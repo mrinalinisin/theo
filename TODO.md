@@ -38,7 +38,8 @@
 [x] Make new cards UI as default in /shopping-list
 [x] Small UI tweaks
 [ ] Group by domain 
-[ ]
+[ ] Add keyboard shortcuts for search Ctrl / CMD + K and Ctrl / CMD + N for new item
+
 [ ] Add a new item shouldn't take a page refresh, if unable to fetch show unable to fetch and allow user to manually add details 
 [ ] Size chart should be a special image under each listing
 [ ] Add variant urls and pictures
