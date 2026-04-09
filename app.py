@@ -41,6 +41,7 @@ def create_app():
     def shopping_list():
         PAGE_SIZE = 24
         tag_filter = request.args.get("tag")
+        search_q = (request.args.get("q") or "").strip()
         try:
             page = max(1, int(request.args.get("page", "1")))
         except (TypeError, ValueError):
@@ -50,6 +51,11 @@ def create_app():
         query = Product.query.filter_by(status="watching")
         if tag_filter:
             query = query.filter(Product.tags.any(Tag.id == int(tag_filter)))
+        if search_q:
+            # SQLite LIKE is case-insensitive for ASCII; ilike for portability.
+            # Escape LIKE wildcards so "50%" searches literally match "50%".
+            escaped = search_q.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+            query = query.filter(Product.name.ilike(f"%{escaped}%", escape="\\"))
         query = query.order_by(Product.created_at.desc())
 
         total_count = query.count()
@@ -103,6 +109,7 @@ def create_app():
             has_more=has_more,
             next_page=page + 1 if has_more else None,
             page_size=PAGE_SIZE,
+            search_q=search_q,
         )
 
     # ── Add Item ──────────────────────────────────────────────────────────────
@@ -316,14 +323,23 @@ def create_app():
 
         notes = request.form.get("notes", "")
 
-        purchase = Purchase(
-            product_id=product.id,
-            paid_amount=paid,
-            purchased_at=purchased_at,
-            notes=notes,
-        )
+        # Idempotent: if a Purchase row already exists for this product
+        # (unique constraint on product_id), update it rather than inserting.
+        # This makes form re-submits / URL replays safe.
+        purchase = Purchase.query.filter_by(product_id=product.id).first()
+        if purchase:
+            purchase.paid_amount = paid
+            purchase.purchased_at = purchased_at
+            purchase.notes = notes
+        else:
+            purchase = Purchase(
+                product_id=product.id,
+                paid_amount=paid,
+                purchased_at=purchased_at,
+                notes=notes,
+            )
+            db.session.add(purchase)
         product.status = "purchased"
-        db.session.add(purchase)
         db.session.commit()
 
         # Check budget warning
@@ -464,24 +480,27 @@ def create_app():
                 total_savings += p.product.original_price - p.paid_amount
 
         # Group
+        # NOTE: the inner dict key is "purchases" (not "items") because Jinja's
+        # attribute lookup on a dict finds the builtin `dict.items` method
+        # first, shadowing the key and breaking `{{ data.items|length }}`.
         grouped = {}
         if group_by == "tag":
             for purchase in all_purchases:
                 product = purchase.product
                 if product and product.tags:
                     for tag in product.tags:
-                        grouped.setdefault(tag.name, {"tag": tag, "items": [], "total": 0})
-                        grouped[tag.name]["items"].append(purchase)
+                        grouped.setdefault(tag.name, {"tag": tag, "purchases": [], "total": 0})
+                        grouped[tag.name]["purchases"].append(purchase)
                         grouped[tag.name]["total"] += purchase.paid_amount
                 else:
-                    grouped.setdefault("Uncategorised", {"tag": None, "items": [], "total": 0})
-                    grouped["Uncategorised"]["items"].append(purchase)
+                    grouped.setdefault("Uncategorised", {"tag": None, "purchases": [], "total": 0})
+                    grouped["Uncategorised"]["purchases"].append(purchase)
                     grouped["Uncategorised"]["total"] += purchase.paid_amount
         else:
             for purchase in all_purchases:
                 month_key = purchase.purchased_at.strftime("%B %Y")
-                grouped.setdefault(month_key, {"tag": None, "items": [], "total": 0})
-                grouped[month_key]["items"].append(purchase)
+                grouped.setdefault(month_key, {"tag": None, "purchases": [], "total": 0})
+                grouped[month_key]["purchases"].append(purchase)
                 grouped[month_key]["total"] += purchase.paid_amount
 
         return render_template(

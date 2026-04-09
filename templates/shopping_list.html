@@ -4,7 +4,7 @@
 {% block content %}
 <div class="page-header">
   <div class="page-header-top">
-    <div class="page-header-inline">
+    <div class="page-header-inline" style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;width:100%;">
       <div class="page-title">
         {% if active_tag_obj %}
           <span class="tag-dot" style="background:{{ active_tag_obj.colour }};display:inline-block;width:12px;height:12px;border-radius:50%;vertical-align:middle;margin-right:6px;"></span>
@@ -13,6 +13,18 @@
           Shopping List
         {% endif %}
       </div>
+      <form id="searchForm" method="GET" action="{{ url_for('shopping_list') }}" style="margin-left:auto;flex:0 1 320px;min-width:200px;">
+        {% if active_tag %}<input type="hidden" name="tag" value="{{ active_tag }}">{% endif %}
+        <input
+          type="search"
+          name="q"
+          id="searchInput"
+          class="form-input"
+          placeholder="Search by product name…"
+          value="{{ search_q or '' }}"
+          autocomplete="off"
+          style="width:100%;">
+      </form>
     </div>
   </div>
   {% if currency_totals %}
@@ -67,6 +79,7 @@
   <div id="infiniteScrollSentinel"
        data-next-page="{{ next_page }}"
        data-tag="{{ active_tag or '' }}"
+       data-q="{{ search_q or '' }}"
        style="padding:24px;text-align:center;">
     <span class="text-xs text-faint">Loading more…</span>
   </div>
@@ -78,12 +91,21 @@
   </div>
 
   {% else %}
+  {% if search_q %}
+  <div class="empty-state">
+    <div class="empty-icon">&#x1f50d;</div>
+    <div class="empty-title">No matches for &ldquo;{{ search_q }}&rdquo;</div>
+    <div class="empty-desc">Try a different search term{{ ' or clear the current tag filter' if active_tag }}.</div>
+    <a href="{{ url_for('shopping_list', tag=active_tag) }}" class="btn btn-secondary mt-16">Clear search</a>
+  </div>
+  {% else %}
   <div class="empty-state">
     <div class="empty-icon">&#x1f6cd;&#xfe0f;</div>
     <div class="empty-title">Your shopping list is empty</div>
     <div class="empty-desc">Add products to track their prices over time.</div>
     <a href="{{ url_for('add_item') }}" class="btn btn-primary mt-16">+ Add Your First Item</a>
   </div>
+  {% endif %}
   {% endif %}
 </div>
 
@@ -158,6 +180,30 @@ document.getElementById('modal-purchase').addEventListener('click', e => {
   if (e.target.id === 'modal-purchase') closePurchaseModal();
 });
 
+// ── Debounced search ──
+(function() {
+  const form = document.getElementById('searchForm');
+  const input = document.getElementById('searchInput');
+  if (!form || !input) return;
+
+  let timer = null;
+  const initial = input.value;
+
+  input.addEventListener('input', () => {
+    clearTimeout(timer);
+    timer = setTimeout(() => {
+      // Only submit if the value actually changed from the initial render,
+      // or has been cleared. Avoids bouncing back on focus/blur.
+      if (input.value !== initial || input.value === '') {
+        form.submit();
+      }
+    }, 300);
+  });
+
+  // Allow Enter to submit immediately (default form behavior) —
+  // the form element itself handles that without extra code.
+})();
+
 // ── Endless scroll via IntersectionObserver ──
 (function() {
   const sentinel = document.getElementById('infiniteScrollSentinel');
@@ -169,10 +215,12 @@ document.getElementById('modal-purchase').addEventListener('click', e => {
   let loading = false;
   let nextPage = parseInt(sentinel.dataset.nextPage || '0', 10);
   const tag = sentinel.dataset.tag || '';
+  const q = sentinel.dataset.q || '';
 
   function buildUrl(page) {
     const params = new URLSearchParams({ partial: '1', page: String(page) });
     if (tag) params.set('tag', tag);
+    if (q) params.set('q', q);
     return '/shopping-list?' + params.toString();
   }
 

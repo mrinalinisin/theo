@@ -19,15 +19,15 @@
 [x] Keep only USD, SGD, INR currencies 
 [x] Add to the "Edit Product" form the paste image from clipboard to upload images against this listing 
 [x] Add endless scroll to the /shopping-list UI 
-[ ] Auto create tags: "pricing unknown", "images required", "untagged items" where pricing is 0
-[ ] Need a search in UI to search through scrapes
-[ ] Gallery view to delete unecessary data
-[ ] Size chart should be a special image under each listing
+[ ] Add a search by name, domain
 [ ] Assign a random colour not previously assigned to any tag in the colour wheel 
 [ ] Capitalize the first letter of tag names
+[ ] Gallery view of all images so user can delete unecessary data
+
+
+[ ] If any listings exist where price is unknown or 0, if any listings exists where there are no main image set, if any listing exists where no tags have been attached to it, create "pricing unknown", "images required", "untagged items" where pricing is 0
+[ ] Size chart should be a special image under each listing
 [ ] Add variant urls and pictures
-
-
 [ ] Add sorting to /shopping-list. Sort by 
     [ ] Last modified date
 [ ] Safari extension to create data in locally running app

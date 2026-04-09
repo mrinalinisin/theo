@@ -56,7 +56,7 @@
           <span class="tag-dot" style="background:{{ data.tag.colour }};"></span>{{ data.tag.name }}
         </span>
         {% endif %}
-        {{ group_name }} &middot; {{ data.items|length }} items
+        {{ group_name }} &middot; {{ data.purchases|length }} items
       </span>
       <span style="font-variant-numeric:tabular-nums;">{{ data.total|fmt_price }} total</span>
     </div>
@@ -65,7 +65,7 @@
     <div class="table-desktop">
       <table class="data-table">
         <tbody>
-          {% for purchase in data.items %}
+          {% for purchase in data.purchases %}
           <tr>
             <td>
               <div class="flex items-center gap-12">
@@ -105,7 +105,7 @@
 
     <!-- Mobile cards -->
     <div class="card-list-mobile">
-      {% for purchase in data.items %}
+      {% for purchase in data.purchases %}
       <div class="product-card" style="border-radius:0;border-left:0;border-right:0;border-top:0;">
         <div class="product-card-top">
           <div class="product-card-img" style="width:40px;height:40px;">
