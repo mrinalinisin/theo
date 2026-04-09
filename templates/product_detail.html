@@ -70,10 +70,13 @@
             {% set change = product.price_change_pct %}
             <div class="price {{ 'price-drop' if change and change < 0 else 'price-up' if change and change > 0 else '' }}"
               style="font-size:24px;">
-              {{ product.current_price|fmt_price }}
+              {{ product.current_price|fmt_price }}{% if product.quantity and product.quantity > 1 %} <span class="text-sm text-faint">&times; {{ product.quantity }}</span>{% endif %}
             </div>
+            {% if product.quantity and product.quantity > 1 and product.current_price %}
+            <div class="text-sm text-muted" style="margin-top:2px;">Total: {{ (product.current_price * product.quantity)|fmt_price }}</div>
+            {% endif %}
             {% if product.original_price and product.original_price != product.current_price %}
-            <div class="price-original" style="font-size:14px;">{{ product.original_price|fmt_price }}</div>
+            <div class="price-original" style="font-size:14px;">was {{ product.original_price|fmt_price }}</div>
             {% endif %}
             {% if change %}
               {% if change < 0 %}
@@ -192,6 +195,10 @@
         <div class="form-group">
           <label class="form-label">URL</label>
           <input type="url" name="url" class="form-input" value="{{ product.url }}">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Quantity</label>
+          <input type="number" name="quantity" class="form-input" value="{{ product.quantity }}" min="1" step="1">
         </div>
         <div class="form-group">
           <label class="form-label">Notes</label>

@@ -79,9 +79,15 @@
               <label class="form-label">Product Name</label>
               <input type="text" name="name" class="form-input" value="{{ scraped.name }}">
             </div>
-            <div class="form-group">
-              <label class="form-label">Price</label>
-              <input type="text" name="price" class="form-input" value="{{ scraped.price or '' }}">
+            <div class="flex gap-8">
+              <div class="form-group" style="flex:2;">
+                <label class="form-label">Price</label>
+                <input type="text" name="price" class="form-input" value="{{ scraped.price or '' }}">
+              </div>
+              <div class="form-group" style="flex:1;">
+                <label class="form-label">Quantity</label>
+                <input type="number" name="quantity" class="form-input" value="1" min="1" step="1">
+              </div>
             </div>
             <div class="form-group" style="margin-bottom:0;">
               <label class="form-label">Store</label>

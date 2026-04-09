@@ -1,7 +1,7 @@
 
 ## Work on these sequentially
-[ ] Can quantity be added in listing?
-[ ] Ensure you can select currency
+
+
 [ ] Setup local server + GUI client for a SQLite
 [ ] Need the ability to remove photos in the /add-item UI post scrape 
 [ ] Clean up junk metadata in existing scrapes like random pricing
@@ -17,7 +17,6 @@
 [ ] Hot reload in server and UI 
 [ ] How can I leverage Metabase like features in Gummi? [Abstract, needs thinking]
 [ ] Can each tag be a type corresponding to Anytype types? So that I can get Claude to update listings inside Anytype?
-[ ] Alembic for database up, down and rolling schema changes?
 [ ] "Access Denied" domains scrapes need to be successfully re-tried through playwright or some other headless browser
 [ ] Some thumbnails are not showing up in /shopping-list, why?
 [ ] Not scraping price properly in amazon.com links, why?
@@ -33,7 +32,9 @@
 
 
 ## Done 
-[x] UI for scrape & add
-[x] Manual listing creation by pasting from clipboard
-[x] Fix memory leak
-[x] UI - Move tags from the top to the sidebar
+[x] UI: Scrape and add
+[x] Backend x UI: Manual listing creation by pasting from clipboard
+[x] Backend: Fix memory leak
+[x] UI: Move tags from the top to the sidebar
+[x] Add Quantity per listing
+[ ] Add a table with Currencies and then add "Currency" field per listing, with primary key to Currencies table entries 

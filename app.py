@@ -26,6 +26,7 @@ def create_app():
 
     with app.app_context():
         db.create_all()
+        _run_lightweight_migrations()
         Settings.get()  # ensure singleton exists
 
     # ── Routes ────────────────────────────────────────────────────────────────
@@ -46,7 +47,7 @@ def create_app():
         tags = Tag.query.order_by(Tag.name).all()
 
         # Stats
-        total_value = sum(p.current_price or 0 for p in products)
+        total_value = sum((p.current_price or 0) * (p.quantity or 1) for p in products)
         week_ago = datetime.utcnow() - timedelta(days=7)
         price_drops = 0
         price_rises = 0
@@ -104,6 +105,10 @@ def create_app():
         images_raw = request.form.get("images", "[]")
         variants_raw = request.form.get("variants", "{}")
         notes = request.form.get("notes", "")
+        try:
+            quantity = max(1, int(request.form.get("quantity", "1") or 1))
+        except (TypeError, ValueError):
+            quantity = 1
         tag_ids = request.form.getlist("tag_ids")
 
         try:
@@ -125,6 +130,7 @@ def create_app():
             images=images,
             variants=variants,
             notes=notes,
+            quantity=quantity,
             status="watching",
         )
 
@@ -167,6 +173,10 @@ def create_app():
         product.name = request.form.get("name", product.name)
         product.notes = request.form.get("notes", product.notes)
         product.url = request.form.get("url", product.url)
+        try:
+            product.quantity = max(1, int(request.form.get("quantity", product.quantity) or 1))
+        except (TypeError, ValueError):
+            pass
 
         tag_ids = request.form.getlist("tag_ids")
         product.tags.clear()
@@ -543,6 +553,25 @@ def create_app():
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
+
+
+def _run_lightweight_migrations():
+    """Best-effort schema upgrades for columns added after initial DB creation.
+
+    SQLAlchemy's create_all() never alters existing tables, so for a zero-ops
+    local app we issue idempotent ALTER TABLE statements. Each block checks
+    PRAGMA table_info first so it's safe to re-run on every startup.
+    """
+    from sqlalchemy import text
+
+    def column_exists(table, column):
+        rows = db.session.execute(text(f"PRAGMA table_info({table})")).fetchall()
+        return any(r[1] == column for r in rows)
+
+    # Product.quantity added 2026-04
+    if not column_exists("product", "quantity"):
+        db.session.execute(text("ALTER TABLE product ADD COLUMN quantity INTEGER NOT NULL DEFAULT 1"))
+        db.session.commit()
 
 
 def _parse_price(s):

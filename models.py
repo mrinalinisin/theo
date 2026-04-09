@@ -34,6 +34,7 @@ class Product(db.Model):
     images = db.Column(db.JSON, default=list)  # list of image URLs
     variants = db.Column(db.JSON, default=dict)  # {sizes: [...], colours: [...]}
     notes = db.Column(db.Text, default="")
+    quantity = db.Column(db.Integer, default=1, nullable=False)
     status = db.Column(db.String(20), default="watching")  # watching | purchased
     check_interval = db.Column(db.Integer, nullable=True)  # per-item override in minutes
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
