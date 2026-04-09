@@ -104,6 +104,11 @@ class Purchase(db.Model):
     paid_amount = db.Column(db.Float, nullable=False)
     purchased_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     notes = db.Column(db.Text, default="")
+    # At least one of these must be set when a product is marked as purchased.
+    # The route-level validator enforces that invariant — the DB allows NULL
+    # for backfill compatibility with pre-existing purchase rows.
+    order_details_url = db.Column(db.Text, default="")
+    tracking_url = db.Column(db.Text, default="")
 
 
 class Settings(db.Model):

@@ -97,6 +97,20 @@
             &#x2705; Purchased on {{ product.purchase.purchased_at|fmt_date }}
             for {{ product.fmt_price(product.purchase.paid_amount) }}
             {% if product.purchase.notes %} &mdash; {{ product.purchase.notes }}{% endif %}
+            {% if product.purchase.order_details_url or product.purchase.tracking_url %}
+            <div style="margin-top:6px;display:flex;gap:12px;flex-wrap:wrap;">
+              {% if product.purchase.order_details_url %}
+              <a href="{{ product.purchase.order_details_url }}" target="_blank" rel="noopener" class="text-sm">
+                &#128196; Order details
+              </a>
+              {% endif %}
+              {% if product.purchase.tracking_url %}
+              <a href="{{ product.purchase.tracking_url }}" target="_blank" rel="noopener" class="text-sm">
+                &#128230; Track shipment
+              </a>
+              {% endif %}
+            </div>
+            {% endif %}
           </div>
           {% endif %}
 
@@ -188,7 +202,7 @@
 <!-- ═══ Edit Modal ═══ -->
 <div class="modal-overlay" id="modal-edit">
   <div class="modal">
-    <form method="POST" action="{{ url_for('product_edit', product_id=product.id) }}">
+    <form method="POST" action="{{ url_for('product_edit', product_id=product.id) }}" onsubmit="return validateEditLinks(this)">
       <input type="hidden" name="images" id="editImagesField" value="{{ product.images|tojson_safe }}">
       <input type="hidden" name="image_url" id="editImageUrlField" value="{{ product.image_url }}">
       <div class="modal-header">
@@ -253,6 +267,21 @@
           <label class="form-label">Notes</label>
           <textarea name="notes" class="form-input">{{ product.notes }}</textarea>
         </div>
+        {% if product.status == 'purchased' and product.purchase %}
+        <div class="form-group">
+          <label class="form-label">Order details URL <span class="text-xs text-faint">(order confirmation / receipt page)</span></label>
+          <input type="url" name="order_details_url" class="form-input"
+            value="{{ product.purchase.order_details_url or '' }}" placeholder="https://...">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Tracking link <span class="text-xs text-faint">(shipment tracking page)</span></label>
+          <input type="url" name="tracking_url" class="form-input"
+            value="{{ product.purchase.tracking_url or '' }}" placeholder="https://...">
+        </div>
+        <div class="text-xs text-faint" style="margin:-8px 0 12px;">
+          At least one of the two links above is required for purchased items.
+        </div>
+        {% endif %}
         <div class="form-group">
           <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
             <input type="checkbox" name="track_price" value="1" {{ 'checked' if product.track_price }}>
@@ -285,7 +314,7 @@
 <!-- ═══ Purchase Modal ═══ -->
 <div class="modal-overlay" id="modal-purchase">
   <div class="modal">
-    <form method="POST" action="{{ url_for('product_purchase', product_id=product.id) }}">
+    <form method="POST" action="{{ url_for('product_purchase', product_id=product.id) }}" onsubmit="return validatePurchaseLinks(this)">
       <div class="modal-header">
         <div class="modal-title">Mark as Purchased</div>
         <button type="button" class="btn btn-ghost btn-sm" onclick="document.getElementById('modal-purchase').classList.remove('open')">&#x2715;</button>
@@ -319,6 +348,22 @@
         <div class="form-group">
           <label class="form-label">Purchase Date</label>
           <input type="date" name="purchased_at" class="form-input">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Order details URL <span class="text-xs text-faint">(order confirmation / receipt page)</span></label>
+          <input type="url" name="order_details_url" class="form-input" placeholder="https://..."
+            value="{{ product.purchase.order_details_url if product.purchase else '' }}">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Tracking link <span class="text-xs text-faint">(shipment tracking page)</span></label>
+          <input type="url" name="tracking_url" class="form-input" placeholder="https://..."
+            value="{{ product.purchase.tracking_url if product.purchase else '' }}">
+        </div>
+
+        <div class="text-xs text-faint" style="margin:-8px 0 12px;">
+          At least one of the two links above is required.
         </div>
 
         <div class="form-group" style="margin-bottom:0;">
@@ -570,6 +615,32 @@ function openPurchaseModal() {
   const today = new Date().toISOString().split('T')[0];
   document.querySelector('#modal-purchase input[name="purchased_at"]').value = today;
   document.getElementById('modal-purchase').classList.add('open');
+}
+
+function validatePurchaseLinks(form) {
+  const order = (form.elements['order_details_url'].value || '').trim();
+  const tracking = (form.elements['tracking_url'].value || '').trim();
+  if (!order && !tracking) {
+    alert('Please provide an Order details URL or a Tracking link before marking as purchased.');
+    return false;
+  }
+  return true;
+}
+
+function validateEditLinks(form) {
+  // Only enforced for purchased products — the template only renders these
+  // inputs when product.status == 'purchased', so their absence means the
+  // rule doesn't apply to this product.
+  const orderField = form.elements['order_details_url'];
+  const trackingField = form.elements['tracking_url'];
+  if (!orderField || !trackingField) return true;
+  const order = (orderField.value || '').trim();
+  const tracking = (trackingField.value || '').trim();
+  if (!order && !tracking) {
+    alert('Purchased items require at least an Order details URL or a Tracking link.');
+    return false;
+  }
+  return true;
 }
 
 // Close modals on overlay click

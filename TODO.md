@@ -30,26 +30,24 @@
 [x] Swap position of "Edit" and "Remove buttons in product listing page
 [x] Card view for multi currency tagged items 
 [x] Merge tags entries of 'Tech & Accessories' and 'Hardware' into 'Hardware, Tech & Accessories'
-
-[ ] Gallery view of all images so user can delete unecessary data
-[ ] If any listings exist where price is unknown or 0, if any listings exists where there are no main image set, if any listing exists where no tags have been attached to it, create "pricing unknown", "images required", "untagged items" where pricing is 0
+[x] Add sorting to /shopping-list. Sort by 
+    [x] Last modified date
+    [x] Creation date
+[x] If marked as purchased, then must fill fields "order page" and/or "tracking link" 
 [ ] Size chart should be a special image under each listing
 [ ] Add variant urls and pictures
-[ ] Add sorting to /shopping-list. Sort by 
-    [ ] Last modified date
-[ ] Safari extension to create data in locally running app
+[ ] Listing should have link to video instructions
+[ ] Is the UI templates in EJS or similar?
+[ ] Improve card view to make image the focal point 
+[ ] Deleting a tag should only delete tag and not associated listings
+[ ] Erase price history for all items 
+[ ] Remove "Re-scrape" button for now 
+[ ] Safari extension to scrape listing and create data in locally running app
 [ ] Setup local server + GUI client for a SQLite
 [ ] Push notifications when price drops 
-[ ] Bulk edit listings
+
 [ ] Bulk scrapes, what is the limit?
-[ ] Listing should have field for "Tracking Link"
-[ ] Listing should have link to video instructions
-[ ] Hot reload in server and UI 
 [ ] Separate development app vs `sv` productionized app 
-[ ] How can I leverage Metabase like features in Gummi? [Abstract, needs thinking]
-[ ] Can each tag be a type corresponding to Anytype types? So that I can get Claude to update listings inside Anytype?
+[ ] Anytype listing, media creator, data filler. Can each tag be a type corresponding to Anytype types? So that I can get Claude to update listings inside Anytype?
 [ ] "Access Denied" domains scrapes need to be successfully re-tried through playwright or some other headless browser
-[ ] Some thumbnails are not showing up in /shopping-list, why?
 [ ] Not scraping price properly in amazon.com links, why?
-[ ] Is the UI templates in EJS or similar?
-[ ] Anytype listing, media creator, data filler

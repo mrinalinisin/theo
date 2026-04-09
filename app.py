@@ -334,6 +334,24 @@ def create_app():
             if tag:
                 product.tags.append(tag)
 
+        # Order details / tracking link edits — only meaningful for purchased
+        # products (the edit modal only renders those inputs when a Purchase
+        # row exists). We re-enforce the "at least one link" invariant so a
+        # user can't blank both fields on an already-purchased item.
+        if product.status == "purchased" and product.purchase and (
+            "order_details_url" in request.form or "tracking_url" in request.form
+        ):
+            order_details_url = (request.form.get("order_details_url") or "").strip()
+            tracking_url = (request.form.get("tracking_url") or "").strip()
+            if not order_details_url and not tracking_url:
+                flash(
+                    "Purchased items require an Order details URL or a Tracking link.",
+                    "error",
+                )
+                return redirect(url_for("product_detail", product_id=product_id))
+            product.purchase.order_details_url = order_details_url
+            product.purchase.tracking_url = tracking_url
+
         product.updated_at = datetime.now(timezone.utc)
         db.session.commit()
         flash("Product updated.", "success")
@@ -357,6 +375,17 @@ def create_app():
             purchased_at = datetime.now(timezone.utc)
 
         notes = request.form.get("notes", "")
+        order_details_url = (request.form.get("order_details_url") or "").strip()
+        tracking_url = (request.form.get("tracking_url") or "").strip()
+
+        # A purchased item must have either an order details link or a tracking
+        # link (or both) so we always have a way back to the receipt/shipment.
+        if not order_details_url and not tracking_url:
+            flash(
+                "Please provide an Order details URL or a Tracking link before marking as purchased.",
+                "error",
+            )
+            return redirect(url_for("product_detail", product_id=product.id))
 
         # Idempotent: if a Purchase row already exists for this product
         # (unique constraint on product_id), update it rather than inserting.
@@ -366,12 +395,16 @@ def create_app():
             purchase.paid_amount = paid
             purchase.purchased_at = purchased_at
             purchase.notes = notes
+            purchase.order_details_url = order_details_url
+            purchase.tracking_url = tracking_url
         else:
             purchase = Purchase(
                 product_id=product.id,
                 paid_amount=paid,
                 purchased_at=purchased_at,
                 notes=notes,
+                order_details_url=order_details_url,
+                tracking_url=tracking_url,
             )
             db.session.add(purchase)
         product.status = "purchased"
@@ -740,6 +773,15 @@ def _run_lightweight_migrations():
     # Product.track_price added 2026-04 — default OFF for all existing items
     if not column_exists("product", "track_price"):
         db.session.execute(text("ALTER TABLE product ADD COLUMN track_price BOOLEAN NOT NULL DEFAULT 0"))
+        db.session.commit()
+
+    # Purchase.order_details_url / tracking_url added 2026-04 — at least one is
+    # required when marking a product purchased (enforced at the route layer).
+    if not column_exists("purchase", "order_details_url"):
+        db.session.execute(text("ALTER TABLE purchase ADD COLUMN order_details_url TEXT DEFAULT ''"))
+        db.session.commit()
+    if not column_exists("purchase", "tracking_url"):
+        db.session.execute(text("ALTER TABLE purchase ADD COLUMN tracking_url TEXT DEFAULT ''"))
         db.session.commit()
 
     # Product.updated_at added 2026-04 — backfill with created_at so existing

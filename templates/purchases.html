@@ -59,6 +59,16 @@
                 <div>
                   <div style="font-weight:500;">{{ purchase.product.name if purchase.product else 'Unknown' }}</div>
                   <div class="text-xs text-faint">{{ purchase.product.store if purchase.product else '' }}</div>
+                  {% if purchase.order_details_url or purchase.tracking_url %}
+                  <div class="text-xs" style="margin-top:2px;display:flex;gap:10px;flex-wrap:wrap;" onclick="event.stopPropagation()">
+                    {% if purchase.order_details_url %}
+                    <a href="{{ purchase.order_details_url }}" target="_blank" rel="noopener">&#128196; Order</a>
+                    {% endif %}
+                    {% if purchase.tracking_url %}
+                    <a href="{{ purchase.tracking_url }}" target="_blank" rel="noopener">&#128230; Track</a>
+                    {% endif %}
+                  </div>
+                  {% endif %}
                 </div>
               </div>
             </td>
@@ -100,6 +110,16 @@
       </div>
       {% if purchase.product %}
       </a>
+      {% endif %}
+      {% if purchase.order_details_url or purchase.tracking_url %}
+      <div class="text-xs" style="padding:0 16px 10px 64px;display:flex;gap:14px;flex-wrap:wrap;">
+        {% if purchase.order_details_url %}
+        <a href="{{ purchase.order_details_url }}" target="_blank" rel="noopener">&#128196; Order</a>
+        {% endif %}
+        {% if purchase.tracking_url %}
+        <a href="{{ purchase.tracking_url }}" target="_blank" rel="noopener">&#128230; Track</a>
+        {% endif %}
+      </div>
       {% endif %}
       {% endfor %}
     </div>
