@@ -9,7 +9,7 @@
 [x] Add a "Currencies" table and then add "Currency" field per listing, with foreign key to Currencies table entries. Backfill all existing listings' currencies to be INR. In UI, in the form to edit a listing, I should be able to change the currency for that listing's price.
 [X] Turn off price tracking by default 
 [x] Add Price field in Edit listing form 
-[ ] Total value number in INR not required 
+[x] Remove unnecessary stats from /shopping-list UI 
 [ ] Need the ability to remove photos in the /add-item UI post scrape 
 [ ] Clean up junk metadata in existing scrapes like random pricing
 [ ] Add quantity and variant urls and pictures [needs thinking to sort of link to other scrapes]

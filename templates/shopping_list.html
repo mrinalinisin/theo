@@ -16,26 +16,6 @@
 <div class="page-body">
   {% if products %}
 
-  <!-- Stats -->
-  <div class="stats-grid mb-20">
-    <div class="stat-card">
-      <div class="stat-label">Items Watching</div>
-      <div class="stat-value">{{ products|length }}</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-label">Total Value</div>
-      <div class="stat-value">{{ total_value|fmt_price }}</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-label">Price Drops (7d)</div>
-      <div class="stat-value" style="color:var(--accent)">{{ price_drops }}</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-label">Price Rises (7d)</div>
-      <div class="stat-value" style="color:var(--danger)">{{ price_rises }}</div>
-    </div>
-  </div>
-
   <!-- Desktop table view -->
   <div class="table-desktop">
     <div class="card">
