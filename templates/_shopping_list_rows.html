@@ -1,0 +1,68 @@
+{% for p in products %}
+<tr>
+  <td>
+    <a href="{{ url_for('product_detail', product_id=p.id) }}" style="text-decoration:none;color:inherit;">
+      <div class="flex items-center gap-12">
+        <div class="product-card-img">
+          {% if p.image_url %}
+          <img src="{{ p.image_url }}" alt="">
+          {% else %}
+          IMG
+          {% endif %}
+        </div>
+        <div>
+          <div style="font-weight:500;">{{ p.name }}</div>
+          <div class="text-xs text-faint">{{ p.store }}</div>
+        </div>
+      </div>
+    </a>
+  </td>
+  <td>
+    {% for tag in p.tags %}
+    <span class="tag" style="color:{{ tag.colour }};background:{{ tag.colour }}18;">
+      <span class="tag-dot" style="background:{{ tag.colour }};"></span>{{ tag.name }}
+    </span>
+    {% endfor %}
+  </td>
+  <td>
+    {% set change = p.price_change_pct %}
+    <div class="price {{ 'price-drop' if change and change < 0 else 'price-up' if change and change > 0 else '' }}">
+      {{ p.fmt_price(p.current_price) }}{% if p.quantity and p.quantity > 1 %} <span class="text-xs text-faint">&times;{{ p.quantity }}</span>{% endif %}
+    </div>
+    {% if p.quantity and p.quantity > 1 and p.current_price %}
+    <div class="price-original">= {{ p.fmt_price(p.current_price * p.quantity) }}</div>
+    {% elif p.original_price and p.original_price != p.current_price %}
+    <div class="price-original">{{ p.fmt_price(p.original_price) }}</div>
+    {% endif %}
+  </td>
+  <td>
+    {% if change %}
+      {% if change < 0 %}
+      <span class="status status-price-drop">&darr; {{ "%.1f"|format(change) }}%</span>
+      {% elif change > 0 %}
+      <span class="status status-price-up">&uarr; +{{ "%.1f"|format(change) }}%</span>
+      {% endif %}
+    {% else %}
+    <span class="text-faint text-sm">No change</span>
+    {% endif %}
+  </td>
+  <td>
+    {% set history = (p.price_history|sort(attribute='checked_at'))[-8:] %}
+    {% if history %}
+    <div class="sparkline">
+      {% set max_p = history|map(attribute='price')|max %}
+      {% set min_p = history|map(attribute='price')|min %}
+      {% set range_p = max_p - min_p if max_p != min_p else 1 %}
+      {% for h in history %}
+      <div class="spark-bar {{ 'current' if loop.last else '' }}"
+        style="height: {{ 6 + ((h.price - min_p) / range_p * 22)|int }}px;"></div>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </td>
+  <td class="text-muted text-sm">{{ p.last_checked_at|time_ago }}</td>
+  <td>
+    <button class="btn btn-primary btn-sm" onclick="openPurchaseModal({{ p.id }}, '{{ p.name|e }}', {{ (p.current_price or 0) * (p.quantity or 1) }})">Add to Purchased</button>
+  </td>
+</tr>
+{% endfor %}

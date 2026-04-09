@@ -14,7 +14,7 @@ from urllib.parse import urlparse
 import json
 import re
 
-from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, make_response
 from config import Config
 from models import db, Product, Tag, PriceHistory, Purchase, Settings, Currency, product_tags
 
@@ -39,16 +39,37 @@ def create_app():
 
     @app.route("/shopping-list")
     def shopping_list():
+        PAGE_SIZE = 24
         tag_filter = request.args.get("tag")
+        try:
+            page = max(1, int(request.args.get("page", "1")))
+        except (TypeError, ValueError):
+            page = 1
+        is_partial = request.args.get("partial") == "1"
+
         query = Product.query.filter_by(status="watching")
         if tag_filter:
             query = query.filter(Product.tags.any(Tag.id == int(tag_filter)))
-        products = query.order_by(Product.created_at.desc()).all()
-        tags = Tag.query.order_by(Tag.name).all()
+        query = query.order_by(Product.created_at.desc())
 
-        # Per-currency totals for the current view (covers mixed-currency lists)
+        total_count = query.count()
+        offset = (page - 1) * PAGE_SIZE
+        page_products = query.offset(offset).limit(PAGE_SIZE).all()
+        has_more = (offset + len(page_products)) < total_count
+
+        # ── Partial response for infinite scroll: just the new rows + cards ──
+        if is_partial:
+            body = render_template("_shopping_list_items.html", products=page_products)
+            resp = make_response(body)
+            resp.headers["X-Has-More"] = "1" if has_more else "0"
+            resp.headers["X-Next-Page"] = str(page + 1) if has_more else ""
+            resp.headers["Content-Type"] = "text/html; charset=utf-8"
+            return resp
+
+        # ── Full-page render: use ALL matches for header totals, first page for list ──
+        all_products = query.all()  # for currency totals (aggregate over full set)
         currency_totals = {}  # code -> {"symbol": str, "code": str, "name": str, "total": float}
-        for p in products:
+        for p in all_products:
             if not p.current_price:
                 continue
             c = p.currency
@@ -61,6 +82,8 @@ def create_app():
             bucket["total"] += (p.current_price or 0) * (p.quantity or 1)
         currency_totals_list = sorted(currency_totals.values(), key=lambda b: b["code"])
 
+        tags = Tag.query.order_by(Tag.name).all()
+
         # Active tag object (for header display)
         active_tag_obj = None
         if tag_filter:
@@ -71,11 +94,15 @@ def create_app():
 
         return render_template(
             "shopping_list.html",
-            products=products,
+            products=page_products,
             tags=tags,
             active_tag=tag_filter,
             active_tag_obj=active_tag_obj,
             currency_totals=currency_totals_list,
+            total_count=total_count,
+            has_more=has_more,
+            next_page=page + 1 if has_more else None,
+            page_size=PAGE_SIZE,
         )
 
     # ── Add Item ──────────────────────────────────────────────────────────────

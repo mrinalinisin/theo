@@ -1,5 +1,3 @@
-
-
 ## TODOs 
 [x] UI x DB: Basic app to scrape and add
 [x] Backend x UI: Manual listing creation by pasting from clipboard
@@ -20,8 +18,7 @@
 [x] Avoid duplicates by checking if the listing URL exists in DB 
 [x] Keep only USD, SGD, INR currencies 
 [x] Add to the "Edit Product" form the paste image from clipboard to upload images against this listing 
-[ ] Add endless scroll to the /shopping-list UI 
-
+[x] Add endless scroll to the /shopping-list UI 
 [ ] Auto create tags: "pricing unknown", "images required", "untagged items" where pricing is 0
 [ ] Need a search in UI to search through scrapes
 [ ] Gallery view to delete unecessary data
@@ -29,6 +26,10 @@
 [ ] Assign a random colour not previously assigned to any tag in the colour wheel 
 [ ] Capitalize the first letter of tag names
 [ ] Add variant urls and pictures
+
+
+[ ] Add sorting to /shopping-list. Sort by 
+    [ ] Last modified date
 [ ] Safari extension to create data in locally running app
 [ ] Setup local server + GUI client for a SQLite
 [ ] Push notifications when price drops 
