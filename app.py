@@ -660,22 +660,34 @@ def _run_lightweight_migrations():
         db.session.execute(text("ALTER TABLE product ADD COLUMN track_price BOOLEAN NOT NULL DEFAULT 0"))
         db.session.commit()
 
-    # Seed common currencies (idempotent — only inserts missing codes)
+    # Seed supported currencies (idempotent — only inserts missing codes).
+    # Whitelist: anything outside this list gets pruned below.
     seed_currencies = [
         ("INR", "\u20b9", "Indian Rupee"),
         ("USD", "$", "US Dollar"),
-        ("EUR", "\u20ac", "Euro"),
-        ("GBP", "\u00a3", "British Pound"),
-        ("JPY", "\u00a5", "Japanese Yen"),
-        ("AUD", "A$", "Australian Dollar"),
-        ("CAD", "C$", "Canadian Dollar"),
         ("SGD", "S$", "Singapore Dollar"),
-        ("AED", "AED ", "UAE Dirham"),
     ]
     for code, symbol, name in seed_currencies:
         if not Currency.query.filter_by(code=code).first():
             db.session.add(Currency(code=code, symbol=symbol, name=name))
     db.session.commit()
+
+    # Prune any legacy currencies outside the whitelist. Reassign products
+    # still pointing at a pruned currency to INR first so the FK stays valid.
+    allowed_codes = {c[0] for c in seed_currencies}
+    inr_row = Currency.query.filter_by(code="INR").first()
+    stale = Currency.query.filter(~Currency.code.in_(allowed_codes)).all()
+    if stale and inr_row:
+        stale_ids = [c.id for c in stale]
+        db.session.execute(
+            text("UPDATE product SET currency_id = :inr WHERE currency_id IN :ids")
+                .bindparams(db.bindparam("ids", expanding=True)),
+            {"inr": inr_row.id, "ids": stale_ids},
+        )
+        for c in stale:
+            db.session.delete(c)
+        db.session.commit()
+        print(f"[Migration] Pruned {len(stale)} currency row(s): {[c.code for c in stale]}")
 
     # Product.currency_id added 2026-04 — backfill to INR
     if not column_exists("product", "currency_id"):

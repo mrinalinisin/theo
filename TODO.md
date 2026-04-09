@@ -19,7 +19,7 @@
 [x] After scraping listing, if no price found then default price to 0
 [x] Avoid duplicates by checking if the listing URL exists in DB 
 [ ] Edit listing should also have the paste image to upload 
-[ ] Keep only USD, SGD, INR currencies 
+[x] Keep only USD, SGD, INR currencies 
 
 [ ] Auto create tags: "pricing unknown", "images required", "untagged items" where pricing is 0
 [ ] Need a search in UI to search through scrapes
