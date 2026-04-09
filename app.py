@@ -73,7 +73,8 @@ def create_app():
     @app.route("/add-item", methods=["GET"])
     def add_item():
         tags = Tag.query.order_by(Tag.name).all()
-        return render_template("add_item.html", tags=tags, scraped=None)
+        currencies = Currency.query.order_by(Currency.code).all()
+        return render_template("add_item.html", tags=tags, currencies=currencies, scraped=None)
 
     @app.route("/add-item", methods=["POST"])
     def add_item_scrape():
@@ -92,7 +93,8 @@ def create_app():
             return redirect(url_for("add_item"))
 
         tags = Tag.query.order_by(Tag.name).all()
-        return render_template("add_item.html", tags=tags, scraped=scraped, url=url)
+        currencies = Currency.query.order_by(Currency.code).all()
+        return render_template("add_item.html", tags=tags, currencies=currencies, scraped=scraped, url=url)
 
     @app.route("/add-item/save", methods=["POST"])
     def add_item_save():
@@ -110,6 +112,18 @@ def create_app():
         except (TypeError, ValueError):
             quantity = 1
         track_price = bool(request.form.get("track_price"))
+        currency_id = None
+        try:
+            raw_cid = request.form.get("currency_id")
+            if raw_cid:
+                cid = int(raw_cid)
+                if Currency.query.get(cid):
+                    currency_id = cid
+        except (TypeError, ValueError):
+            currency_id = None
+        if currency_id is None:
+            inr = Currency.query.filter_by(code="INR").first()
+            currency_id = inr.id if inr else None
         tag_ids = request.form.getlist("tag_ids")
 
         try:
@@ -133,6 +147,7 @@ def create_app():
             notes=notes,
             quantity=quantity,
             track_price=track_price,
+            currency_id=currency_id,
             status="watching",
         )
 

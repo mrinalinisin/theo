@@ -81,13 +81,23 @@
             </div>
             <div class="flex gap-8">
               <div class="form-group" style="flex:2;">
-                <label class="form-label">Price</label>
+                <label class="form-label">Price <span class="text-xs text-faint">(per unit)</span></label>
                 <input type="text" name="price" class="form-input" value="{{ scraped.price or '' }}">
               </div>
               <div class="form-group" style="flex:1;">
                 <label class="form-label">Quantity</label>
                 <input type="number" name="quantity" class="form-input" value="1" min="1" step="1">
               </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Currency</label>
+              <select name="currency_id" class="form-input">
+                {% for c in currencies %}
+                <option value="{{ c.id }}" {{ 'selected' if c.code == 'INR' }}>
+                  {{ c.symbol }} &mdash; {{ c.code }} ({{ c.name }})
+                </option>
+                {% endfor %}
+              </select>
             </div>
             <div class="form-group" style="margin-bottom:0;">
               <label class="form-label">Store</label>
@@ -100,11 +110,12 @@
 
         <!-- Extracted Photos -->
         {% if scraped.images %}
-        <div class="section-label">Extracted Photos ({{ scraped.images|length }})</div>
+        <div class="section-label" id="photoStripLabel">Extracted Photos ({{ scraped.images|length }})</div>
         <div class="photo-strip mb-16" id="photoStrip">
           {% for img in scraped.images %}
-          <div class="photo-thumb {{ 'active' if loop.first }}">
+          <div class="photo-thumb {{ 'active' if loop.first }}" data-src="{{ img }}">
             <img src="{{ img }}" alt="Photo {{ loop.index }}">
+            <span class="remove-btn" title="Remove">&times;</span>
           </div>
           {% endfor %}
         </div>
@@ -193,25 +204,10 @@
 
 {% block scripts %}
 <script>
-// Photo thumbnail click — set as main image
-document.querySelectorAll('.photo-strip').forEach(strip => {
-  strip.querySelectorAll('.photo-thumb').forEach(thumb => {
-    thumb.addEventListener('click', () => {
-      // Deactivate all thumbs across all strips
-      document.querySelectorAll('.photo-thumb, .pasted-thumb').forEach(t => t.classList.remove('active'));
-      thumb.classList.add('active');
-      // Update hidden image_url field to this image
-      const img = thumb.querySelector('img');
-      if (img) {
-        const field = document.querySelector('input[name="image_url"]');
-        if (field) field.value = img.src;
-      }
-    });
-  });
-});
-
-// ── Clipboard paste & drag-drop for images ──────────────────────────────
+// ── Unified image management (scraped + pasted) ─────────────────────────
 (function() {
+  const photoStrip = document.getElementById('photoStrip');
+  const photoStripLabel = document.getElementById('photoStripLabel');
   const pasteZone = document.getElementById('pasteZone');
   const pastedPhotos = document.getElementById('pastedPhotos');
   const imagesField = document.querySelector('input[name="images"]');
@@ -219,6 +215,71 @@ document.querySelectorAll('.photo-strip').forEach(strip => {
   if (!pasteZone) return;
 
   let pastedImages = []; // base64 data URLs
+
+  function scrapedSrcs() {
+    // Live DOM: only scraped thumbs still in the strip count
+    return Array.from(photoStrip?.querySelectorAll('.photo-thumb[data-src]') || [])
+      .map(t => t.dataset.src);
+  }
+
+  function syncHiddenField() {
+    if (!imagesField) return;
+    imagesField.value = JSON.stringify([...scrapedSrcs(), ...pastedImages]);
+  }
+
+  function updateLabel() {
+    if (photoStripLabel) {
+      const n = scrapedSrcs().length;
+      photoStripLabel.textContent = n > 0
+        ? `Extracted Photos (${n})`
+        : 'Extracted Photos (all removed — paste or upload below)';
+    }
+  }
+
+  function setMainImage(src) {
+    document.querySelectorAll('.photo-thumb, .pasted-thumb').forEach(t => t.classList.remove('active'));
+    // Mark the first matching thumb active (scraped or pasted)
+    const match = Array.from(document.querySelectorAll('.photo-thumb, .pasted-thumb'))
+      .find(t => (t.dataset.src === src) || (t.querySelector('img')?.src === src));
+    if (match) match.classList.add('active');
+    if (imageUrlField) imageUrlField.value = src;
+  }
+
+  function removeScrapedThumb(thumb) {
+    const src = thumb.dataset.src;
+    const wasMain = imageUrlField && imageUrlField.value === src;
+    thumb.remove();
+    syncHiddenField();
+    updateLabel();
+    // If the removed one was the main image, fall back to the first remaining thumb
+    if (wasMain) {
+      const fallback = photoStrip.querySelector('.photo-thumb[data-src]');
+      if (fallback) {
+        setMainImage(fallback.dataset.src);
+      } else if (pastedImages[0]) {
+        setMainImage(pastedImages[0]);
+      } else {
+        imageUrlField.value = '';
+      }
+    }
+  }
+
+  // Scraped thumbs: click to set as main, X to remove (delegated)
+  if (photoStrip) {
+    photoStrip.addEventListener('click', (e) => {
+      const thumb = e.target.closest('.photo-thumb');
+      if (!thumb) return;
+      if (e.target.classList.contains('remove-btn')) {
+        e.stopPropagation();
+        removeScrapedThumb(thumb);
+        return;
+      }
+      setMainImage(thumb.dataset.src || thumb.querySelector('img')?.src);
+    });
+  }
+
+  // Seed the hidden field once at load so it matches the live DOM
+  syncHiddenField();
 
   function addImage(dataUrl) {
     pastedImages.push(dataUrl);
@@ -239,18 +300,6 @@ document.querySelectorAll('.photo-strip').forEach(strip => {
     }
     syncHiddenField();
     renderPastedThumbs();
-  }
-
-  function syncHiddenField() {
-    if (!imagesField) return;
-    try {
-      const existing = JSON.parse(imagesField.value || '[]');
-      // Remove old pasted images (data: URLs) and add current ones
-      const scraped = existing.filter(u => !u.startsWith('data:'));
-      imagesField.value = JSON.stringify([...scraped, ...pastedImages]);
-    } catch(e) {
-      imagesField.value = JSON.stringify(pastedImages);
-    }
   }
 
   function renderPastedThumbs() {
