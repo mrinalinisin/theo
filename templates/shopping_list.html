@@ -17,8 +17,23 @@
         <button type="button" data-view="table" aria-pressed="true" title="Table view">&#x2630; Table</button>
         <button type="button" data-view="card" aria-pressed="false" title="Card view">&#x25a6; Cards</button>
       </div>
+      <form id="sortForm" method="GET" action="{{ url_for('shopping_list') }}" style="display:flex;align-items:center;gap:6px;">
+        {% if active_tag %}<input type="hidden" name="tag" value="{{ active_tag }}">{% endif %}
+        {% if search_q %}<input type="hidden" name="q" value="{{ search_q }}">{% endif %}
+        <label for="sortSelect" class="text-xs text-faint" style="text-transform:uppercase;letter-spacing:0.05em;">Sort</label>
+        <select name="sort" id="sortSelect" class="form-input" style="width:auto;padding:6px 8px;">
+          <option value="created" {% if sort_key == 'created' %}selected{% endif %}>Created date</option>
+          <option value="modified" {% if sort_key == 'modified' %}selected{% endif %}>Last modified</option>
+        </select>
+        <select name="order" id="orderSelect" class="form-input" style="width:auto;padding:6px 8px;" title="Sort order">
+          <option value="desc" {% if order_key == 'desc' %}selected{% endif %}>&darr; Desc</option>
+          <option value="asc" {% if order_key == 'asc' %}selected{% endif %}>&uarr; Asc</option>
+        </select>
+      </form>
       <form id="searchForm" method="GET" action="{{ url_for('shopping_list') }}" style="flex:0 1 320px;min-width:200px;">
         {% if active_tag %}<input type="hidden" name="tag" value="{{ active_tag }}">{% endif %}
+        <input type="hidden" name="sort" value="{{ sort_key }}">
+        <input type="hidden" name="order" value="{{ order_key }}">
         <input
           type="search"
           name="q"
@@ -95,6 +110,8 @@
        data-next-page="{{ next_page }}"
        data-tag="{{ active_tag or '' }}"
        data-q="{{ search_q or '' }}"
+       data-sort="{{ sort_key }}"
+       data-order="{{ order_key }}"
        style="padding:24px;text-align:center;">
     <span class="text-xs text-faint">Loading more…</span>
   </div>
@@ -177,12 +194,12 @@
 
 {% block scripts %}
 <script>
-function openPurchaseModal(productId, name, price) {
+function openPurchaseModal(productId, name, price, currencySymbol) {
   event.preventDefault();
   event.stopPropagation();
   document.getElementById('purchase-form').action = '/product/' + productId + '/purchase';
   document.getElementById('purchase-product-name').textContent = name;
-  document.getElementById('purchase-listed-price').textContent = '\u20b9' + price.toLocaleString('en-IN');
+  document.getElementById('purchase-listed-price').textContent = (currencySymbol || '\u20b9') + price.toLocaleString('en-IN');
   // Set today's date
   const today = new Date().toISOString().split('T')[0];
   document.querySelector('#modal-purchase input[name="purchased_at"]').value = today;
@@ -217,6 +234,15 @@ document.getElementById('modal-purchase').addEventListener('click', e => {
 
   // Allow Enter to submit immediately (default form behavior) —
   // the form element itself handles that without extra code.
+})();
+
+// ── Sort controls: submit on change ──
+(function() {
+  const form = document.getElementById('sortForm');
+  if (!form) return;
+  form.querySelectorAll('select').forEach(sel => {
+    sel.addEventListener('change', () => form.submit());
+  });
 })();
 
 // ── View toggle (Table ⇄ Card) ──
@@ -266,11 +292,15 @@ document.getElementById('modal-purchase').addEventListener('click', e => {
   let nextPage = parseInt(sentinel.dataset.nextPage || '0', 10);
   const tag = sentinel.dataset.tag || '';
   const q = sentinel.dataset.q || '';
+  const sort = sentinel.dataset.sort || '';
+  const order = sentinel.dataset.order || '';
 
   function buildUrl(page) {
     const params = new URLSearchParams({ partial: '1', page: String(page) });
     if (tag) params.set('tag', tag);
     if (q) params.set('q', q);
+    if (sort) params.set('sort', sort);
+    if (order) params.set('order', order);
     return '/shopping-list?' + params.toString();
   }
 

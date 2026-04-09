@@ -14,7 +14,7 @@
       </form>
       {% if product.status == 'watching' %}
       <button class="btn btn-primary btn-sm"
-        onclick="openPurchaseModal({{ product.id }}, '{{ product.name|e }}', {{ product.current_price or 0 }})">
+        onclick='openPurchaseModal({{ product.id }}, {{ product.name|tojson }}, {{ product.current_price or 0 }})'>
         Mark as Purchased
       </button>
       {% endif %}
@@ -95,7 +95,7 @@
           {% if product.status == 'purchased' and product.purchase %}
           <div class="callout callout-success mb-16">
             &#x2705; Purchased on {{ product.purchase.purchased_at|fmt_date }}
-            for {{ product.purchase.paid_amount|fmt_price }}
+            for {{ product.fmt_price(product.purchase.paid_amount) }}
             {% if product.purchase.notes %} &mdash; {{ product.purchase.notes }}{% endif %}
           </div>
           {% endif %}
@@ -162,14 +162,14 @@
             {% for h in history %}
             <div class="price-row">
               <div class="price-row-date">{{ h.checked_at|fmt_date }}</div>
-              <div class="price-row-val">{{ h.price|fmt_price }}</div>
+              <div class="price-row-val">{{ product.fmt_price(h.price) }}</div>
               {% if not loop.last %}
                 {% set prev = history[loop.index] %}
                 {% set diff = h.price - prev.price %}
                 {% if diff < 0 %}
-                <div class="price-row-delta neg">&darr; {{ diff|fmt_price }}</div>
+                <div class="price-row-delta neg">&darr; {{ product.fmt_price(diff) }}</div>
                 {% elif diff > 0 %}
-                <div class="price-row-delta pos">&uarr; +{{ diff|fmt_price }}</div>
+                <div class="price-row-delta pos">&uarr; +{{ product.fmt_price(diff) }}</div>
                 {% endif %}
               {% else %}
               <div class="price-row-delta" style="color:var(--text-faint);">Added</div>
@@ -292,7 +292,7 @@
       </div>
       <div class="modal-body">
         <div class="callout callout-info mb-16">
-          {{ product.name }} &mdash; Listed: <strong>{{ product.current_price|fmt_price }}</strong>
+          {{ product.name }} &mdash; Listed: <strong>{{ product.fmt_price(product.current_price) }}</strong>
         </div>
 
         <div class="form-group">
@@ -301,7 +301,7 @@
             <label>
               <input type="radio" name="price_mode" value="listed" checked
                 onchange="document.getElementById('detail-custom-price').style.display='none'">
-              Use listed price ({{ product.current_price|fmt_price }})
+              Use listed price ({{ product.fmt_price(product.current_price) }})
             </label>
             <label>
               <input type="radio" name="price_mode" value="custom"

@@ -62,7 +62,7 @@
   </td>
   <td class="text-muted text-sm">{{ p.last_checked_at|time_ago }}</td>
   <td>
-    <button class="btn btn-primary btn-sm" onclick="openPurchaseModal({{ p.id }}, '{{ p.name|e }}', {{ (p.current_price or 0) * (p.quantity or 1) }})">Add to Purchased</button>
+    <button class="btn btn-primary btn-sm" onclick='openPurchaseModal({{ p.id }}, {{ p.name|tojson }}, {{ (p.current_price or 0) * (p.quantity or 1) }}, {{ p.currency_symbol|tojson }})'>Add to Purchased</button>
   </td>
 </tr>
 {% endfor %}

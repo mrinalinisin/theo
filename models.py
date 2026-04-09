@@ -52,6 +52,10 @@ class Product(db.Model):
     status = db.Column(db.String(20), default="watching")  # watching | purchased
     check_interval = db.Column(db.Integer, nullable=True)  # per-item override in minutes
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    # Bumped explicitly in the user edit route — NOT via SQLAlchemy onupdate,
+    # because the scraper writes to this row on every price check and we don't
+    # want automated price refreshes to count as "modifications" for sorting.
+    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     last_checked_at = db.Column(db.DateTime, nullable=True)
 
     tags = db.relationship("Tag", secondary=product_tags, back_populates="products")

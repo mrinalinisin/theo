@@ -52,6 +52,20 @@ def create_app():
             page = 1
         is_partial = request.args.get("partial") == "1"
 
+        # Sort controls. Whitelist the inputs so we never interpolate raw
+        # user strings into the ORDER BY — everything maps to a known column.
+        SORT_COLUMNS = {
+            "created": Product.created_at,
+            "modified": Product.updated_at,
+        }
+        sort_key = request.args.get("sort", "created")
+        if sort_key not in SORT_COLUMNS:
+            sort_key = "created"
+        order_key = request.args.get("order", "desc")
+        if order_key not in ("asc", "desc"):
+            order_key = "desc"
+        sort_col = SORT_COLUMNS[sort_key]
+
         query = Product.query.filter_by(status="watching")
         if tag_filter:
             query = query.filter(Product.tags.any(Tag.id == int(tag_filter)))
@@ -60,7 +74,11 @@ def create_app():
             # Escape LIKE wildcards so "50%" searches literally match "50%".
             escaped = search_q.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
             query = query.filter(Product.name.ilike(f"%{escaped}%", escape="\\"))
-        query = query.order_by(Product.created_at.desc())
+        # Tie-breaker on id keeps pagination stable when timestamps collide
+        # (e.g. two items added in the same second by the seed scraper).
+        primary = sort_col.asc() if order_key == "asc" else sort_col.desc()
+        tiebreak = Product.id.asc() if order_key == "asc" else Product.id.desc()
+        query = query.order_by(primary, tiebreak)
 
         total_count = query.count()
         offset = (page - 1) * PAGE_SIZE
@@ -114,6 +132,8 @@ def create_app():
             next_page=page + 1 if has_more else None,
             page_size=PAGE_SIZE,
             search_q=search_q,
+            sort_key=sort_key,
+            order_key=order_key,
         )
 
     # ── Add Item ──────────────────────────────────────────────────────────────
@@ -314,6 +334,7 @@ def create_app():
             if tag:
                 product.tags.append(tag)
 
+        product.updated_at = datetime.now(timezone.utc)
         db.session.commit()
         flash("Product updated.", "success")
         return redirect(url_for("product_detail", product_id=product_id))
@@ -719,6 +740,13 @@ def _run_lightweight_migrations():
     # Product.track_price added 2026-04 — default OFF for all existing items
     if not column_exists("product", "track_price"):
         db.session.execute(text("ALTER TABLE product ADD COLUMN track_price BOOLEAN NOT NULL DEFAULT 0"))
+        db.session.commit()
+
+    # Product.updated_at added 2026-04 — backfill with created_at so existing
+    # rows sort sensibly on "last modified" until they're edited.
+    if not column_exists("product", "updated_at"):
+        db.session.execute(text("ALTER TABLE product ADD COLUMN updated_at DATETIME"))
+        db.session.execute(text("UPDATE product SET updated_at = created_at WHERE updated_at IS NULL"))
         db.session.commit()
 
     # Seed supported currencies (idempotent — only inserts missing codes).

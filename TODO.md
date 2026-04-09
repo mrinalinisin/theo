@@ -28,16 +28,15 @@
 [x] Fix Entity Too Large during editing a listing
 [x] If there is only 1 image in a listing, then set it as the main image
 [x] Swap position of "Edit" and "Remove buttons in product listing page
-[ ] Card view for multi currency tagged items 
+[x] Card view for multi currency tagged items 
+[ ] Merge tags entries of 'Tech & Accessories' and 'Hardware' into 'Hardware, Tech & Accessories'
+
 [ ] Gallery view of all images so user can delete unecessary data
 [ ] If any listings exist where price is unknown or 0, if any listings exists where there are no main image set, if any listing exists where no tags have been attached to it, create "pricing unknown", "images required", "untagged items" where pricing is 0
 [ ] Size chart should be a special image under each listing
 [ ] Add variant urls and pictures
 [ ] Add sorting to /shopping-list. Sort by 
     [ ] Last modified date
-
-
-
 [ ] Safari extension to create data in locally running app
 [ ] Setup local server + GUI client for a SQLite
 [ ] Push notifications when price drops 
