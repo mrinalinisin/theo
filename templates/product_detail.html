@@ -214,6 +214,11 @@
               <div class="paste-zone-hint">or drag &amp; drop an image here, or click to upload</div>
             </div>
           </div>
+          <div id="editPhotoBudget" class="text-xs text-faint" style="margin-top:6px;display:flex;justify-content:space-between;gap:8px;">
+            <span id="editPhotoBudgetUsed">0 MB used</span>
+            <span class="text-faint">Limit: 48 MB</span>
+          </div>
+          <div id="editPhotoWarning" class="flash flash-error" style="display:none;margin-top:8px;padding:8px 12px;font-size:12px;"></div>
         </div>
         <div class="form-group">
           <label class="form-label">Name</label>
@@ -420,13 +425,59 @@
   // ── Paste / drop / upload new images into the edit strip ──
   const pasteZone = document.getElementById('editPasteZone');
   const editModal = document.getElementById('modal-edit');
+  const photoWarning = document.getElementById('editPhotoWarning');
+  const photoBudgetUsed = document.getElementById('editPhotoBudgetUsed');
+  // 48 MB of base64 payload ≈ 64 MB raw form body after URL-encoding overhead.
+  const PHOTO_BUDGET_BYTES = 48 * 1024 * 1024;
 
   function isEditModalOpen() {
     return editModal?.classList.contains('open');
   }
 
+  function currentPhotoBytes() {
+    if (!editStrip) return 0;
+    let total = 0;
+    editStrip.querySelectorAll('.photo-thumb').forEach(t => {
+      // data:… URLs count fully; http(s) URLs are tiny pointers.
+      total += (t.dataset.src || '').length;
+    });
+    return total;
+  }
+
+  function fmtMB(bytes) {
+    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+  }
+
+  function updatePhotoBudget() {
+    if (!photoBudgetUsed) return;
+    const used = currentPhotoBytes();
+    photoBudgetUsed.textContent = fmtMB(used) + ' used';
+    photoBudgetUsed.style.color = used > PHOTO_BUDGET_BYTES * 0.8
+      ? 'var(--warning)' : '';
+  }
+
+  function showPhotoWarning(msg) {
+    if (!photoWarning) { alert(msg); return; }
+    photoWarning.textContent = msg;
+    photoWarning.style.display = '';
+    clearTimeout(showPhotoWarning._t);
+    showPhotoWarning._t = setTimeout(() => {
+      photoWarning.style.display = 'none';
+    }, 6000);
+  }
+
   function appendThumb(dataUrl) {
-    if (!editStrip) return;
+    if (!editStrip) return false;
+    const incoming = (dataUrl || '').length;
+    const used = currentPhotoBytes();
+    if (used + incoming > PHOTO_BUDGET_BYTES) {
+      showPhotoWarning(
+        'Image rejected: adding this photo (' + fmtMB(incoming) +
+        ') would exceed the 48 MB upload limit. Currently using ' +
+        fmtMB(used) + '. Remove some photos and try again.'
+      );
+      return false;
+    }
     const div = document.createElement('div');
     div.className = 'photo-thumb';
     div.dataset.src = dataUrl;
@@ -435,10 +486,12 @@
       '<span class="remove-btn" title="Remove">&times;</span>';
     editStrip.appendChild(div);
     syncHiddenFields();
+    updatePhotoBudget();
     // If this is the first image (no main set yet), promote it
     if (!imageUrlField?.value) {
       setMain(dataUrl);
     }
+    return true;
   }
 
   function handleFile(file) {
@@ -447,6 +500,15 @@
     reader.onload = (e) => appendThumb(e.target.result);
     reader.readAsDataURL(file);
   }
+
+  // Initial tally for existing photos and also refresh when one is removed.
+  updatePhotoBudget();
+  editStrip?.addEventListener('click', (e) => {
+    if (e.target?.classList.contains('remove-btn')) {
+      // Let the existing remove handler run first, then recompute.
+      setTimeout(updatePhotoBudget, 0);
+    }
+  });
 
   // Ctrl+V / Cmd+V — only intercept image pastes while the edit modal is open,
   // so pasting text into the Name/Notes inputs still works normally.

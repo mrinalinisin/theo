@@ -23,7 +23,9 @@ def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
     # Allow large form posts (base64 pasted images in edit forms can get chunky).
-    app.config["MAX_CONTENT_LENGTH"] = 64 * 1024 * 1024  # 64 MB
+    app.config["MAX_CONTENT_LENGTH"] = 64 * 1024 * 1024  # 64 MB total body
+    app.config["MAX_FORM_MEMORY_SIZE"] = 64 * 1024 * 1024  # urlencoded form fields
+    app.config["MAX_FORM_PARTS"] = 2000
     db.init_app(app)
 
     with app.app_context():
