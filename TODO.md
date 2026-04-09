@@ -22,18 +22,14 @@
 [x] Add hyperlink to the listing in /purchases view
 [x] Remove unecessary stats in /purchases UI
 [x] Add hyperlink to / upon click of app title in the sidebar
-[ ] Create new tag with a random unique colour from the color wheel
-[ ] Assign random unique colors to existing tags
-[ ] Remove UI for assigning colors to tags
-
+[x] Create new tag with a random unique colour from the color wheel
+[x] c
+[ ] Before saving new tag capitalize first letter of tag
 
 
 [ ] Add a search by name, domain
-[ ] 
 [ ] Capitalize the first letter of tag names
 [ ] Gallery view of all images so user can delete unecessary data
-
-
 [ ] If any listings exist where price is unknown or 0, if any listings exists where there are no main image set, if any listing exists where no tags have been attached to it, create "pricing unknown", "images required", "untagged items" where pricing is 0
 [ ] Size chart should be a special image under each listing
 [ ] Add variant urls and pictures
