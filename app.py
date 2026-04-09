@@ -296,6 +296,16 @@ def create_app():
                 pass
         if "image_url" in request.form:
             product.image_url = request.form.get("image_url", "") or ""
+        # If there's exactly one image, force it to be the main image —
+        # no point letting a single-image listing have a blank main.
+        if product.images and len(product.images) == 1:
+            product.image_url = product.images[0]
+        # And if the current main image was removed from the list, fall
+        # back to the first remaining image (if any).
+        elif product.images and product.image_url not in product.images:
+            product.image_url = product.images[0]
+        elif not product.images:
+            product.image_url = ""
 
         tag_ids = request.form.getlist("tag_ids")
         product.tags.clear()

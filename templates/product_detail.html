@@ -379,6 +379,14 @@
     }
   }
 
+  function ensureSingleIsMain() {
+    // If exactly one photo remains, force it to be the main image.
+    const srcs = currentSrcs();
+    if (srcs.length === 1 && imageUrlField?.value !== srcs[0]) {
+      setMain(srcs[0]);
+    }
+  }
+
   function removeBySrc(src) {
     // Remove from both strips
     [outerStrip, editStrip].forEach(strip => {
@@ -398,6 +406,8 @@
         clearMain();
       }
     }
+    // If we're now down to a single photo, promote it.
+    ensureSingleIsMain();
   }
 
   function wireStrip(strip, {allowRemove}) {
@@ -421,6 +431,7 @@
 
   // Seed once at load so edit-form hidden fields match the live DOM
   syncHiddenFields();
+  ensureSingleIsMain();
 
   // ── Paste / drop / upload new images into the edit strip ──
   const pasteZone = document.getElementById('editPasteZone');
@@ -491,6 +502,8 @@
     if (!imageUrlField?.value) {
       setMain(dataUrl);
     }
+    // And if we're still at exactly one photo, make sure it's the main.
+    ensureSingleIsMain();
     return true;
   }
 
