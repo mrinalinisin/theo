@@ -11,10 +11,31 @@ is used directly.
 
 import json
 import re
-from urllib.parse import urlparse
+from urllib.parse import urlparse, urlunparse
 
 import requests as requests_lib
 from bs4 import BeautifulSoup
+
+
+def sanitize_url(url):
+    """Strip whitespace and drop query/fragment from a URL.
+
+    Many product URLs get copied with tracking params (utm_*, gclid, etc.)
+    or stray whitespace. We keep only scheme + netloc + path so the stored
+    URL is canonical and deduplicable.
+    """
+    if not url:
+        return url
+    # Remove all whitespace anywhere in the string (including accidental newlines)
+    url = "".join(url.split())
+    try:
+        parsed = urlparse(url)
+    except ValueError:
+        return url
+    if not parsed.scheme or not parsed.netloc:
+        return url
+    # params (the rarely-used path-level ";..." bit) is preserved; query + fragment dropped
+    return urlunparse((parsed.scheme, parsed.netloc, parsed.path, parsed.params, "", ""))
 
 HEADERS = {
     "User-Agent": (
@@ -105,6 +126,7 @@ def scrape_product(url, use_browser=False):
     Returns dict with keys:
         url, name, store, price, original_price, image_url, images, variants
     """
+    url = sanitize_url(url)
     html = _fetch_html(url, use_browser=use_browser)
     soup = BeautifulSoup(html, "lxml")
 
@@ -230,6 +252,7 @@ def check_price(url, use_browser=False):
         float or None
     """
     try:
+        url = sanitize_url(url)
         html = _fetch_html(url, use_browser=use_browser)
         soup = BeautifulSoup(html, "lxml")
 

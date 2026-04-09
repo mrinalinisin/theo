@@ -88,9 +88,9 @@ def create_app():
 
     @app.route("/add-item", methods=["POST"])
     def add_item_scrape():
-        from scraper import scrape_product
+        from scraper import scrape_product, sanitize_url
 
-        url = request.form.get("url", "").strip()
+        url = sanitize_url(request.form.get("url", ""))
         if not url:
             flash("Please enter a URL.", "error")
             return redirect(url_for("add_item"))
@@ -108,7 +108,8 @@ def create_app():
 
     @app.route("/add-item/save", methods=["POST"])
     def add_item_save():
-        url = request.form.get("url", "")
+        from scraper import sanitize_url
+        url = sanitize_url(request.form.get("url", ""))
         name = request.form.get("name", "Unknown Product")
         store = request.form.get("store", "")
         price_str = request.form.get("price", "0")
@@ -198,10 +199,11 @@ def create_app():
 
     @app.route("/product/<int:product_id>/edit", methods=["POST"])
     def product_edit(product_id):
+        from scraper import sanitize_url
         product = Product.query.get_or_404(product_id)
         product.name = request.form.get("name", product.name)
         product.notes = request.form.get("notes", product.notes)
-        product.url = request.form.get("url", product.url)
+        product.url = sanitize_url(request.form.get("url", product.url)) or product.url
         try:
             product.quantity = max(1, int(request.form.get("quantity", product.quantity) or 1))
         except (TypeError, ValueError):
