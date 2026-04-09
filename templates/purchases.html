@@ -26,26 +26,6 @@
 <div class="page-body">
   {% if grouped %}
 
-  <!-- Stats -->
-  <div class="stats-grid mb-20">
-    <div class="stat-card">
-      <div class="stat-label">Total Spent</div>
-      <div class="stat-value">{{ total_spent|fmt_price }}</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-label">Items Purchased</div>
-      <div class="stat-value">{{ total_items }}</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-label">Avg per Item</div>
-      <div class="stat-value">{{ avg_per_item|fmt_price }}</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-label">Saved vs. Listed</div>
-      <div class="stat-value" style="color:var(--accent);">{{ total_savings|fmt_price }}</div>
-    </div>
-  </div>
-
   <!-- Grouped purchases -->
   <div class="card">
     {% for group_name, data in grouped.items() %}

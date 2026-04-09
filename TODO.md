@@ -19,6 +19,8 @@
 [x] Keep only USD, SGD, INR currencies 
 [x] Add to the "Edit Product" form the paste image from clipboard to upload images against this listing 
 [x] Add endless scroll to the /shopping-list UI 
+[x] Add hyperlink to the listing in /purchases view
+[x] Remove unecessary stats in /purchases UI
 [ ] Add a search by name, domain
 [ ] Assign a random colour not previously assigned to any tag in the colour wheel 
 [ ] Capitalize the first letter of tag names
