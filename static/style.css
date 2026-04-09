@@ -210,14 +210,9 @@ textarea.form-input { resize: vertical; min-height: 80px; }
    The flat "cards" view is the default. The "grouped" view is shown when
    the body has data-view="grouped". Both are always rendered server-side
    so toggling is instant with no re-fetch. */
-.product-card-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: 12px;
-}
-.product-card-grid .product-card { margin-bottom: 0; }
+#productCardsFlat { /* Flat cards view uses .hero-card-grid styling directly */ }
 .hero-card-groups { display: none; }
-.page-body[data-view="grouped"] .product-card-grid { display: none; }
+.page-body[data-view="grouped"] #productCardsFlat { display: none; }
 .page-body[data-view="grouped"] .hero-card-groups { display: block; }
 
 /* ── View toggle (Cards ⇄ Grouped) ────────────────────────────────────────── */

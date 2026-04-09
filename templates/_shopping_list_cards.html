@@ -1,39 +1,39 @@
 {% for p in products %}
-<a href="{{ url_for('product_detail', product_id=p.id) }}" style="text-decoration:none;color:inherit;">
-  <div class="product-card">
-    <div class="product-card-top">
-      <div class="product-card-img">
-        {% if p.image_url %}
-        <img src="{{ p.image_url }}" alt="">
-        {% else %}
-        IMG
-        {% endif %}
-      </div>
-      <div class="product-card-info">
-        <div class="product-card-name">{{ p.name }}</div>
-        <div class="product-card-store">{{ p.store }}
-          {% for tag in p.tags %}
-          &middot; <span style="color:{{ tag.colour }};">{{ tag.name }}</span>
-          {% endfor %}
-        </div>
-      </div>
+<a href="{{ url_for('product_detail', product_id=p.id) }}" class="hero-card">
+  <div class="hero-card-image">
+    {% if p.image_url %}
+    <img src="{{ p.image_url }}" alt="{{ p.name }}">
+    {% else %}
+    <span class="hero-card-image-placeholder">&#x1f6cd;&#xfe0f;</span>
+    {% endif %}
+  </div>
+  <div class="hero-card-body">
+    <div class="hero-card-title">{{ p.name }}</div>
+    <div class="hero-card-subtitle">
+      Added in {{ p.created_at.strftime('%Y') if p.created_at else '—' }}
     </div>
-    <div class="product-card-bottom">
-      <div>
-        {% set change = p.price_change_pct %}
-        <span class="product-card-price {{ 'price-drop' if change and change < 0 else 'price-up' if change and change > 0 else '' }}">
-          {{ p.fmt_price(p.current_price) }}{% if p.quantity and p.quantity > 1 %} &times;{{ p.quantity }}{% endif %}
-        </span>
-        {% if change %}
-          {% if change < 0 %}
-          <span class="status status-price-drop" style="font-size:10px;">&darr;{{ "%.0f"|format(change) }}%</span>
-          {% elif change > 0 %}
-          <span class="status status-price-up" style="font-size:10px;">&uarr;+{{ "%.0f"|format(change) }}%</span>
-          {% endif %}
+    <div class="hero-card-description">
+      {% if p.store %}
+        From <strong>{{ p.store }}</strong> &middot;
+      {% endif %}
+      {{ p.fmt_price(p.current_price) }}{% if p.quantity and p.quantity > 1 %} &times; {{ p.quantity }}{% endif %}
+      {% set change = p.price_change_pct %}
+      {% if change %}
+        {% if change < 0 %}
+          <span class="price-drop">({{ "%.0f"|format(change) }}%)</span>
+        {% elif change > 0 %}
+          <span class="price-up">(+{{ "%.0f"|format(change) }}%)</span>
         {% endif %}
-      </div>
-      <div class="text-xs text-faint">{{ p.last_checked_at|time_ago }}</div>
+      {% endif %}
     </div>
+  </div>
+  <div class="hero-card-footer">
+    <span class="hero-card-footer-icon">&#x1f3f7;&#xfe0f;</span>
+    {% if p.tags %}
+      {{ p.tags|length }} Tag{{ 's' if p.tags|length != 1 }}
+    {% else %}
+      No tags
+    {% endif %}
   </div>
 </a>
 {% endfor %}
