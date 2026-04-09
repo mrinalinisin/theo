@@ -21,8 +21,15 @@
 [x] Add endless scroll to the /shopping-list UI 
 [x] Add hyperlink to the listing in /purchases view
 [x] Remove unecessary stats in /purchases UI
+[x] Add hyperlink to / upon click of app title in the sidebar
+[ ] Create new tag with a random unique colour from the color wheel
+[ ] Assign random unique colors to existing tags
+[ ] Remove UI for assigning colors to tags
+
+
+
 [ ] Add a search by name, domain
-[ ] Assign a random colour not previously assigned to any tag in the colour wheel 
+[ ] 
 [ ] Capitalize the first letter of tag names
 [ ] Gallery view of all images so user can delete unecessary data
 

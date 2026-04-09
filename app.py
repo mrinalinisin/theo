@@ -524,7 +524,6 @@ def create_app():
     @app.route("/tags/create", methods=["POST"])
     def tag_create():
         name = request.form.get("name", "").strip()
-        colour = request.form.get("colour", "#3d6b8a")
         description = request.form.get("description", "")
         if not name:
             flash("Tag name is required.", "error")
@@ -532,6 +531,7 @@ def create_app():
         if Tag.query.filter_by(name=name).first():
             flash(f"Tag \"{name}\" already exists.", "error")
             return redirect(url_for("tags"))
+        colour = _pick_random_tag_colour()
         tag = Tag(name=name, colour=colour, description=description)
         db.session.add(tag)
         db.session.commit()
@@ -765,6 +765,65 @@ def _run_lightweight_migrations():
     if changed:
         db.session.commit()
         print(f"[Migration] Canonicalised {changed} product URL(s)")
+
+
+# Curated palette of 16 visually-distinct tag colours.
+# Ordered so the first N tags get a nice spread even without randomisation.
+TAG_COLOUR_PALETTE = [
+    "#3d6b8a",  # slate blue
+    "#7a4a9e",  # purple
+    "#a05c1e",  # brown
+    "#2d7a5a",  # green
+    "#8a3a3a",  # dark red
+    "#c2781e",  # orange
+    "#1e8a9e",  # teal
+    "#c94f7c",  # pink
+    "#5a3a8a",  # deep purple
+    "#2d5a27",  # forest green
+    "#9e8d4a",  # olive
+    "#4a7a9e",  # steel blue
+    "#c94f4f",  # bright red
+    "#4a9e4a",  # lime green
+    "#8a4a1e",  # rust
+    "#6a6a6a",  # gray
+]
+
+
+def _pick_random_tag_colour():
+    """Return a hex colour not already assigned to any existing tag.
+
+    Strategy: shuffle the curated palette and return the first unused entry.
+    If every palette colour is taken, generate random HSL-based hex until we
+    find one that's not in the used set (bounded by 20 tries to stay O(1)).
+    """
+    import random as _random
+    import colorsys
+
+    used = {
+        (t.colour or "").lower()
+        for t in Tag.query.with_entities(Tag.colour).all()
+    }
+
+    palette = list(TAG_COLOUR_PALETTE)
+    _random.shuffle(palette)
+    for colour in palette:
+        if colour.lower() not in used:
+            return colour
+
+    # Palette exhausted — generate HSL-based colours in the same pleasant range.
+    for _ in range(20):
+        h = _random.random()
+        s = _random.uniform(0.45, 0.70)
+        l = _random.uniform(0.35, 0.55)
+        r, g, b = colorsys.hls_to_rgb(h, l, s)
+        candidate = "#{:02x}{:02x}{:02x}".format(
+            int(r * 255), int(g * 255), int(b * 255)
+        )
+        if candidate.lower() not in used:
+            return candidate
+
+    # Last-resort fallback (astronomically unlikely) — return any palette entry
+    return TAG_COLOUR_PALETTE[0]
 
 
 def _parse_price(s):

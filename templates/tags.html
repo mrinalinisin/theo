@@ -75,19 +75,10 @@
           <label class="form-label">Tag Name</label>
           <input type="text" name="name" class="form-input" placeholder="e.g. Clothes, Tech, Books..." required>
         </div>
-        <div class="form-group">
+        <div class="form-group" style="margin-bottom:0;">
           <label class="form-label">Description</label>
           <textarea name="description" class="form-input" placeholder="What kind of items belong in this tag?"></textarea>
-        </div>
-        <div class="form-group" style="margin-bottom:0;">
-          <label class="form-label">Colour</label>
-          <div class="swatch-row" id="new-tag-swatches">
-            {% for c in ['#3d6b8a', '#7a4a9e', '#a05c1e', '#2d7a5a', '#8a3a3a', '#6a6a6a', '#c2781e', '#2d5a27'] %}
-            <div class="swatch {{ 'active' if loop.first }}" style="background:{{ c }};"
-              onclick="selectSwatch(this, '{{ c }}', 'new-tag-colour')"></div>
-            {% endfor %}
-          </div>
-          <input type="hidden" name="colour" id="new-tag-colour" value="#3d6b8a">
+          <div class="form-hint">A colour will be picked automatically &mdash; you can change it later by editing the tag.</div>
         </div>
       </div>
       <div class="modal-footer">
