@@ -36,6 +36,10 @@
 [x] If marked as purchased, then must fill fields "order page" and/or "tracking link" 
 [x] Purchases page also has grouped new card view
 [x] Make new cards UI as default in /shopping-list
+[x] Small UI tweaks
+[ ] Group by domain 
+[ ]
+[ ] Add a new item shouldn't take a page refresh, if unable to fetch show unable to fetch and allow user to manually add details 
 [ ] Size chart should be a special image under each listing
 [ ] Add variant urls and pictures
 [ ] Listing should have link to video instructions

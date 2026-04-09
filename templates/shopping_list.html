@@ -1,51 +1,109 @@
 {% extends "base.html" %}
 {% block title %}Shopping List — Gummi{% endblock %}
 
+{% block sidebar_filters %}
+<div class="sidebar-section">
+  <div class="sidebar-section-label">Filters</div>
+  <form id="sortForm" method="GET" action="{{ url_for('shopping_list') }}" style="display:flex;flex-direction:column;gap:8px;padding:0 4px;">
+    {% if active_tag %}<input type="hidden" name="tag" value="{{ active_tag }}">{% endif %}
+    {% if search_q %}<input type="hidden" name="q" value="{{ search_q }}">{% endif %}
+    <select name="sort" id="sortSelect" class="form-input" style="width:100%;padding:6px 8px;">
+      <option value="created" {% if sort_key == 'created' %}selected{% endif %}>Created date</option>
+      <option value="modified" {% if sort_key == 'modified' %}selected{% endif %}>Last modified</option>
+    </select>
+    <select name="order" id="orderSelect" class="form-input" style="width:100%;padding:6px 8px;" title="Sort order">
+      <option value="desc" {% if order_key == 'desc' %}selected{% endif %}>&darr; Desc</option>
+      <option value="asc" {% if order_key == 'asc' %}selected{% endif %}>&uarr; Asc</option>
+    </select>
+  </form>
+</div>
+{% endblock %}
+
 {% block content %}
 <div class="page-header">
   <div class="page-header-top">
     <div class="page-header-inline" style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;width:100%;">
+      {% if active_tag_obj %}
       <div class="page-title">
-        {% if active_tag_obj %}
-          <span class="tag-dot" style="background:{{ active_tag_obj.colour }};display:inline-block;width:12px;height:12px;border-radius:50%;vertical-align:middle;margin-right:6px;"></span>
-          {{ active_tag_obj.name }}
-        {% else %}
-          Shopping List
-        {% endif %}
+        <span class="tag-dot" style="background:{{ active_tag_obj.colour }};display:inline-block;width:12px;height:12px;border-radius:50%;vertical-align:middle;margin-right:6px;"></span>
+        {{ active_tag_obj.name }}
       </div>
-      <div class="view-toggle" id="viewToggle" role="group" aria-label="Switch view" style="margin-left:auto;">
-        <button type="button" data-view="cards" aria-pressed="true" title="Card view">&#x25a6; Cards</button>
+      {% endif %}
+      <div class="view-toggle" id="viewToggle" role="group" aria-label="Switch view">
+        <button type="button" data-view="cards" aria-pressed="true" title="Default view">&#x25a6; Default view</button>
         <button type="button" data-view="grouped" aria-pressed="false" title="Grouped by tag">&#x1f5c2;&#xfe0f; Grouped</button>
       </div>
-      <form id="sortForm" method="GET" action="{{ url_for('shopping_list') }}" style="display:flex;align-items:center;gap:6px;">
-        {% if active_tag %}<input type="hidden" name="tag" value="{{ active_tag }}">{% endif %}
-        {% if search_q %}<input type="hidden" name="q" value="{{ search_q }}">{% endif %}
-        <label for="sortSelect" class="text-xs text-faint" style="text-transform:uppercase;letter-spacing:0.05em;">Sort</label>
-        <select name="sort" id="sortSelect" class="form-input" style="width:auto;padding:6px 8px;">
-          <option value="created" {% if sort_key == 'created' %}selected{% endif %}>Created date</option>
-          <option value="modified" {% if sort_key == 'modified' %}selected{% endif %}>Last modified</option>
-        </select>
-        <select name="order" id="orderSelect" class="form-input" style="width:auto;padding:6px 8px;" title="Sort order">
-          <option value="desc" {% if order_key == 'desc' %}selected{% endif %}>&darr; Desc</option>
-          <option value="asc" {% if order_key == 'asc' %}selected{% endif %}>&uarr; Asc</option>
-        </select>
-      </form>
-      <form id="searchForm" method="GET" action="{{ url_for('shopping_list') }}" style="flex:0 1 320px;min-width:200px;">
-        {% if active_tag %}<input type="hidden" name="tag" value="{{ active_tag }}">{% endif %}
-        <input type="hidden" name="sort" value="{{ sort_key }}">
-        <input type="hidden" name="order" value="{{ order_key }}">
-        <input
-          type="search"
-          name="q"
-          id="searchInput"
-          class="form-input"
-          placeholder="Search by product name…"
-          value="{{ search_q or '' }}"
-          autocomplete="off"
-          style="width:100%;">
-      </form>
     </div>
   </div>
+
+  <style>
+    .floating-search {
+      position: fixed;
+      right: 24px;
+      bottom: 24px;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .floating-search-toggle {
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      border: none;
+      background: var(--accent, #2d5a27);
+      color: white;
+      font-size: 22px;
+      cursor: pointer;
+      box-shadow: 0 6px 16px rgba(0,0,0,0.18);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: transform 0.15s ease;
+    }
+    .floating-search-toggle:hover { transform: scale(1.05); }
+    .floating-search-input {
+      width: 0;
+      padding: 0;
+      border: 1px solid var(--border, #e5e5e5);
+      opacity: 0;
+      pointer-events: none;
+      background: white;
+      box-shadow: 0 6px 16px rgba(0,0,0,0.12);
+      border-radius: 26px;
+      height: 52px;
+      font-size: 15px;
+      outline: none;
+      transition: width 0.25s ease, opacity 0.2s ease, padding 0.25s ease;
+    }
+    .floating-search.open .floating-search-input {
+      width: 260px;
+      padding: 0 20px;
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .floating-search-input:focus { border-color: var(--accent, #2d5a27); }
+    @media (max-width: 768px) {
+      .floating-search { bottom: 84px; right: 16px; }
+      .floating-search.open .floating-search-input { width: min(260px, calc(100vw - 100px)); }
+    }
+  </style>
+
+  <form id="searchForm" class="floating-search" method="GET" action="{{ url_for('shopping_list') }}">
+    {% if active_tag %}<input type="hidden" name="tag" value="{{ active_tag }}">{% endif %}
+    <input type="hidden" name="sort" value="{{ sort_key }}">
+    <input type="hidden" name="order" value="{{ order_key }}">
+    <input
+      type="search"
+      name="q"
+      id="searchInput"
+      class="floating-search-input"
+      placeholder="Search by product name…"
+      value="{{ search_q or '' }}"
+      autocomplete="off">
+    <button type="button" class="floating-search-toggle" id="searchToggle" aria-label="Search" title="Search">&#x1f50d;</button>
+  </form>
   {% if currency_totals %}
   <div class="flex gap-12 flex-wrap" style="margin-top:10px;align-items:baseline;">
     <span class="text-xs text-faint" style="text-transform:uppercase;letter-spacing:0.05em;">Total value</span>
@@ -265,11 +323,39 @@ document.getElementById('modal-purchase').addEventListener('click', e => {
   if (e.target.id === 'modal-purchase') closePurchaseModal();
 });
 
-// ── Debounced search ──
+// ── Debounced search + floating toggle ──
 (function() {
   const form = document.getElementById('searchForm');
   const input = document.getElementById('searchInput');
+  const toggle = document.getElementById('searchToggle');
   if (!form || !input) return;
+
+  // If there's already a query, open the search by default so the user sees it.
+  if (input.value) form.classList.add('open');
+
+  if (toggle) {
+    toggle.addEventListener('click', (e) => {
+      e.preventDefault();
+      if (form.classList.contains('open')) {
+        // If open with a value, submit; otherwise just close.
+        if (input.value.trim()) {
+          form.submit();
+        } else {
+          form.classList.remove('open');
+        }
+      } else {
+        form.classList.add('open');
+        setTimeout(() => input.focus(), 50);
+      }
+    });
+  }
+
+  // Close when clicking outside (only if empty).
+  document.addEventListener('click', (e) => {
+    if (!form.contains(e.target) && !input.value.trim()) {
+      form.classList.remove('open');
+    }
+  });
 
   let timer = null;
   const initial = input.value;
@@ -277,8 +363,6 @@ document.getElementById('modal-purchase').addEventListener('click', e => {
   input.addEventListener('input', () => {
     clearTimeout(timer);
     timer = setTimeout(() => {
-      // Only submit if the value actually changed from the initial render,
-      // or has been cleared. Avoids bouncing back on focus/blur.
       if (input.value !== initial || input.value === '') {
         form.submit();
       }
