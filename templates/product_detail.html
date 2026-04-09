@@ -1,0 +1,295 @@
+{% extends "base.html" %}
+{% block title %}{{ product.name }} — Gummi{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-header-top">
+    <div class="flex items-center gap-12">
+      <a href="{{ url_for('shopping_list') }}" class="btn btn-ghost btn-sm">&larr; Back</a>
+      <div class="page-title">Product Detail</div>
+    </div>
+    <div class="header-actions">
+      <form method="POST" action="{{ url_for('product_rescrape', product_id=product.id) }}" style="display:inline;">
+        <button type="submit" class="btn btn-secondary btn-sm">&#x1f504; Re-scrape</button>
+      </form>
+      {% if product.status == 'watching' %}
+      <button class="btn btn-primary btn-sm"
+        onclick="openPurchaseModal({{ product.id }}, '{{ product.name|e }}', {{ product.current_price or 0 }})">
+        Mark as Purchased
+      </button>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<div class="page-body">
+  <div class="grid-2-desktop gap-20">
+
+    <!-- Left — photos -->
+    <div>
+      <div class="card mb-16">
+        <div class="card-body">
+          <div class="product-photo-main mb-12" id="main-photo">
+            {% if product.image_url %}
+            <img src="{{ product.image_url }}" alt="{{ product.name }}">
+            {% else %}
+            <div style="font-size:40px;">&#x1f6cd;&#xfe0f;</div>
+            <div class="text-faint text-sm">No product photo</div>
+            {% endif %}
+          </div>
+          {% if product.images %}
+          <div class="photo-strip">
+            {% for img in product.images %}
+            <div class="photo-thumb {{ 'active' if loop.first }}" onclick="setMainPhoto(this, '{{ img }}')">
+              <img src="{{ img }}" alt="Photo {{ loop.index }}">
+            </div>
+            {% endfor %}
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Right — details -->
+    <div class="flex-col gap-16">
+      <div class="card">
+        <div class="card-body">
+          <div class="flex justify-between items-start mb-16" style="gap:12px;">
+            <div style="flex:1;">
+              <div style="font-size:18px;font-weight:700;line-height:1.3;">{{ product.name }}</div>
+              <div class="text-sm text-muted mt-4">{{ product.store }}</div>
+            </div>
+            {% for tag in product.tags %}
+            <span class="tag" style="color:{{ tag.colour }};background:{{ tag.colour }}18;">
+              <span class="tag-dot" style="background:{{ tag.colour }};"></span>{{ tag.name }}
+            </span>
+            {% endfor %}
+          </div>
+
+          <div class="flex items-center gap-12 mb-16 flex-wrap">
+            {% set change = product.price_change_pct %}
+            <div class="price {{ 'price-drop' if change and change < 0 else 'price-up' if change and change > 0 else '' }}"
+              style="font-size:24px;">
+              {{ product.current_price|fmt_price }}
+            </div>
+            {% if product.original_price and product.original_price != product.current_price %}
+            <div class="price-original" style="font-size:14px;">{{ product.original_price|fmt_price }}</div>
+            {% endif %}
+            {% if change %}
+              {% if change < 0 %}
+              <span class="status status-price-drop">&darr; {{ "%.1f"|format(change) }}% since added</span>
+              {% elif change > 0 %}
+              <span class="status status-price-up">&uarr; +{{ "%.1f"|format(change) }}% since added</span>
+              {% endif %}
+            {% endif %}
+          </div>
+
+          {% if product.status == 'purchased' and product.purchase %}
+          <div class="callout callout-success mb-16">
+            &#x2705; Purchased on {{ product.purchase.purchased_at|fmt_date }}
+            for {{ product.purchase.paid_amount|fmt_price }}
+            {% if product.purchase.notes %} &mdash; {{ product.purchase.notes }}{% endif %}
+          </div>
+          {% endif %}
+
+          <div class="divider"></div>
+
+          <!-- Variants -->
+          {% if product.variants %}
+            {% if product.variants.get('sizes') %}
+            <div class="section-label">Sizes</div>
+            <div class="variant-grid mb-16">
+              {% for size in product.variants.sizes %}
+              <div class="variant-pill">{{ size }}</div>
+              {% endfor %}
+            </div>
+            {% endif %}
+            {% if product.variants.get('colours') %}
+            <div class="section-label">Colours</div>
+            <div class="variant-grid mb-16">
+              {% for colour in product.variants.colours %}
+              <div class="variant-pill">{{ colour }}</div>
+              {% endfor %}
+            </div>
+            {% endif %}
+          {% endif %}
+
+          <!-- Notes -->
+          {% if product.notes %}
+          <div class="section-label">Notes</div>
+          <div class="text-sm text-muted mb-16" style="padding:8px 10px;background:var(--bg);border-radius:var(--radius-sm);">
+            {{ product.notes }}
+          </div>
+          {% endif %}
+
+          <div class="divider"></div>
+
+          <!-- Actions -->
+          <div class="flex gap-8 flex-wrap">
+            <a href="{{ product.url }}" target="_blank" class="btn btn-secondary btn-sm" style="text-decoration:none;">&#x1f517; Open Product Page</a>
+            <button class="btn btn-ghost btn-sm" onclick="document.getElementById('modal-edit').classList.add('open')">&#x270f;&#xfe0f; Edit</button>
+            <form method="POST" action="{{ url_for('product_delete', product_id=product.id) }}"
+              style="margin-left:auto;"
+              onsubmit="return confirm('Remove this product from your list?')">
+              <button type="submit" class="btn btn-danger btn-sm">&#x1f5d1; Remove</button>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <!-- Price History -->
+      <div class="card">
+        <div class="card-header">
+          Price History
+          <span class="text-xs text-faint">{{ history|length }} records</span>
+        </div>
+        <div class="card-body">
+          {% if history %}
+            {% if lowest_price and product.current_price and product.current_price <= lowest_price %}
+            <div class="callout callout-success mb-12">
+              &#x1f4c9; This is the lowest price recorded &mdash; good time to buy!
+            </div>
+            {% endif %}
+            {% for h in history %}
+            <div class="price-row">
+              <div class="price-row-date">{{ h.checked_at|fmt_date }}</div>
+              <div class="price-row-val">{{ h.price|fmt_price }}</div>
+              {% if not loop.last %}
+                {% set prev = history[loop.index] %}
+                {% set diff = h.price - prev.price %}
+                {% if diff < 0 %}
+                <div class="price-row-delta neg">&darr; {{ diff|fmt_price }}</div>
+                {% elif diff > 0 %}
+                <div class="price-row-delta pos">&uarr; +{{ diff|fmt_price }}</div>
+                {% endif %}
+              {% else %}
+              <div class="price-row-delta" style="color:var(--text-faint);">Added</div>
+              {% endif %}
+            </div>
+            {% endfor %}
+          {% else %}
+          <div class="text-sm text-faint text-center" style="padding:20px;">No price history yet.</div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ Edit Modal ═══ -->
+<div class="modal-overlay" id="modal-edit">
+  <div class="modal">
+    <form method="POST" action="{{ url_for('product_edit', product_id=product.id) }}">
+      <div class="modal-header">
+        <div class="modal-title">Edit Product</div>
+        <button type="button" class="btn btn-ghost btn-sm" onclick="document.getElementById('modal-edit').classList.remove('open')">&#x2715;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Name</label>
+          <input type="text" name="name" class="form-input" value="{{ product.name }}">
+        </div>
+        <div class="form-group">
+          <label class="form-label">URL</label>
+          <input type="url" name="url" class="form-input" value="{{ product.url }}">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Notes</label>
+          <textarea name="notes" class="form-input">{{ product.notes }}</textarea>
+        </div>
+        <div class="form-group" style="margin-bottom:0;">
+          <label class="form-label">Tags</label>
+          <div class="flex gap-8 flex-wrap">
+            {% for tag in tags %}
+            <label class="chip {{ 'active' if tag in product.tags }}" style="cursor:pointer;">
+              <input type="checkbox" name="tag_ids" value="{{ tag.id }}" style="display:none;"
+                {{ 'checked' if tag in product.tags }}
+                onchange="this.parentElement.classList.toggle('active', this.checked)">
+              {{ tag.name }}
+            </label>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="document.getElementById('modal-edit').classList.remove('open')">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save Changes</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ═══ Purchase Modal ═══ -->
+<div class="modal-overlay" id="modal-purchase">
+  <div class="modal">
+    <form method="POST" action="{{ url_for('product_purchase', product_id=product.id) }}">
+      <div class="modal-header">
+        <div class="modal-title">Mark as Purchased</div>
+        <button type="button" class="btn btn-ghost btn-sm" onclick="document.getElementById('modal-purchase').classList.remove('open')">&#x2715;</button>
+      </div>
+      <div class="modal-body">
+        <div class="callout callout-info mb-16">
+          {{ product.name }} &mdash; Listed: <strong>{{ product.current_price|fmt_price }}</strong>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Did you pay a different amount?</label>
+          <div class="radio-group">
+            <label>
+              <input type="radio" name="price_mode" value="listed" checked
+                onchange="document.getElementById('detail-custom-price').style.display='none'">
+              Use listed price ({{ product.current_price|fmt_price }})
+            </label>
+            <label>
+              <input type="radio" name="price_mode" value="custom"
+                onchange="document.getElementById('detail-custom-price').style.display='block'">
+              I paid a different amount
+            </label>
+          </div>
+        </div>
+
+        <div class="form-group" id="detail-custom-price" style="display:none;">
+          <label class="form-label">Amount Paid</label>
+          <input type="text" name="paid_amount" class="form-input" placeholder="e.g. 2200">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Purchase Date</label>
+          <input type="date" name="purchased_at" class="form-input">
+        </div>
+
+        <div class="form-group" style="margin-bottom:0;">
+          <label class="form-label">Notes (optional)</label>
+          <textarea name="notes" class="form-input" placeholder="E.g. 'Used promo SAVE10'"></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="document.getElementById('modal-purchase').classList.remove('open')">Cancel</button>
+        <button type="submit" class="btn btn-primary">&#x2713; Confirm Purchase</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function setMainPhoto(thumb, src) {
+  document.querySelectorAll('.photo-thumb').forEach(t => t.classList.remove('active'));
+  thumb.classList.add('active');
+  const main = document.getElementById('main-photo');
+  main.innerHTML = '<img src="' + src + '" alt="Product">';
+}
+
+function openPurchaseModal() {
+  const today = new Date().toISOString().split('T')[0];
+  document.querySelector('#modal-purchase input[name="purchased_at"]').value = today;
+  document.getElementById('modal-purchase').classList.add('open');
+}
+
+// Close modals on overlay click
+document.querySelectorAll('.modal-overlay').forEach(o => {
+  o.addEventListener('click', e => { if (e.target === o) o.classList.remove('open'); });
+});
+</script>
+{% endblock %}

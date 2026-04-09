@@ -1,0 +1,268 @@
+{% extends "base.html" %}
+{% block title %}Shopping List — Gummi{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-header-top">
+    <div class="page-header-inline">
+      <div class="page-title">Shopping List</div>
+    </div>
+    <div class="header-actions">
+      <a href="{{ url_for('add_item') }}" class="btn btn-primary btn-sm">+ Add Item</a>
+    </div>
+  </div>
+  {% if tags %}
+  <div class="header-filters">
+    <div class="filter-chips">
+      <a href="{{ url_for('shopping_list') }}" class="chip {{ 'active' if not active_tag }}">All ({{ products|length }})</a>
+      {% for tag in tags %}
+      <a href="{{ url_for('shopping_list', tag=tag.id) }}" class="chip {{ 'active' if active_tag == tag.id|string }}"
+        style="{{ 'background:' + tag.colour + ';color:white;border-color:' + tag.colour if active_tag == tag.id|string else '' }}">
+        {{ tag.name }}
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+<div class="page-body">
+  {% if products %}
+
+  <!-- Stats -->
+  <div class="stats-grid mb-20">
+    <div class="stat-card">
+      <div class="stat-label">Items Watching</div>
+      <div class="stat-value">{{ products|length }}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Total Value</div>
+      <div class="stat-value">{{ total_value|fmt_price }}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Price Drops (7d)</div>
+      <div class="stat-value" style="color:var(--accent)">{{ price_drops }}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Price Rises (7d)</div>
+      <div class="stat-value" style="color:var(--danger)">{{ price_rises }}</div>
+    </div>
+  </div>
+
+  <!-- Desktop table view -->
+  <div class="table-desktop">
+    <div class="card">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Item</th>
+            <th>Tags</th>
+            <th>Price</th>
+            <th>Change</th>
+            <th>History</th>
+            <th>Checked</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for p in products %}
+          <tr>
+            <td>
+              <a href="{{ url_for('product_detail', product_id=p.id) }}" style="text-decoration:none;color:inherit;">
+                <div class="flex items-center gap-12">
+                  <div class="product-card-img">
+                    {% if p.image_url %}
+                    <img src="{{ p.image_url }}" alt="">
+                    {% else %}
+                    IMG
+                    {% endif %}
+                  </div>
+                  <div>
+                    <div style="font-weight:500;">{{ p.name }}</div>
+                    <div class="text-xs text-faint">{{ p.store }}</div>
+                  </div>
+                </div>
+              </a>
+            </td>
+            <td>
+              {% for tag in p.tags %}
+              <span class="tag" style="color:{{ tag.colour }};background:{{ tag.colour }}18;">
+                <span class="tag-dot" style="background:{{ tag.colour }};"></span>{{ tag.name }}
+              </span>
+              {% endfor %}
+            </td>
+            <td>
+              {% set change = p.price_change_pct %}
+              <div class="price {{ 'price-drop' if change and change < 0 else 'price-up' if change and change > 0 else '' }}">
+                {{ p.current_price|fmt_price }}
+              </div>
+              {% if p.original_price and p.original_price != p.current_price %}
+              <div class="price-original">{{ p.original_price|fmt_price }}</div>
+              {% endif %}
+            </td>
+            <td>
+              {% if change %}
+                {% if change < 0 %}
+                <span class="status status-price-drop">&darr; {{ "%.1f"|format(change) }}%</span>
+                {% elif change > 0 %}
+                <span class="status status-price-up">&uarr; +{{ "%.1f"|format(change) }}%</span>
+                {% endif %}
+              {% else %}
+              <span class="text-faint text-sm">No change</span>
+              {% endif %}
+            </td>
+            <td>
+              {% set history = (p.price_history|sort(attribute='checked_at'))[-8:] %}
+              {% if history %}
+              <div class="sparkline">
+                {% set max_p = history|map(attribute='price')|max %}
+                {% set min_p = history|map(attribute='price')|min %}
+                {% set range_p = max_p - min_p if max_p != min_p else 1 %}
+                {% for h in history %}
+                <div class="spark-bar {{ 'current' if loop.last else '' }}"
+                  style="height: {{ 6 + ((h.price - min_p) / range_p * 22)|int }}px;"></div>
+                {% endfor %}
+              </div>
+              {% endif %}
+            </td>
+            <td class="text-muted text-sm">{{ p.last_checked_at|time_ago }}</td>
+            <td>
+              <button class="btn btn-primary btn-sm" onclick="openPurchaseModal({{ p.id }}, '{{ p.name|e }}', {{ p.current_price or 0 }})">Add to Purchased</button>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Mobile card list -->
+  <div class="card-list-mobile">
+    {% for p in products %}
+    <a href="{{ url_for('product_detail', product_id=p.id) }}" style="text-decoration:none;color:inherit;">
+      <div class="product-card">
+        <div class="product-card-top">
+          <div class="product-card-img">
+            {% if p.image_url %}
+            <img src="{{ p.image_url }}" alt="">
+            {% else %}
+            IMG
+            {% endif %}
+          </div>
+          <div class="product-card-info">
+            <div class="product-card-name">{{ p.name }}</div>
+            <div class="product-card-store">{{ p.store }}
+              {% for tag in p.tags %}
+              &middot; <span style="color:{{ tag.colour }};">{{ tag.name }}</span>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+        <div class="product-card-bottom">
+          <div>
+            {% set change = p.price_change_pct %}
+            <span class="product-card-price {{ 'price-drop' if change and change < 0 else 'price-up' if change and change > 0 else '' }}">
+              {{ p.current_price|fmt_price }}
+            </span>
+            {% if change %}
+              {% if change < 0 %}
+              <span class="status status-price-drop" style="font-size:10px;">&darr;{{ "%.0f"|format(change) }}%</span>
+              {% elif change > 0 %}
+              <span class="status status-price-up" style="font-size:10px;">&uarr;+{{ "%.0f"|format(change) }}%</span>
+              {% endif %}
+            {% endif %}
+          </div>
+          <div class="text-xs text-faint">{{ p.last_checked_at|time_ago }}</div>
+        </div>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+
+  <div class="text-xs text-faint mt-12 text-right">
+    Prices auto-refresh every <strong>{{ g_settings.default_check_interval // 60 }}h</strong> &middot;
+    <a href="{{ url_for('settings') }}" style="color:var(--accent);">Change in Settings</a>
+  </div>
+
+  {% else %}
+  <div class="empty-state">
+    <div class="empty-icon">&#x1f6cd;&#xfe0f;</div>
+    <div class="empty-title">Your shopping list is empty</div>
+    <div class="empty-desc">Add products to track their prices over time.</div>
+    <a href="{{ url_for('add_item') }}" class="btn btn-primary mt-16">+ Add Your First Item</a>
+  </div>
+  {% endif %}
+</div>
+
+<!-- ═══ Purchase Modal ═══ -->
+<div class="modal-overlay" id="modal-purchase">
+  <div class="modal">
+    <form method="POST" id="purchase-form">
+      <div class="modal-header">
+        <div class="modal-title">Mark as Purchased</div>
+        <button type="button" class="btn btn-ghost btn-sm" onclick="closePurchaseModal()">&#x2715;</button>
+      </div>
+      <div class="modal-body">
+        <div class="callout callout-info mb-16">
+          <span id="purchase-product-name"></span> &mdash; Listed: <strong id="purchase-listed-price"></strong>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Did you pay a different amount?</label>
+          <div class="radio-group">
+            <label>
+              <input type="radio" name="price_mode" value="listed" checked onchange="document.getElementById('custom-price-group').style.display='none'">
+              Use listed price
+            </label>
+            <label>
+              <input type="radio" name="price_mode" value="custom" onchange="document.getElementById('custom-price-group').style.display='block'">
+              I paid a different amount
+            </label>
+          </div>
+        </div>
+
+        <div class="form-group" id="custom-price-group" style="display:none;">
+          <label class="form-label">Amount Paid</label>
+          <input type="text" name="paid_amount" class="form-input" placeholder="e.g. 2200">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Purchase Date</label>
+          <input type="date" name="purchased_at" class="form-input" value="{{ now().strftime('%Y-%m-%d') if now is defined else '' }}">
+        </div>
+
+        <div class="form-group" style="margin-bottom:0;">
+          <label class="form-label">Notes (optional)</label>
+          <textarea name="notes" class="form-input" placeholder="E.g. 'Used promo SAVE10', 'Bought in-store'..."></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closePurchaseModal()">Cancel</button>
+        <button type="submit" class="btn btn-primary">&#x2713; Confirm Purchase</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function openPurchaseModal(productId, name, price) {
+  event.preventDefault();
+  event.stopPropagation();
+  document.getElementById('purchase-form').action = '/product/' + productId + '/purchase';
+  document.getElementById('purchase-product-name').textContent = name;
+  document.getElementById('purchase-listed-price').textContent = '\u20b9' + price.toLocaleString('en-IN');
+  // Set today's date
+  const today = new Date().toISOString().split('T')[0];
+  document.querySelector('#modal-purchase input[name="purchased_at"]').value = today;
+  document.getElementById('modal-purchase').classList.add('open');
+}
+function closePurchaseModal() {
+  document.getElementById('modal-purchase').classList.remove('open');
+}
+document.getElementById('modal-purchase').addEventListener('click', e => {
+  if (e.target.id === 'modal-purchase') closePurchaseModal();
+});
+</script>
+{% endblock %}

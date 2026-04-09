@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+{% block title %}Purchases — Gummi{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-header-top">
+    <div class="page-title">Purchases</div>
+    <div class="header-actions">
+      <select onchange="updateFilters()" id="group-select" class="form-select" style="width:auto;min-height:32px;font-size:12px;padding:4px 28px 4px 10px;">
+        <option value="tag" {{ 'selected' if group_by == 'tag' }}>Group by: Tag</option>
+        <option value="month" {{ 'selected' if group_by == 'month' }}>Group by: Month</option>
+      </select>
+    </div>
+  </div>
+  <div class="header-filters">
+    <div class="filter-chips">
+      <a href="{{ url_for('purchases', period='all', group_by=group_by) }}" class="chip {{ 'active' if period == 'all' }}">All Time</a>
+      <a href="{{ url_for('purchases', period='1m', group_by=group_by) }}" class="chip {{ 'active' if period == '1m' }}">Last Month</a>
+      <a href="{{ url_for('purchases', period='3m', group_by=group_by) }}" class="chip {{ 'active' if period == '3m' }}">Last 3M</a>
+      <a href="{{ url_for('purchases', period='6m', group_by=group_by) }}" class="chip {{ 'active' if period == '6m' }}">Last 6M</a>
+      <a href="{{ url_for('purchases', period='1y', group_by=group_by) }}" class="chip {{ 'active' if period == '1y' }}">Last Year</a>
+    </div>
+  </div>
+</div>
+
+<div class="page-body">
+  {% if grouped %}
+
+  <!-- Stats -->
+  <div class="stats-grid mb-20">
+    <div class="stat-card">
+      <div class="stat-label">Total Spent</div>
+      <div class="stat-value">{{ total_spent|fmt_price }}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Items Purchased</div>
+      <div class="stat-value">{{ total_items }}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Avg per Item</div>
+      <div class="stat-value">{{ avg_per_item|fmt_price }}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Saved vs. Listed</div>
+      <div class="stat-value" style="color:var(--accent);">{{ total_savings|fmt_price }}</div>
+    </div>
+  </div>
+
+  <!-- Grouped purchases -->
+  <div class="card">
+    {% for group_name, data in grouped.items() %}
+    <div class="group-header">
+      <span>
+        {% if data.tag %}
+        <span class="tag" style="color:{{ data.tag.colour }};background:{{ data.tag.colour }}18;margin-right:6px;">
+          <span class="tag-dot" style="background:{{ data.tag.colour }};"></span>{{ data.tag.name }}
+        </span>
+        {% endif %}
+        {{ group_name }} &middot; {{ data.items|length }} items
+      </span>
+      <span style="font-variant-numeric:tabular-nums;">{{ data.total|fmt_price }} total</span>
+    </div>
+
+    <!-- Desktop table -->
+    <div class="table-desktop">
+      <table class="data-table">
+        <tbody>
+          {% for purchase in data.items %}
+          <tr>
+            <td>
+              <div class="flex items-center gap-12">
+                <div class="product-card-img" style="width:36px;height:36px;">
+                  {% if purchase.product and purchase.product.image_url %}
+                  <img src="{{ purchase.product.image_url }}" alt="">
+                  {% else %}
+                  IMG
+                  {% endif %}
+                </div>
+                <div>
+                  <div style="font-weight:500;">{{ purchase.product.name if purchase.product else 'Unknown' }}</div>
+                  <div class="text-xs text-faint">{{ purchase.product.store if purchase.product else '' }}</div>
+                </div>
+              </div>
+            </td>
+            <td class="text-sm text-muted">{{ purchase.purchased_at|fmt_date }}</td>
+            <td>
+              <div class="price">{{ purchase.paid_amount|fmt_price }}</div>
+              {% if purchase.product and purchase.product.original_price and purchase.paid_amount < purchase.product.original_price %}
+              <div class="text-xs" style="color:var(--accent);">
+                Saved {{ (purchase.product.original_price - purchase.paid_amount)|fmt_price }}
+              </div>
+              {% endif %}
+            </td>
+            <td><span class="status status-purchased">Purchased</span></td>
+            <td>
+              {% if purchase.product %}
+              <a href="{{ url_for('product_detail', product_id=purchase.product.id) }}" class="btn btn-ghost btn-sm">Details</a>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Mobile cards -->
+    <div class="card-list-mobile">
+      {% for purchase in data.items %}
+      <div class="product-card" style="border-radius:0;border-left:0;border-right:0;border-top:0;">
+        <div class="product-card-top">
+          <div class="product-card-img" style="width:40px;height:40px;">
+            {% if purchase.product and purchase.product.image_url %}
+            <img src="{{ purchase.product.image_url }}" alt="">
+            {% endif %}
+          </div>
+          <div class="product-card-info">
+            <div class="product-card-name">{{ purchase.product.name if purchase.product else 'Unknown' }}</div>
+            <div class="product-card-store">{{ purchase.purchased_at|fmt_date }}</div>
+          </div>
+          <div class="price">{{ purchase.paid_amount|fmt_price }}</div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% endfor %}
+  </div>
+
+  {% else %}
+  <div class="empty-state">
+    <div class="empty-icon">&#x2705;</div>
+    <div class="empty-title">No purchases yet</div>
+    <div class="empty-desc">When you mark items as purchased, they'll show up here.</div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function updateFilters() {
+  const groupBy = document.getElementById('group-select').value;
+  const url = new URL(window.location);
+  url.searchParams.set('group_by', groupBy);
+  window.location = url;
+}
+</script>
+{% endblock %}

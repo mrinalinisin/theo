@@ -1,0 +1,179 @@
+{% extends "base.html" %}
+{% block title %}Add Item — Gummi{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-header-top">
+    <div class="page-title">Add Item</div>
+  </div>
+</div>
+
+<div class="page-body" style="max-width: 680px; margin: 0 auto;">
+
+  <!-- Step indicator -->
+  <div class="steps mb-24">
+    <div class="step {{ 'done' if scraped else 'active' }}">
+      <div class="step-num">{{ '&#x2713;' if scraped else '1' }}</div>
+      <span>Paste URL</span>
+    </div>
+    <div class="step-connector"></div>
+    <div class="step {{ 'active' if scraped else '' }}">
+      <div class="step-num">2</div>
+      <span>Review Details</span>
+    </div>
+    <div class="step-connector"></div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <span>Add Tags & Save</span>
+    </div>
+  </div>
+
+  {% if not scraped %}
+  <!-- ═══ Step 1: Enter URL ═══ -->
+  <div class="card">
+    <div class="card-header">Product URL</div>
+    <div class="card-body">
+      <form method="POST" action="{{ url_for('add_item') }}">
+        <div class="form-group">
+          <label class="form-label">Paste the product page URL</label>
+          <input type="url" name="url" class="form-input" required
+            placeholder="https://www.uniqlo.com/in/en/products/E470358..."
+            autofocus>
+          <div class="form-hint">Works best with sites that have structured product data (JSON-LD, Open Graph).</div>
+        </div>
+        <button type="submit" class="btn btn-primary btn-block">Scrape Product</button>
+      </form>
+    </div>
+  </div>
+
+  {% else %}
+  <!-- ═══ Step 2+3: Review scraped data + tags ═══ -->
+  <div class="callout callout-success mb-16">
+    &#x2713; Scraped: <strong>{{ scraped.store }}</strong> &mdash; {{ scraped.url[:60] }}...
+  </div>
+
+  <form method="POST" action="{{ url_for('add_item_save') }}">
+    <input type="hidden" name="url" value="{{ scraped.url }}">
+    <input type="hidden" name="images" value="{{ scraped.images|tojson_safe }}">
+    <input type="hidden" name="variants" value="{{ scraped.variants|tojson }}">
+
+    <div class="card mb-20">
+      <div class="card-header">
+        Scraped Product Details
+        <span class="text-xs text-faint">Edit any field before saving</span>
+      </div>
+      <div class="card-body">
+        <div class="flex gap-16 mb-16" style="flex-wrap: wrap;">
+          <!-- Main photo -->
+          {% if scraped.image_url %}
+          <div style="flex-shrink:0;">
+            <div class="img-placeholder" style="width:120px;height:140px;overflow:hidden;">
+              <img src="{{ scraped.image_url }}" alt="Product" style="width:100%;height:100%;object-fit:cover;">
+            </div>
+          </div>
+          {% endif %}
+
+          <!-- Fields -->
+          <div style="flex:1;min-width:200px;">
+            <div class="form-group">
+              <label class="form-label">Product Name</label>
+              <input type="text" name="name" class="form-input" value="{{ scraped.name }}">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Price</label>
+              <input type="text" name="price" class="form-input" value="{{ scraped.price or '' }}">
+            </div>
+            <div class="form-group" style="margin-bottom:0;">
+              <label class="form-label">Store</label>
+              <input type="text" name="store" class="form-input" value="{{ scraped.store }}">
+            </div>
+          </div>
+        </div>
+
+        <input type="hidden" name="image_url" value="{{ scraped.image_url }}">
+
+        <!-- Extracted Photos -->
+        {% if scraped.images %}
+        <div class="section-label">Extracted Photos ({{ scraped.images|length }})</div>
+        <div class="photo-strip mb-16">
+          {% for img in scraped.images %}
+          <div class="photo-thumb {{ 'active' if loop.first }}">
+            <img src="{{ img }}" alt="Photo {{ loop.index }}">
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- Variants -->
+        {% if scraped.variants.get('sizes') %}
+        <div class="section-label">Available Sizes</div>
+        <div class="variant-grid mb-16">
+          {% for size in scraped.variants.sizes %}
+          <div class="variant-pill">{{ size }}</div>
+          {% endfor %}
+        </div>
+        {% endif %}
+
+        {% if scraped.variants.get('colours') %}
+        <div class="section-label">Available Colours</div>
+        <div class="variant-grid mb-16">
+          {% for colour in scraped.variants.colours %}
+          <div class="variant-pill">{{ colour }}</div>
+          {% endfor %}
+        </div>
+        {% endif %}
+
+        <div class="form-group" style="margin-bottom:0;">
+          <label class="form-label">Personal Notes (optional)</label>
+          <textarea name="notes" class="form-input" placeholder="E.g. 'Wait for sale season', 'Check size chart first'..."></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tags -->
+    <div class="card mb-20">
+      <div class="card-header">
+        Tags
+        <a href="{{ url_for('tags') }}" class="btn btn-ghost btn-sm">Manage Tags</a>
+      </div>
+      <div class="card-body">
+        {% if tags %}
+        <p class="text-sm text-muted mb-12">Select one or more tags:</p>
+        <div class="flex gap-8 flex-wrap">
+          {% for tag in tags %}
+          <label class="chip" style="cursor:pointer;">
+            <input type="checkbox" name="tag_ids" value="{{ tag.id }}" style="display:none;"
+              onchange="this.parentElement.classList.toggle('active', this.checked)">
+            <span class="tag-dot" style="background:{{ tag.colour }};width:6px;height:6px;border-radius:50;display:inline-block;"></span>
+            {{ tag.name }}
+          </label>
+          {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-sm text-faint">No tags yet. <a href="{{ url_for('tags') }}" style="color:var(--accent);">Create some first</a> or save without tags.</p>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="flex justify-between gap-12">
+      <a href="{{ url_for('add_item') }}" class="btn btn-secondary">&larr; Start Over</a>
+      <button type="submit" class="btn btn-primary">Add to Shopping List &rarr;</button>
+    </div>
+  </form>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Photo thumbnail click
+document.querySelectorAll('.photo-strip').forEach(strip => {
+  strip.querySelectorAll('.photo-thumb').forEach(thumb => {
+    thumb.addEventListener('click', () => {
+      strip.querySelectorAll('.photo-thumb').forEach(t => t.classList.remove('active'));
+      thumb.classList.add('active');
+    });
+  });
+});
+</script>
+{% endblock %}

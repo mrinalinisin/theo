@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Built-In Bra Tops — Shortlist</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Outfit:wght@300;400;500;600&display=swap');
+
+:root {
+  --bg: #faf8f6;
+  --card: #fff;
+  --text: #1a1714;
+  --muted: #9b918a;
+  --accent: #c06b54;
+  --accent2: #8b6f5e;
+  --border: #ebe5df;
+  --green: #5a8a6a;
+  --red: #c0655a;
+  --tag: #f3eeea;
+  --shadow: 0 1px 8px rgba(26,23,20,0.05);
+  --shadow-hover: 0 8px 32px rgba(26,23,20,0.1);
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  font-family: 'Outfit', sans-serif;
+  font-weight: 300;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+}
+
+header {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 2.5rem 2rem 0.5rem;
+}
+
+header h1 {
+  font-family: 'Cormorant Garamond', serif;
+  font-weight: 500;
+  font-size: 2rem;
+  letter-spacing: -0.03em;
+}
+
+header p { color: var(--muted); font-size: 0.82rem; margin-top: 0.2rem; }
+
+.controls {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 1rem 2rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  align-items: center;
+}
+
+.pill {
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.72rem;
+  font-weight: 400;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 0.35rem 0.75rem;
+  border-radius: 100px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.pill:hover { border-color: var(--accent2); color: var(--text); }
+.pill.active { background: var(--text); color: var(--bg); border-color: var(--text); }
+
+select {
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.78rem;
+  font-weight: 400;
+  padding: 0.35rem 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--card);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.grid {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 1rem 2rem 4rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 1.5rem;
+}
+
+.card {
+  background: var(--card);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+  transition: transform 0.25s, box-shadow 0.25s;
+}
+
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-hover);
+}
+
+/* Image carousel */
+.carousel {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 3/4;
+  overflow: hidden;
+  background: var(--tag);
+}
+
+.carousel img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity 0.4s;
+}
+
+.carousel img.active { opacity: 1; }
+
+.carousel-dots {
+  position: absolute;
+  bottom: 0.75rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 5px;
+  z-index: 2;
+}
+
+.carousel-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.5);
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+}
+
+.carousel-dot.active { background: #fff; transform: scale(1.3); }
+
+.carousel-nav {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 40%;
+  cursor: pointer;
+  z-index: 1;
+  background: transparent;
+  border: none;
+}
+
+.carousel-nav.prev { left: 0; }
+.carousel-nav.next { right: 0; }
+
+.type-tag {
+  position: absolute;
+  top: 0.75rem;
+  left: 0.75rem;
+  font-size: 0.62rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 0.2rem 0.55rem;
+  border-radius: 4px;
+  background: rgba(255,255,255,0.92);
+  backdrop-filter: blur(6px);
+  color: var(--text);
+  z-index: 3;
+}
+
+.price-tag {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.1rem;
+  font-weight: 600;
+  padding: 0.15rem 0.55rem;
+  border-radius: 6px;
+  background: rgba(26,23,20,0.8);
+  color: #fff;
+  z-index: 3;
+}
+
+.card-body { padding: 1rem 1.1rem 1.2rem; }
+
+.card-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.05rem;
+  font-weight: 500;
+  line-height: 1.25;
+  margin-bottom: 0.7rem;
+}
+
+.card-title a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.card-title a:hover { text-decoration: underline; text-underline-offset: 3px; }
+
+.sizes-label {
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  font-weight: 500;
+  margin-bottom: 0.3rem;
+}
+
+/* Color availability grid */
+.avail-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  margin-top: 0.2rem;
+}
+
+.avail-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.avail-color-name {
+  font-size: 0.72rem;
+  width: 70px;
+  flex-shrink: 0;
+  color: var(--text);
+  font-weight: 400;
+}
+
+.avail-sizes {
+  display: flex;
+  gap: 3px;
+}
+
+.size-chip {
+  font-size: 0.62rem;
+  font-weight: 500;
+  width: 26px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  letter-spacing: 0.02em;
+}
+
+.size-chip.in-stock {
+  background: #e8f2eb;
+  color: var(--green);
+}
+
+.size-chip.sold-out {
+  background: #f5eae8;
+  color: var(--red);
+  text-decoration: line-through;
+  opacity: 0.6;
+}
+
+.check-site {
+  font-size: 0.7rem;
+  color: var(--muted);
+  font-style: italic;
+}
+
+.visit-link {
+  display: inline-block;
+  margin-top: 0.7rem;
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--accent);
+  text-decoration: none;
+  letter-spacing: 0.02em;
+  transition: color 0.15s;
+}
+
+.visit-link:hover { color: var(--text); }
+
+.empty-state {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 5rem 2rem;
+  color: var(--muted);
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.2rem;
+}
+
+@media (max-width: 720px) {
+  .grid { grid-template-columns: 1fr; gap: 1rem; padding: 1rem 1rem 3rem; }
+  header, .controls { padding-left: 1rem; padding-right: 1rem; }
+  header h1 { font-size: 1.5rem; }
+  .carousel { aspect-ratio: 4/5; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Built-In Bra Tops</h1>
+  <p>12 shortlisted from Twirl Around World — tap images to browse, check size availability at a glance</p>
+</header>
+
+<div class="controls">
+  <select id="sortBy">
+    <option value="price-asc">Price: Low → High</option>
+    <option value="price-desc">Price: High → Low</option>
+    <option value="avail">Most Available</option>
+    <option value="name">A → Z</option>
+  </select>
+  <div id="typeFilters"></div>
+</div>
+
+<div class="grid" id="grid"></div>
+
+<script>
+const DATA=[{"title":"Lima CrossBack Built-In Bra Top","price":1299,"images":["https://twirlaroundworld.com/cdn/shop/files/IMG_6947.jpg","https://twirlaroundworld.com/cdn/shop/files/IMG_6950.jpg","https://twirlaroundworld.com/cdn/shop/files/IMG_6952.jpg","https://twirlaroundworld.com/cdn/shop/files/IMG_6949.jpg","https://twirlaroundworld.com/cdn/shop/files/IMG_6951.jpg","https://twirlaroundworld.com/cdn/shop/files/IMG_6956.jpg","https://twirlaroundworld.com/cdn/shop/files/IMG_6955.jpg"],"sizes":["One size"],"color_summary":{"Red":{"in_stock":[],"sold_out":["One size"]},"White":{"in_stock":["One size"],"sold_out":[]},"Black":{"in_stock":["One size"],"sold_out":[]},"Dark grey":{"in_stock":[],"sold_out":["One size"]}},"type":"Tank Top","url":"https://twirlaroundworld.com/products/lima-crossback-built-in-bra-top"},{"title":"Soft Ribbed Button Down Cami Top","price":1699,"images":["https://twirlaroundworld.com/cdn/shop/files/IMG_2091.jpg","https://twirlaroundworld.com/cdn/shop/files/IMG_4059.jpg","https://twirlaroundworld.com/cdn/shop/files/IMG_4058.jpg","https://twirlaroundworld.com/cdn/shop/files/IMG_4057.jpg","https://twirlaroundworld.com/cdn/shop/files/IMG_4060.jpg","https://twirlaroundworld.com/cdn/shop/files/IMG_4065.jpg"],"sizes":["S","M","L","XL"],"color_summary":{"White":{"in_stock":["M","L"],"sold_out":["S","XL"]},"Baby pink":{"in_stock":["M","L","XL"],"sold_out":["S"]},"Yellow":{"in_stock":["S","L","XL"],"sold_out":["M"]},"Green":{"in_stock":["M","L","XL"],"sold_out":["S"]}},"type":"Camisole","url":"https://twirlaroundworld.com/products/soft-ribbed-button-down-cami-top"},{"title":"May Built-In Bra Camisole","price":1599,"images":["https://twirlaroundworld.com/cdn/shop/files/IMG_3762.jpg","https://twirlaroundworld.com/cdn/shop/files/IMG_3758.jpg","https://twirlaroundworld.com/cdn/shop/files/IMG_3757.jpg","https://twirlaroundworld.com/cdn/shop/files/IMG_3760.jpg"],"sizes":["S","M","L","XL"],"color_summary":{},"type":"Camisole","url":"https://twirlaroundworld.com/collections/padded-top/products/may-built-in-bra-camisole"},{"title":"Rose Layered Built-In Bra Tshirt","price":1599,"images":["https://twirlaroundworld.com/cdn/shop/files/IMG_6915_1.jpg","https://twirlaroundworld.com/cdn/shop/files/IMG_6916_1.jpg","https://twirlaroundworld.com/cdn/shop/files/IMG_6920_1.jpg","https://twirlaroundworld.com/cdn/shop/files/IMG_6922_1.jpg","https://twirlaroundworld.com/cdn/shop/files/IMG_6919_1.jpg"],"sizes":["S","M","L","XL"],"color_summary":{},"type":"T-Shirt","url":"https://twirlaroundworld.com/collections/padded-top/products/rose-layered-built-in-bra-tshirt"},{"title":"Nina Buttoned Built-In Bra Crop T-shirt","price":1599,"images":["https://twirlaroundworld.com/cdn/shop/files/IMG_3233_36166a55-1382-4fcc-89dc-aff335b4d181.jpg","https://twirlaroundworld.com/cdn/shop/files/IMG_3237.jpg","https://twirlaroundworld.com/cdn/shop/files/IMG_3239_0f274b5e-e1ab-473d-a1a4-4cb611c3b858.jpg","https://twirlaroundworld.com/cdn/shop/files/IMG_3236_98e5ff55-dfe6-45ff-99a5-9276e2ff0ba2.jpg","https://twirlaroundworld.com/cdn/shop/files/IMG_3238.jpg"],"sizes":["S","M","L","XL"],"color_summary":{},"type":"T-Shirt","url":"https://twirlaroundworld.com/collections/padded-top/products/nina-buttoned-built-in-bra-crop-t-shirt"},{"title":"Rio Built-In Bra Tank Top","price":1650,"images":["https://twirlaroundworld.com/cdn/shop/files/IMG_4688.jpg","https://twirlaroundworld.com/cdn/shop/files/IMG_4693.jpg","https://twirlaroundworld.com/cdn/shop/files/IMG_4694.jpg","https://twirlaroundworld.com/cdn/shop/files/IMG_4695.jpg","https://twirlaroundworld.com/cdn/shop/files/IMG_4696.jpg"],"sizes":["S","M","L","XL"],"color_summary":{"Baby pink":{"in_stock":[],"sold_out":["S","M","L","XL"]},"Yellow":{"in_stock":["L","XL"],"sold_out":["S","M"]},"Black":{"in_stock":["S"],"sold_out":["M","L","XL"]},"Green":{"in_stock":["XL"],"sold_out":["S","M","L"]}},"type":"Tank Top","url":"https://twirlaroundworld.com/collections/padded-top/products/rio-built-in-bra-tank-top"},{"title":"Sleek Criss Cross Padded Camisole","price":1650,"images":["https://twirlaroundworld.com/cdn/shop/files/0b9b9cb2-cd1c-408b-85e8-081f59abf62a.jpg","https://twirlaroundworld.com/cdn/shop/files/IMG_6279.jpg","https://twirlaroundworld.com/cdn/shop/files/IMG_6277.jpg","https://twirlaroundworld.com/cdn/shop/files/IMG_6280.jpg","https://twirlaroundworld.com/cdn/shop/files/IMG_6276.jpg","https://twirlaroundworld.com/cdn/shop/files/IMG_6278.jpg"],"sizes":["S","M","L","XL"],"color_summary":{"Black":{"in_stock":["L","XL"],"sold_out":["S","M"]},"White":{"in_stock":["S","M","L","XL"],"sold_out":[]},"Beige":{"in_stock":["S","M","L","XL"],"sold_out":[]},"Brown":{"in_stock":["S","M","L","XL"],"sold_out":[]},"Grey":{"in_stock":["S","M","L","XL"],"sold_out":[]}},"type":"Camisole","url":"https://twirlaroundworld.com/collections/padded-top/products/sleek-criss-cross-padded-camisole"},{"title":"Basic V-Neck Built-In Bra Camisole","price":1599,"images":["https://twirlaroundworld.com/cdn/shop/files/IMG_2796.jpg","https://twirlaroundworld.com/cdn/shop/files/IMG_2789.jpg","https://twirlaroundworld.com/cdn/shop/files/IMG_2787.jpg","https://twirlaroundworld.com/cdn/shop/files/IMG_2790.jpg","https://twirlaroundworld.com/cdn/shop/files/IMG_2788.jpg","https://twirlaroundworld.com/cdn/shop/files/IMG_2786.jpg"],"sizes":["S","M","L","XL"],"color_summary":{"White":{"in_stock":["S","M","L","XL"],"sold_out":[]},"Black":{"in_stock":["S","M","L","XL"],"sold_out":[]},"Red":{"in_stock":["S","M","L","XL"],"sold_out":[]},"Brown":{"in_stock":["S","M","L","XL"],"sold_out":[]},"Green":{"in_stock":["S","M","L","XL"],"sold_out":[]},"Beige":{"in_stock":["S","L","XL"],"sold_out":["M"]}},"type":"Camisole","url":"https://twirlaroundworld.com/collections/padded-top/products/basic-v-neck-built-in-bra-camisole"},{"title":"Maldives Double Strap Built-In Bra Top","price":1399,"images":["https://twirlaroundworld.com/cdn/shop/files/IMG_9588_1.jpg","https://twirlaroundworld.com/cdn/shop/files/IMG_9590_2_a7e3a09a-7230-4dd7-b1ca-882d9237be3c.jpg","https://twirlaroundworld.com/cdn/shop/files/IMG_9584_1.jpg","https://twirlaroundworld.com/cdn/shop/files/IMG-7978.jpg","https://twirlaroundworld.com/cdn/shop/files/IMG_9594.jpg"],"sizes":["One size"],"color_summary":{"Yellow":{"in_stock":[],"sold_out":["One size"]},"Marron":{"in_stock":[],"sold_out":["One size"]},"White":{"in_stock":[],"sold_out":["One size"]},"Black":{"in_stock":["One size"],"sold_out":[]},"Green":{"in_stock":["One size"],"sold_out":[]}},"type":"Tank Top","url":"https://twirlaroundworld.com/collections/padded-top/products/maldives-double-strap-built-in-bra-top"},{"title":"Cuba Core Flex Back Built-In Bra Top","price":1699,"images":["https://twirlaroundworld.com/cdn/shop/files/IMG_5601.jpg","https://twirlaroundworld.com/cdn/shop/files/IMG_6969.jpg","https://twirlaroundworld.com/cdn/shop/files/IMG_6962.jpg","https://twirlaroundworld.com/cdn/shop/files/IMG_6961.jpg","https://twirlaroundworld.com/cdn/shop/files/IMG_6963.jpg","https://twirlaroundworld.com/cdn/shop/files/IMG_6960.jpg"],"sizes":["S","M","L"],"color_summary":{"White":{"in_stock":["S","M"],"sold_out":["L"]},"Black":{"in_stock":["S","M","L"],"sold_out":[]},"Lavender":{"in_stock":["L"],"sold_out":["S","M"]},"Yellow":{"in_stock":["S","M","L"],"sold_out":[]},"Brown":{"in_stock":["S","M","L"],"sold_out":[]}},"type":"T-Shirt","url":"https://twirlaroundworld.com/collections/padded-top/products/cuba-core-flex-back-built-in-bra-top"},{"title":"Alpro Halter Neck Built-In Bra Top","price":1599,"images":["https://twirlaroundworld.com/cdn/shop/files/IMG_6404.jpg","https://twirlaroundworld.com/cdn/shop/files/IMG_6417.jpg","https://twirlaroundworld.com/cdn/shop/files/IMG_6415.jpg","https://twirlaroundworld.com/cdn/shop/files/IMG_6414.jpg","https://twirlaroundworld.com/cdn/shop/files/IMG_6416.jpg","https://twirlaroundworld.com/cdn/shop/files/IMG_6412.jpg"],"sizes":["S","M","L","XL"],"color_summary":{"Yellow":{"in_stock":["S","M","L","XL"],"sold_out":[]},"Lavender":{"in_stock":["S","M","L","XL"],"sold_out":[]},"Red":{"in_stock":["S","M","L","XL"],"sold_out":[]},"Orange":{"in_stock":["L","XL"],"sold_out":["S","M"]},"Black":{"in_stock":["S","M","L","XL"],"sold_out":[]},"White":{"in_stock":["S","M","L","XL"],"sold_out":[]}},"type":"Tank Top","url":"https://twirlaroundworld.com/products/alpro-halter-neck-built-in-bra-top"},{"title":"Alivia Button-Up Padded Camisole","price":1599,"images":["https://twirlaroundworld.com/cdn/shop/files/IMG_3208_1.jpg","https://twirlaroundworld.com/cdn/shop/files/IMG_4683.jpg","https://twirlaroundworld.com/cdn/shop/files/IMG_4691.jpg","https://twirlaroundworld.com/cdn/shop/files/IMG_4692.jpg","https://twirlaroundworld.com/cdn/shop/files/IMG_3774.jpg"],"sizes":["S","M","L","XL"],"color_summary":{"Black":{"in_stock":["L","XL"],"sold_out":["S","M"]},"Blue":{"in_stock":[],"sold_out":["S","M","L","XL"]},"Yellow":{"in_stock":["S","M","L","XL"],"sold_out":[]},"White":{"in_stock":["S","L"],"sold_out":["M","XL"]},"Brown":{"in_stock":["S","M","L","XL"],"sold_out":[]}},"type":"Camisole","url":"https://twirlaroundworld.com/products/alivia-button-up-padded-camisole"}];
+
+const types = [...new Set(DATA.map(d => d.type))].sort();
+let activeTypes = new Set();
+
+// Build type filters
+const filterDiv = document.getElementById('typeFilters');
+types.forEach(t => {
+  const btn = document.createElement('button');
+  btn.className = 'pill';
+  btn.textContent = t;
+  btn.onclick = () => { 
+    activeTypes.has(t) ? activeTypes.delete(t) : activeTypes.add(t);
+    btn.classList.toggle('active');
+    render();
+  };
+  filterDiv.appendChild(btn);
+});
+
+document.getElementById('sortBy').addEventListener('change', render);
+
+function countAvailable(p) {
+  let total = 0;
+  for (const c of Object.values(p.color_summary)) total += c.in_stock.length;
+  return total;
+}
+
+function render() {
+  let items = [...DATA];
+  if (activeTypes.size) items = items.filter(p => activeTypes.has(p.type));
+
+  const sort = document.getElementById('sortBy').value;
+  items.sort((a, b) => {
+    switch(sort) {
+      case 'price-asc': return a.price - b.price;
+      case 'price-desc': return b.price - a.price;
+      case 'avail': return countAvailable(b) - countAvailable(a);
+      case 'name': return a.title.localeCompare(b.title);
+      default: return 0;
+    }
+  });
+
+  const grid = document.getElementById('grid');
+  if (!items.length) { grid.innerHTML = '<div class="empty-state">No tops match your filters</div>'; return; }
+
+  grid.innerHTML = items.map((p, pi) => {
+    const colors = Object.entries(p.color_summary);
+    const allSizes = p.sizes;
+    const hasColors = colors.length > 0;
+
+    const imgHTML = p.images.slice(0, 6).map((src, i) =>
+      `<img src="${src}" alt="${p.title}" class="${i === 0 ? 'active' : ''}" loading="lazy" data-idx="${i}">`
+    ).join('');
+
+    const dotsHTML = p.images.slice(0, 6).map((_, i) =>
+      `<button class="carousel-dot ${i === 0 ? 'active' : ''}" data-idx="${i}"></button>`
+    ).join('');
+
+    let availHTML = '';
+    if (hasColors) {
+      availHTML = `<div class="sizes-label">Color / Size availability</div><div class="avail-grid">` +
+        colors.map(([color, data]) => {
+          const sizeChips = allSizes.map(s => {
+            const inStock = data.in_stock.includes(s);
+            const soldOut = data.sold_out.includes(s);
+            if (inStock) return `<span class="size-chip in-stock">${s}</span>`;
+            if (soldOut) return `<span class="size-chip sold-out">${s}</span>`;
+            return `<span class="size-chip sold-out">${s}</span>`;
+          }).join('');
+          return `<div class="avail-row"><span class="avail-color-name">${color}</span><div class="avail-sizes">${sizeChips}</div></div>`;
+        }).join('') + '</div>';
+    } else {
+      availHTML = `<p class="check-site">Variant details — check site for availability</p>`;
+    }
+
+    return `
+    <div class="card" data-card="${pi}">
+      <div class="carousel" data-carousel="${pi}">
+        ${imgHTML}
+        <div class="type-tag">${p.type}</div>
+        <div class="price-tag">₹${p.price.toLocaleString('en-IN')}</div>
+        <button class="carousel-nav prev" data-dir="-1"></button>
+        <button class="carousel-nav next" data-dir="1"></button>
+        <div class="carousel-dots">${dotsHTML}</div>
+      </div>
+      <div class="card-body">
+        <div class="card-title"><a href="${p.url}" target="_blank" rel="noopener">${p.title}</a></div>
+        ${availHTML}
+        <a href="${p.url}" target="_blank" rel="noopener" class="visit-link">View on Twirl Around World →</a>
+      </div>
+    </div>`;
+  }).join('');
+
+  // Attach carousel handlers
+  document.querySelectorAll('.carousel').forEach(carousel => {
+    const imgs = carousel.querySelectorAll('img');
+    const dots = carousel.querySelectorAll('.carousel-dot');
+    let current = 0;
+
+    function goTo(idx) {
+      current = (idx + imgs.length) % imgs.length;
+      imgs.forEach(img => img.classList.remove('active'));
+      dots.forEach(dot => dot.classList.remove('active'));
+      imgs[current].classList.add('active');
+      dots[current].classList.add('active');
+    }
+
+    carousel.querySelectorAll('.carousel-nav').forEach(btn => {
+      btn.addEventListener('click', e => {
+        e.stopPropagation();
+        goTo(current + parseInt(btn.dataset.dir));
+      });
+    });
+
+    dots.forEach(dot => {
+      dot.addEventListener('click', e => {
+        e.stopPropagation();
+        goTo(parseInt(dot.dataset.idx));
+      });
+    });
+
+    // Touch swipe
+    let touchX = 0;
+    carousel.addEventListener('touchstart', e => { touchX = e.touches[0].clientX; }, {passive:true});
+    carousel.addEventListener('touchend', e => {
+      const diff = touchX - e.changedTouches[0].clientX;
+      if (Math.abs(diff) > 40) goTo(current + (diff > 0 ? 1 : -1));
+    }, {passive:true});
+  });
+}
+
+render();
+</script>
+</body>
+</html>

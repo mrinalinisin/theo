@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#2d5a27">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Gummi">
+  <title>{% block title %}Gummi{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+  <link rel="apple-touch-icon" href="{{ url_for('static', filename='icons/icon-192.png') }}">
+</head>
+<body>
+<div class="app-shell">
+
+  <!-- ═══ Desktop Sidebar ═══ -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="wordmark">Gummi</div>
+      <div class="tagline">Shopping Tracker</div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-section-label">Track</div>
+      <a href="{{ url_for('shopping_list') }}" class="nav-item {{ 'active' if request.endpoint == 'shopping_list' }}">
+        <span class="icon">&#x1f6cd;&#xfe0f;</span> Shopping List
+        {% if g_watching_count %}<span class="nav-badge">{{ g_watching_count }}</span>{% endif %}
+      </a>
+      <a href="{{ url_for('add_item') }}" class="nav-item {{ 'active' if request.endpoint in ('add_item', 'add_item_scrape') }}">
+        <span class="icon">&#xff0b;</span> Add Item
+      </a>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-section-label">Finance</div>
+      <a href="{{ url_for('analytics') }}" class="nav-item {{ 'active' if request.endpoint == 'analytics' }}">
+        <span class="icon">&#x1f4ca;</span> Analytics
+      </a>
+      <a href="{{ url_for('purchases') }}" class="nav-item {{ 'active' if request.endpoint == 'purchases' }}">
+        <span class="icon">&#x2705;</span> Purchases
+      </a>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-section-label">Manage</div>
+      <a href="{{ url_for('tags') }}" class="nav-item {{ 'active' if request.endpoint in ('tags', 'tag_create', 'tag_edit') }}">
+        <span class="icon">&#x1f3f7;&#xfe0f;</span> Tags
+      </a>
+      <a href="{{ url_for('settings') }}" class="nav-item {{ 'active' if request.endpoint in ('settings', 'settings_save') }}">
+        <span class="icon">&#x2699;&#xfe0f;</span> Settings
+      </a>
+    </div>
+
+    <div class="sidebar-footer">
+      {% if g_settings.shopping_budget %}
+      <div class="budget-label">{{ g_month_name }}</div>
+      <div class="flex items-center gap-8" style="margin-top: 6px;">
+        <div class="progress-track" style="flex:1;">
+          <div class="progress-fill {{ 'danger' if g_budget_pct >= 90 else 'warning' if g_budget_pct >= 60 else '' }}"
+               style="width: {{ g_budget_pct }}%;"></div>
+        </div>
+        <div class="text-sm" style="font-weight:600;
+          color: {{ 'var(--danger)' if g_budget_pct >= 90 else 'var(--warning)' if g_budget_pct >= 60 else 'var(--accent)' }};">
+          {{ g_budget_pct|int }}%
+        </div>
+      </div>
+      <div class="text-xs text-faint" style="margin-top:3px;">
+        {{ g_month_spent|fmt_price }} of {{ g_settings.shopping_budget|fmt_price }} used
+      </div>
+      {% else %}
+      <div class="text-xs text-faint">
+        <a href="{{ url_for('settings') }}" style="color:var(--accent);">Set your budget &rarr;</a>
+      </div>
+      {% endif %}
+    </div>
+  </aside>
+
+  <!-- ═══ Main Content ═══ -->
+  <main class="main">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div class="flash-messages" style="padding-top: 12px;">
+      {% for category, message in messages %}
+      <div class="flash flash-{{ category }}">
+        {{ message }}
+        <button class="flash-close" onclick="this.parentElement.remove()">&times;</button>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+    {% endwith %}
+
+    {% block content %}{% endblock %}
+  </main>
+
+  <!-- ═══ Mobile Bottom Tab Bar ═══ -->
+  <nav class="bottom-nav">
+    <a href="{{ url_for('shopping_list') }}" class="{{ 'active' if request.endpoint == 'shopping_list' }}">
+      <span class="tab-icon">&#x1f6cd;&#xfe0f;</span>
+      <span>List</span>
+    </a>
+    <a href="{{ url_for('add_item') }}" class="{{ 'active' if request.endpoint in ('add_item', 'add_item_scrape') }}">
+      <span class="tab-icon">&#xff0b;</span>
+      <span>Add</span>
+    </a>
+    <a href="{{ url_for('analytics') }}" class="{{ 'active' if request.endpoint == 'analytics' }}">
+      <span class="tab-icon">&#x1f4ca;</span>
+      <span>Analytics</span>
+    </a>
+    <a href="{{ url_for('purchases') }}" class="{{ 'active' if request.endpoint == 'purchases' }}">
+      <span class="tab-icon">&#x2705;</span>
+      <span>Bought</span>
+    </a>
+    <a href="{{ url_for('settings') }}" class="{{ 'active' if request.endpoint in ('settings', 'settings_save', 'tags') }}">
+      <span class="tab-icon">&#x2699;&#xfe0f;</span>
+      <span>More</span>
+    </a>
+  </nav>
+</div>
+
+<script>
+  // Service worker registration
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/static/sw.js').catch(() => {});
+  }
+  // Auto-dismiss flash messages after 5s
+  document.querySelectorAll('.flash').forEach(el => {
+    setTimeout(() => el.remove(), 5000);
+  });
+</script>
+{% block scripts %}{% endblock %}
+</body>
+</html>
