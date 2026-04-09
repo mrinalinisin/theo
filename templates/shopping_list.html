@@ -11,19 +11,6 @@
       <a href="{{ url_for('add_item') }}" class="btn btn-primary btn-sm">+ Add Item</a>
     </div>
   </div>
-  {% if tags %}
-  <div class="header-filters">
-    <div class="filter-chips">
-      <a href="{{ url_for('shopping_list') }}" class="chip {{ 'active' if not active_tag }}">All ({{ products|length }})</a>
-      {% for tag in tags %}
-      <a href="{{ url_for('shopping_list', tag=tag.id) }}" class="chip {{ 'active' if active_tag == tag.id|string }}"
-        style="{{ 'background:' + tag.colour + ';color:white;border-color:' + tag.colour if active_tag == tag.id|string else '' }}">
-        {{ tag.name }}
-      </a>
-      {% endfor %}
-    </div>
-  </div>
-  {% endif %}
 </div>
 
 <div class="page-body">

@@ -36,3 +36,4 @@
 [x] UI for scrape & add
 [x] Manual listing creation by pasting from clipboard
 [x] Fix memory leak
+[x] UI - Move tags from the top to the sidebar

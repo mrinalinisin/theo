@@ -43,6 +43,26 @@
       </a>
     </div>
 
+    {% if g_sidebar_tags %}
+    <div class="sidebar-section">
+      <div class="sidebar-section-label">Tags</div>
+      <a href="{{ url_for('shopping_list') }}"
+         class="nav-item {{ 'active' if request.endpoint == 'shopping_list' and not g_active_tag }}">
+        <span class="tag-dot" style="background: var(--text-faint);"></span>
+        All Items
+        {% if g_watching_count %}<span class="nav-badge">{{ g_watching_count }}</span>{% endif %}
+      </a>
+      {% for t in g_sidebar_tags %}
+      <a href="{{ url_for('shopping_list', tag=t.id) }}"
+         class="nav-item {{ 'active' if g_active_tag and g_active_tag|int == t.id }}">
+        <span class="tag-dot" style="background: {{ t.colour }};"></span>
+        {{ t.name }}
+        {% if t.count %}<span class="nav-badge">{{ t.count }}</span>{% endif %}
+      </a>
+      {% endfor %}
+    </div>
+    {% endif %}
+
     <div class="sidebar-section">
       <div class="sidebar-section-label">Manage</div>
       <a href="{{ url_for('tags') }}" class="nav-item {{ 'active' if request.endpoint in ('tags', 'tag_create', 'tag_edit') }}">

@@ -64,6 +64,10 @@ body {
 .nav-item:hover { background: var(--bg); color: var(--text); }
 .nav-item.active { background: var(--accent-light); color: var(--accent); font-weight: 500; }
 .nav-item .icon { font-size: 15px; width: 18px; text-align: center; }
+.nav-item .tag-dot {
+  width: 10px; height: 10px; border-radius: 50%;
+  margin-left: 4px; margin-right: 4px; flex-shrink: 0;
+}
 .nav-badge {
   margin-left: auto; background: var(--accent); color: white;
   font-size: 10px; font-weight: 600; padding: 1px 6px; border-radius: 20px;
