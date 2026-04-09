@@ -29,7 +29,7 @@
 [x] If there is only 1 image in a listing, then set it as the main image
 [x] Swap position of "Edit" and "Remove buttons in product listing page
 [x] Card view for multi currency tagged items 
-[ ] Merge tags entries of 'Tech & Accessories' and 'Hardware' into 'Hardware, Tech & Accessories'
+[x] Merge tags entries of 'Tech & Accessories' and 'Hardware' into 'Hardware, Tech & Accessories'
 
 [ ] Gallery view of all images so user can delete unecessary data
 [ ] If any listings exist where price is unknown or 0, if any listings exists where there are no main image set, if any listing exists where no tags have been attached to it, create "pricing unknown", "images required", "untagged items" where pricing is 0
