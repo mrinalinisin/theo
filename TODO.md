@@ -18,8 +18,9 @@
 [x] Sanitize URLs for query params before scraping
 [x] After scraping listing, if no price found then default price to 0
 [x] Avoid duplicates by checking if the listing URL exists in DB 
-[ ] Edit listing should also have the paste image to upload 
 [x] Keep only USD, SGD, INR currencies 
+[x] Add to the "Edit Product" form the paste image from clipboard to upload images against this listing 
+[ ] Add endless scroll to the /shopping-list UI 
 
 [ ] Auto create tags: "pricing unknown", "images required", "untagged items" where pricing is 0
 [ ] Need a search in UI to search through scrapes
@@ -27,7 +28,6 @@
 [ ] Size chart should be a special image under each listing
 [ ] Assign a random colour not previously assigned to any tag in the colour wheel 
 [ ] Capitalize the first letter of tag names
-
 [ ] Add variant urls and pictures
 [ ] Safari extension to create data in locally running app
 [ ] Setup local server + GUI client for a SQLite

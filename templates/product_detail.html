@@ -195,19 +195,26 @@
         <button type="button" class="btn btn-ghost btn-sm" onclick="document.getElementById('modal-edit').classList.remove('open')">&#x2715;</button>
       </div>
       <div class="modal-body">
-        {% if product.images %}
         <div class="form-group">
           <label class="form-label">Photos <span class="text-xs text-faint">(click to set main &middot; &times; to remove)</span></label>
           <div class="photo-strip" id="editPhotoStrip">
-            {% for img in product.images %}
+            {% for img in product.images or [] %}
             <div class="photo-thumb {{ 'active' if img == product.image_url or (loop.first and not product.image_url) }}" data-src="{{ img }}">
               <img src="{{ img }}" alt="Photo {{ loop.index }}">
               <span class="remove-btn" title="Remove">&times;</span>
             </div>
             {% endfor %}
           </div>
+          <div id="editPasteZone" class="paste-zone" tabindex="0" style="margin-top:10px;">
+            <div class="paste-zone-content">
+              <div class="paste-zone-icon">&#128247;</div>
+              <div class="paste-zone-text">
+                Press <kbd>Ctrl+V</kbd> / <kbd>&#8984;V</kbd> to paste an image from clipboard
+              </div>
+              <div class="paste-zone-hint">or drag &amp; drop an image here, or click to upload</div>
+            </div>
+          </div>
         </div>
-        {% endif %}
         <div class="form-group">
           <label class="form-label">Name</label>
           <input type="text" name="name" class="form-input" value="{{ product.name }}">
@@ -409,6 +416,78 @@
 
   // Seed once at load so edit-form hidden fields match the live DOM
   syncHiddenFields();
+
+  // ── Paste / drop / upload new images into the edit strip ──
+  const pasteZone = document.getElementById('editPasteZone');
+  const editModal = document.getElementById('modal-edit');
+
+  function isEditModalOpen() {
+    return editModal?.classList.contains('open');
+  }
+
+  function appendThumb(dataUrl) {
+    if (!editStrip) return;
+    const div = document.createElement('div');
+    div.className = 'photo-thumb';
+    div.dataset.src = dataUrl;
+    div.innerHTML =
+      '<img src="' + dataUrl + '" alt="Pasted">' +
+      '<span class="remove-btn" title="Remove">&times;</span>';
+    editStrip.appendChild(div);
+    syncHiddenFields();
+    // If this is the first image (no main set yet), promote it
+    if (!imageUrlField?.value) {
+      setMain(dataUrl);
+    }
+  }
+
+  function handleFile(file) {
+    if (!file || !file.type.startsWith('image/')) return;
+    const reader = new FileReader();
+    reader.onload = (e) => appendThumb(e.target.result);
+    reader.readAsDataURL(file);
+  }
+
+  // Ctrl+V / Cmd+V — only intercept image pastes while the edit modal is open,
+  // so pasting text into the Name/Notes inputs still works normally.
+  document.addEventListener('paste', (e) => {
+    if (!isEditModalOpen()) return;
+    const items = e.clipboardData?.items;
+    if (!items) return;
+    for (const item of items) {
+      if (item.type.startsWith('image/')) {
+        e.preventDefault();
+        handleFile(item.getAsFile());
+        return;
+      }
+    }
+  });
+
+  if (pasteZone) {
+    pasteZone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      pasteZone.classList.add('drag-over');
+    });
+    pasteZone.addEventListener('dragleave', () => {
+      pasteZone.classList.remove('drag-over');
+    });
+    pasteZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      pasteZone.classList.remove('drag-over');
+      const files = e.dataTransfer?.files;
+      if (files) for (const file of files) handleFile(file);
+    });
+    pasteZone.addEventListener('click', () => {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'image/*';
+      input.multiple = true;
+      input.addEventListener('change', () => {
+        for (const file of input.files) handleFile(file);
+      });
+      input.click();
+    });
+  }
 })();
 
 function openPurchaseModal() {
