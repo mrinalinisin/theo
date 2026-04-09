@@ -182,6 +182,17 @@ def create_app():
         except (TypeError, ValueError):
             pass
 
+        # Price edit: parse, record history if it actually changed
+        price_raw = request.form.get("price")
+        if price_raw is not None and price_raw.strip() != "":
+            new_price = _parse_price(price_raw)
+            if new_price > 0 and new_price != product.current_price:
+                product.current_price = new_price
+                if product.original_price is None:
+                    product.original_price = new_price
+                ph = PriceHistory(product_id=product.id, price=new_price)
+                db.session.add(ph)
+
         currency_id = request.form.get("currency_id")
         if currency_id:
             try:
