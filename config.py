@@ -9,6 +9,13 @@ class Config:
     SQLALCHEMY_DATABASE_URI = "sqlite:///gummi.db"
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
+    # Allow pasted/uploaded images (base64 data URLs) in form POSTs.
+    # Werkzeug 3.x defaults to ~500 KB per-field, which a single pasted
+    # screenshot easily exceeds. 32 MB total request body gives headroom
+    # for several high-resolution images per add-item submission.
+    MAX_CONTENT_LENGTH = 32 * 1024 * 1024  # 32 MB total request body
+    MAX_FORM_MEMORY_SIZE = 32 * 1024 * 1024  # 32 MB for form fields
+
     # Twilio WhatsApp
     TWILIO_ACCOUNT_SID = os.getenv("TWILIO_ACCOUNT_SID", "")
     TWILIO_AUTH_TOKEN = os.getenv("TWILIO_AUTH_TOKEN", "")

@@ -1,5 +1,14 @@
 """Gummi — Shopping Price Tracker."""
 
+# Suppress harmless multiprocessing semaphore leak warnings that occur when the
+# server is killed abruptly while Playwright has Chromium subprocesses running.
+# macOS cleans up the orphaned semaphores automatically.
+import warnings
+warnings.filterwarnings(
+    "ignore",
+    message=r".*resource_tracker.*leaked semaphore.*",
+)
+
 from datetime import datetime, timezone, timedelta
 from urllib.parse import urlparse
 import json
@@ -575,6 +584,20 @@ if __name__ == "__main__":
     from scheduler import start_scheduler
 
     start_scheduler(app)
+
+    # Register graceful shutdown so APScheduler (and any in-flight Playwright
+    # subprocesses) release their resources cleanly on SIGTERM/SIGINT. Without
+    # this, kill-then-restart cycles can orphan named semaphores on macOS.
+    import atexit
+    import signal
+    from scheduler import scheduler
+
+    def _graceful_shutdown(*_args):
+        if scheduler.running:
+            scheduler.shutdown(wait=False)
+
+    atexit.register(_graceful_shutdown)
+    signal.signal(signal.SIGTERM, lambda *a: (_graceful_shutdown(), exit(0)))
 
     import os
     port = int(os.environ.get("PORT", 5000))

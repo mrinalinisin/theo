@@ -605,3 +605,57 @@ textarea.form-input { resize: vertical; min-height: 80px; }
   .modal-overlay.open { align-items: flex-end; }
   .modal { height: auto; max-height: 92vh; border-radius: 16px 16px 0 0; }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Paste zone — clipboard image drop target
+   ═══════════════════════════════════════════════════════════════════════════ */
+.paste-zone {
+  border: 2px dashed var(--border);
+  border-radius: 12px;
+  padding: 24px 16px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+  outline: none;
+}
+.paste-zone:hover,
+.paste-zone:focus {
+  border-color: var(--accent);
+  background: var(--accent-bg, rgba(74, 124, 89, 0.04));
+}
+.paste-zone.drag-over {
+  border-color: var(--accent);
+  background: rgba(74, 124, 89, 0.08);
+  border-style: solid;
+}
+.paste-zone-icon { font-size: 28px; margin-bottom: 6px; }
+.paste-zone-text { font-size: 14px; color: var(--text); font-weight: 500; }
+.paste-zone-text kbd {
+  display: inline-block;
+  padding: 2px 6px;
+  font-size: 12px;
+  font-family: inherit;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-muted);
+}
+.paste-zone-hint { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+
+.pasted-thumb {
+  position: relative;
+  display: inline-block;
+}
+.pasted-thumb .remove-btn {
+  position: absolute;
+  top: -6px; right: -6px;
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  background: var(--danger, #c53030);
+  color: #fff;
+  font-size: 12px;
+  line-height: 20px;
+  text-align: center;
+  cursor: pointer;
+  border: 2px solid #fff;
+}
