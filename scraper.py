@@ -227,12 +227,18 @@ def scrape_product(url, use_browser=False):
     if not variants:
         variants = _extract_variants_from_html(soup)
 
+    # Default missing price to 0 — user can edit in the review form
+    if price is None:
+        price = 0.0
+    if original_price is None:
+        original_price = price
+
     return {
         "url": url,
         "name": name or "Unknown Product",
         "store": store,
         "price": price,
-        "original_price": original_price or price,
+        "original_price": original_price,
         "image_url": image_url or "",
         "images": images[:12],  # cap at 12
         "variants": variants,

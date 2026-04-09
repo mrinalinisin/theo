@@ -16,7 +16,8 @@
 [x] Each tagged view can have a total value
 [x] Remove 'Add item' button in the top
 [x] Sanitize URLs for query params before scraping
-[ ] If no pricing value found in scrape, then set amount to 0
+[x] After scraping listing, if no price found then default price to 0
+
 [ ] Auto create tags: "pricing unknown", "images required", "untagged items" where pricing is 0
 [ ] Need a search in UI to search through scrapes
 [ ] Gallery view to delete unecessary data
