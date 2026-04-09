@@ -6,8 +6,9 @@
 [x] Backend: Fix memory leak
 [x] UI: Move tags from the top to the sidebar
 [x] Add Quantity per listing
-[ ] Add a "Currencies" table and then add "Currency" field per listing, with foreign key to Currencies table entries. Backfill all existing listings' currencies to be INR. In UI, in the form to edit a listing, I should be able to change the currency for that listing's price.
-[ ] Turn off price tracking by default 
+[x] Add a "Currencies" table and then add "Currency" field per listing, with foreign key to Currencies table entries. Backfill all existing listings' currencies to be INR. In UI, in the form to edit a listing, I should be able to change the currency for that listing's price.
+[X] Turn off price tracking by default 
+[ ] Add Price field in Edit listing form 
 [ ] Total value number in INR not required 
 
 [ ] Need the ability to remove photos in the /add-item UI post scrape 

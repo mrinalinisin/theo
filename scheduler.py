@@ -19,7 +19,7 @@ def start_scheduler(app):
             default_interval = settings.default_check_interval  # minutes
             now = datetime.utcnow()
 
-            products = Product.query.filter_by(status="watching").all()
+            products = Product.query.filter_by(status="watching", track_price=True).all()
 
             for product in products:
                 interval = product.check_interval or default_interval

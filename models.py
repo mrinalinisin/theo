@@ -47,6 +47,7 @@ class Product(db.Model):
     variants = db.Column(db.JSON, default=dict)  # {sizes: [...], colours: [...]}
     notes = db.Column(db.Text, default="")
     quantity = db.Column(db.Integer, default=1, nullable=False)
+    track_price = db.Column(db.Boolean, default=False, nullable=False)
     currency_id = db.Column(db.Integer, db.ForeignKey("currency.id"), nullable=True)
     status = db.Column(db.String(20), default="watching")  # watching | purchased
     check_interval = db.Column(db.Integer, nullable=True)  # per-item override in minutes

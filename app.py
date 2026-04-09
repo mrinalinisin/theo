@@ -109,6 +109,7 @@ def create_app():
             quantity = max(1, int(request.form.get("quantity", "1") or 1))
         except (TypeError, ValueError):
             quantity = 1
+        track_price = bool(request.form.get("track_price"))
         tag_ids = request.form.getlist("tag_ids")
 
         try:
@@ -131,6 +132,7 @@ def create_app():
             variants=variants,
             notes=notes,
             quantity=quantity,
+            track_price=track_price,
             status="watching",
         )
 
@@ -188,6 +190,9 @@ def create_app():
                     product.currency_id = cid
             except (TypeError, ValueError):
                 pass
+
+        # Checkbox: present → True, absent → False
+        product.track_price = bool(request.form.get("track_price"))
 
         tag_ids = request.form.getlist("tag_ids")
         product.tags.clear()
@@ -583,6 +588,11 @@ def _run_lightweight_migrations():
     # Product.quantity added 2026-04
     if not column_exists("product", "quantity"):
         db.session.execute(text("ALTER TABLE product ADD COLUMN quantity INTEGER NOT NULL DEFAULT 1"))
+        db.session.commit()
+
+    # Product.track_price added 2026-04 — default OFF for all existing items
+    if not column_exists("product", "track_price"):
+        db.session.execute(text("ALTER TABLE product ADD COLUMN track_price BOOLEAN NOT NULL DEFAULT 0"))
         db.session.commit()
 
     # Seed common currencies (idempotent — only inserts missing codes)

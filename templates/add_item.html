@@ -143,9 +143,16 @@
         </div>
         {% endif %}
 
-        <div class="form-group" style="margin-bottom:0;">
+        <div class="form-group">
           <label class="form-label">Personal Notes (optional)</label>
           <textarea name="notes" class="form-input" placeholder="E.g. 'Wait for sale season', 'Check size chart first'..."></textarea>
+        </div>
+        <div class="form-group" style="margin-bottom:0;">
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+            <input type="checkbox" name="track_price" value="1">
+            <span>Enable automatic price tracking</span>
+          </label>
+          <div class="form-hint">Off by default. When on, the background checker will re-scrape this item at the configured interval.</div>
         </div>
       </div>
     </div>
