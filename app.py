@@ -89,10 +89,25 @@ def create_app():
     @app.route("/add-item", methods=["POST"])
     def add_item_scrape():
         from scraper import scrape_product, sanitize_url
+        from markupsafe import Markup, escape
 
         url = sanitize_url(request.form.get("url", ""))
         if not url:
             flash("Please enter a URL.", "error")
+            return redirect(url_for("add_item"))
+
+        # Duplicate check — match against the canonical (sanitized) URL
+        existing = Product.query.filter_by(url=url).first()
+        if existing:
+            detail_url = url_for("product_detail", product_id=existing.id)
+            flash(
+                Markup(
+                    f'This URL is already in your list as '
+                    f'<a href="{detail_url}" style="text-decoration:underline;">'
+                    f'{escape(existing.name)}</a>. Edit the existing listing instead of adding a duplicate.'
+                ),
+                "warning",
+            )
             return redirect(url_for("add_item"))
 
         settings = Settings.get()
@@ -674,6 +689,24 @@ def _run_lightweight_migrations():
             {"cid": inr.id},
         )
         db.session.commit()
+
+    # Backfill Product.url through sanitize_url so legacy rows with query
+    # params / whitespace match the canonical form used by duplicate detection.
+    # Idempotent: rows that are already canonical produce no UPDATE.
+    from scraper import sanitize_url
+    rows = db.session.execute(text("SELECT id, url FROM product")).fetchall()
+    changed = 0
+    for row_id, raw_url in rows:
+        canonical = sanitize_url(raw_url)
+        if canonical and canonical != raw_url:
+            db.session.execute(
+                text("UPDATE product SET url = :u WHERE id = :id"),
+                {"u": canonical, "id": row_id},
+            )
+            changed += 1
+    if changed:
+        db.session.commit()
+        print(f"[Migration] Canonicalised {changed} product URL(s)")
 
 
 def _parse_price(s):

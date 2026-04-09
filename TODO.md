@@ -17,13 +17,14 @@
 [x] Remove 'Add item' button in the top
 [x] Sanitize URLs for query params before scraping
 [x] After scraping listing, if no price found then default price to 0
+[x] Avoid duplicates by checking if the listing URL exists in DB 
+[ ] Edit listing should also have the paste image to upload 
+[ ] Keep only USD, SGD, INR currencies 
 
 [ ] Auto create tags: "pricing unknown", "images required", "untagged items" where pricing is 0
 [ ] Need a search in UI to search through scrapes
 [ ] Gallery view to delete unecessary data
-[ ] Avoid duplicates by checking if the listing URL exists in DB 
 [ ] Size chart should be a special image under each listing
-[ ] Edit listing should also have the paste image to upload 
 [ ] Assign a random colour not previously assigned to any tag in the colour wheel 
 [ ] Capitalize the first letter of tag names
 
