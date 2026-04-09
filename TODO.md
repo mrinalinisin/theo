@@ -14,6 +14,7 @@
 [x] Add Currency field to /add-item form 
 [x] Add x button to images when editing a listing so that you can remove images not required
 [x] Each tagged view can have a total value
+[x] Remove 'Add item' button in the top
 [ ] Nuke everything after ? and # in url before scraping
 
 [ ] Add variant urls and pictures [needs thinking to sort of link to other scrapes]
