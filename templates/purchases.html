@@ -26,103 +26,70 @@
 <div class="page-body">
   {% if grouped %}
 
-  <!-- Grouped purchases -->
-  <div class="card">
+  <!-- Grouped purchases — hero-card layout, mirrors shopping_list grouped view -->
+  <div class="hero-card-groups" style="display:block;">
     {% for group_name, data in grouped.items() %}
-    <div class="group-header">
-      <span>
+    <section class="hero-card-group">
+      <h2 class="hero-card-group-heading">
         {% if data.tag %}
-        <span class="tag" style="color:{{ data.tag.colour }};background:{{ data.tag.colour }}18;margin-right:6px;">
-          <span class="tag-dot" style="background:{{ data.tag.colour }};"></span>{{ data.tag.name }}
-        </span>
+          <span class="tag-dot" style="background: {{ data.tag.colour }};"></span>
+          {{ data.tag.name }}
+        {% else %}
+          <span class="tag-dot" style="background: var(--text-faint);"></span>
+          {{ group_name }}
         {% endif %}
-        {{ group_name }} &middot; {{ data.purchases|length }} items
-      </span>
-      <span style="font-variant-numeric:tabular-nums;">{{ data.total|fmt_price }} total</span>
-    </div>
-
-    <!-- Desktop table -->
-    <div class="table-desktop">
-      <table class="data-table">
-        <tbody>
-          {% for purchase in data.purchases %}
-          <tr {% if purchase.product %}onclick="window.location='{{ url_for('product_detail', product_id=purchase.product.id) }}'" style="cursor:pointer;"{% endif %}>
-            <td>
-              <div class="flex items-center gap-12">
-                <div class="product-card-img" style="width:36px;height:36px;">
-                  {% if purchase.product and purchase.product.image_url %}
-                  <img src="{{ purchase.product.image_url }}" alt="">
-                  {% else %}
-                  IMG
-                  {% endif %}
-                </div>
-                <div>
-                  <div style="font-weight:500;">{{ purchase.product.name if purchase.product else 'Unknown' }}</div>
-                  <div class="text-xs text-faint">{{ purchase.product.store if purchase.product else '' }}</div>
-                  {% if purchase.order_details_url or purchase.tracking_url %}
-                  <div class="text-xs" style="margin-top:2px;display:flex;gap:10px;flex-wrap:wrap;" onclick="event.stopPropagation()">
-                    {% if purchase.order_details_url %}
-                    <a href="{{ purchase.order_details_url }}" target="_blank" rel="noopener">&#128196; Order</a>
-                    {% endif %}
-                    {% if purchase.tracking_url %}
-                    <a href="{{ purchase.tracking_url }}" target="_blank" rel="noopener">&#128230; Track</a>
-                    {% endif %}
-                  </div>
-                  {% endif %}
-                </div>
-              </div>
-            </td>
-            <td class="text-sm text-muted">{{ purchase.purchased_at|fmt_date }}</td>
-            <td>
-              <div class="price">{{ purchase.paid_amount|fmt_price }}</div>
-              {% if purchase.product and purchase.product.original_price and purchase.paid_amount < purchase.product.original_price %}
-              <div class="text-xs" style="color:var(--accent);">
-                Saved {{ (purchase.product.original_price - purchase.paid_amount)|fmt_price }}
-              </div>
+        <span class="hero-card-group-count">{{ data.purchases|length }}</span>
+        <span style="margin-left:auto;font-variant-numeric:tabular-nums;font-weight:600;color:var(--text);text-transform:none;letter-spacing:0;">
+          {{ data.total|fmt_price }}
+        </span>
+      </h2>
+      <div class="hero-card-grid">
+        {% for purchase in data.purchases %}
+        {% set product = purchase.product %}
+        <div class="hero-card">
+          {% if product %}
+          <a href="{{ url_for('product_detail', product_id=product.id) }}"
+             style="display:flex;flex-direction:column;text-decoration:none;color:inherit;">
+          {% endif %}
+            <div class="hero-card-image">
+              {% if product and product.image_url %}
+              <img src="{{ product.image_url }}" alt="{{ product.name }}">
+              {% else %}
+              <span class="hero-card-image-placeholder">&#x1f6cd;&#xfe0f;</span>
               {% endif %}
-            </td>
-            <td><span class="status status-purchased">Purchased</span></td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-
-    <!-- Mobile cards -->
-    <div class="card-list-mobile">
-      {% for purchase in data.purchases %}
-      {% if purchase.product %}
-      <a href="{{ url_for('product_detail', product_id=purchase.product.id) }}" style="text-decoration:none;color:inherit;">
-      {% endif %}
-      <div class="product-card" style="border-radius:0;border-left:0;border-right:0;border-top:0;">
-        <div class="product-card-top">
-          <div class="product-card-img" style="width:40px;height:40px;">
-            {% if purchase.product and purchase.product.image_url %}
-            <img src="{{ purchase.product.image_url }}" alt="">
+            </div>
+            <div class="hero-card-body">
+              <div class="hero-card-title">{{ product.name if product else 'Unknown' }}</div>
+              <div class="hero-card-subtitle">
+                {% if product and product.store %}{{ product.store }} &middot; {% endif %}{{ purchase.purchased_at|fmt_date }}
+              </div>
+              <div class="hero-card-description">
+                <span class="price">{{ purchase.paid_amount|fmt_price }}</span>
+                {% if product and product.original_price and purchase.paid_amount < product.original_price %}
+                <span class="price-drop">&nbsp;Saved {{ (product.original_price - purchase.paid_amount)|fmt_price }}</span>
+                {% endif %}
+              </div>
+            </div>
+          {% if product %}
+          </a>
+          {% endif %}
+          <div class="hero-card-footer">
+            <span class="status status-purchased" style="font-size:10px;">Purchased</span>
+            {% if purchase.order_details_url or purchase.tracking_url %}
+            <span style="margin-left:auto;display:flex;gap:10px;">
+              {% if purchase.order_details_url %}
+              <a href="{{ purchase.order_details_url }}" target="_blank" rel="noopener">&#128196; Order</a>
+              {% endif %}
+              {% if purchase.tracking_url %}
+              <a href="{{ purchase.tracking_url }}" target="_blank" rel="noopener">&#128230; Track</a>
+              {% endif %}
+            </span>
             {% endif %}
           </div>
-          <div class="product-card-info">
-            <div class="product-card-name">{{ purchase.product.name if purchase.product else 'Unknown' }}</div>
-            <div class="product-card-store">{{ purchase.purchased_at|fmt_date }}</div>
-          </div>
-          <div class="price">{{ purchase.paid_amount|fmt_price }}</div>
         </div>
+        {% endfor %}
       </div>
-      {% if purchase.product %}
-      </a>
-      {% endif %}
-      {% if purchase.order_details_url or purchase.tracking_url %}
-      <div class="text-xs" style="padding:0 16px 10px 64px;display:flex;gap:14px;flex-wrap:wrap;">
-        {% if purchase.order_details_url %}
-        <a href="{{ purchase.order_details_url }}" target="_blank" rel="noopener">&#128196; Order</a>
-        {% endif %}
-        {% if purchase.tracking_url %}
-        <a href="{{ purchase.tracking_url }}" target="_blank" rel="noopener">&#128230; Track</a>
-        {% endif %}
-      </div>
-      {% endif %}
-      {% endfor %}
-    </div>
+    </section>
     {% endfor %}
   </div>
 

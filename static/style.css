@@ -202,13 +202,27 @@ textarea.form-input { resize: vertical; min-height: 80px; }
 .data-table tbody tr:last-child td { border-bottom: none; }
 .data-table tbody tr:hover td { background: #faf9f7; }
 
-/* Hide table on mobile — show card list instead */
+/* Hide table on mobile — show card list instead (used by /purchases) */
 .table-desktop { display: none; }
 .card-list-mobile { display: block; }
 
-/* ── View toggle (Table ⇄ Card) ────────────────────────────────────────────── */
+/* ── Shopping list view switching (Cards ⇄ Grouped) ────────────────────────
+   The flat "cards" view is the default. The "grouped" view is shown when
+   the body has data-view="grouped". Both are always rendered server-side
+   so toggling is instant with no re-fetch. */
+.product-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 12px;
+}
+.product-card-grid .product-card { margin-bottom: 0; }
+.hero-card-groups { display: none; }
+.page-body[data-view="grouped"] .product-card-grid { display: none; }
+.page-body[data-view="grouped"] .hero-card-groups { display: block; }
+
+/* ── View toggle (Cards ⇄ Grouped) ────────────────────────────────────────── */
 .view-toggle {
-  display: none; /* shown on desktop only */
+  display: inline-flex;
   border: 1px solid var(--border); border-radius: var(--radius-sm);
   overflow: hidden; background: var(--surface);
 }
@@ -244,6 +258,111 @@ textarea.form-input { resize: vertical; min-height: 80px; }
 }
 .product-card-price { font-weight: 600; font-variant-numeric: tabular-nums; }
 .product-card-actions { display: flex; gap: 6px; }
+
+/* ── Hero card (grouped view on /shopping-list) ───────────────────────────
+   Vertically stacked card inspired by a profile card: large image area on
+   top, body with title/subtitle/description, then a thin footer row
+   separated by a hairline border. */
+.hero-card-group { margin-bottom: 28px; }
+.hero-card-group:last-child { margin-bottom: 0; }
+.hero-card-group-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text);
+  margin: 0 0 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border-light);
+}
+.hero-card-group-heading .tag-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+.hero-card-group-count {
+  font-weight: 500;
+  color: var(--text-faint);
+  font-size: 12px;
+  letter-spacing: 0;
+  text-transform: none;
+  margin-left: 4px;
+}
+.hero-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 14px;
+}
+.hero-card {
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  text-decoration: none;
+  color: inherit;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.hero-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+}
+.hero-card-image {
+  aspect-ratio: 1 / 1;
+  background: #6a8080; /* muted teal tone, matches the reference */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+.hero-card-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.hero-card-image-placeholder {
+  font-size: 44px;
+  opacity: 0.55;
+}
+.hero-card-body {
+  padding: 12px 13px 10px;
+}
+.hero-card-title {
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.25;
+  color: var(--text);
+}
+.hero-card-subtitle {
+  font-size: 11px;
+  color: var(--text-faint);
+  margin-top: 2px;
+}
+.hero-card-description {
+  font-size: 12px;
+  color: var(--text);
+  line-height: 1.4;
+  margin-top: 7px;
+}
+.hero-card-footer {
+  padding: 8px 13px;
+  border-top: 1px solid var(--border-light);
+  font-size: 11px;
+  color: var(--text-faint);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.hero-card-footer-icon {
+  font-size: 12px;
+  opacity: 0.7;
+}
 
 /* ── Price display ─────────────────────────────────────────────────────────── */
 .price { font-weight: 600; font-variant-numeric: tabular-nums; }
@@ -599,22 +718,9 @@ textarea.form-input { resize: vertical; min-height: 80px; }
   .page-body { padding: 24px 28px; }
   .flash-messages { padding: 0 28px; }
 
-  /* Show table, hide card list (default desktop view) */
+  /* Show table, hide card list on desktop (used by /purchases) */
   .table-desktop { display: block; }
   .card-list-mobile { display: none; }
-
-  /* View toggle visible on desktop only */
-  .view-toggle { display: inline-flex; }
-
-  /* When user opts into card view on desktop, flip the visibility and
-     render cards in a responsive grid instead of a single column. */
-  .page-body[data-view="card"] .table-desktop { display: none; }
-  .page-body[data-view="card"] .card-list-mobile {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 12px;
-  }
-  .page-body[data-view="card"] .product-card { margin-bottom: 0; }
 
   .stat-value { font-size: 26px; }
   .product-photo-main { height: 300px; }
