@@ -66,7 +66,7 @@
       <table class="data-table">
         <tbody>
           {% for purchase in data.purchases %}
-          <tr>
+          <tr {% if purchase.product %}onclick="window.location='{{ url_for('product_detail', product_id=purchase.product.id) }}'" style="cursor:pointer;"{% endif %}>
             <td>
               <div class="flex items-center gap-12">
                 <div class="product-card-img" style="width:36px;height:36px;">
@@ -92,11 +92,6 @@
               {% endif %}
             </td>
             <td><span class="status status-purchased">Purchased</span></td>
-            <td>
-              {% if purchase.product %}
-              <a href="{{ url_for('product_detail', product_id=purchase.product.id) }}" class="btn btn-ghost btn-sm">Details</a>
-              {% endif %}
-            </td>
           </tr>
           {% endfor %}
         </tbody>
@@ -106,6 +101,9 @@
     <!-- Mobile cards -->
     <div class="card-list-mobile">
       {% for purchase in data.purchases %}
+      {% if purchase.product %}
+      <a href="{{ url_for('product_detail', product_id=purchase.product.id) }}" style="text-decoration:none;color:inherit;">
+      {% endif %}
       <div class="product-card" style="border-radius:0;border-left:0;border-right:0;border-top:0;">
         <div class="product-card-top">
           <div class="product-card-img" style="width:40px;height:40px;">
@@ -120,6 +118,9 @@
           <div class="price">{{ purchase.paid_amount|fmt_price }}</div>
         </div>
       </div>
+      {% if purchase.product %}
+      </a>
+      {% endif %}
       {% endfor %}
     </div>
     {% endfor %}
