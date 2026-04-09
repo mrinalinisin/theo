@@ -1,6 +1,6 @@
 
 
-## Features 
+## TODOs 
 [x] UI x DB: Basic app to scrape and add
 [x] Backend x UI: Manual listing creation by pasting from clipboard
 [x] Backend: Fix memory leak
@@ -13,13 +13,11 @@
 [x] Add x button to images scraped automatically so that user can choose which images to save 
 [x] Add Currency field to /add-item form 
 [x] Add x button to images when editing a listing so that you can remove images not required
-
-
-[ ] Clean up junk metadata in existing scrapes like random pricing
-[ ] Add variant urls and pictures [needs thinking to sort of link to other scrapes]
-[ ] Each tagged view can have a total value
-[ ] Remove the default alt text in the URL textbox in /add-item
+[x] Each tagged view can have a total value
 [ ] Nuke everything after ? and # in url before scraping
+
+[ ] Add variant urls and pictures [needs thinking to sort of link to other scrapes]
+[ ] Remove the default alt text in the URL textbox in /add-item
 [ ] If no pricing value found in scrape, then set amount to 0
 [ ] Auto create tags: "pricing unknown", "images required", "untagged items" where pricing is 0
 [ ] Need a search in UI to search through scrapes

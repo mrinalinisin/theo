@@ -46,26 +46,36 @@ def create_app():
         products = query.order_by(Product.created_at.desc()).all()
         tags = Tag.query.order_by(Tag.name).all()
 
-        # Stats
-        total_value = sum((p.current_price or 0) * (p.quantity or 1) for p in products)
-        week_ago = datetime.utcnow() - timedelta(days=7)
-        price_drops = 0
-        price_rises = 0
+        # Per-currency totals for the current view (covers mixed-currency lists)
+        currency_totals = {}  # code -> {"symbol": str, "code": str, "name": str, "total": float}
         for p in products:
-            recent = [ph for ph in p.price_history if ph.checked_at >= week_ago]
-            if len(recent) >= 2 and recent[0].price < recent[-1].price:
-                price_drops += 1
-            elif len(recent) >= 2 and recent[0].price > recent[-1].price:
-                price_rises += 1
+            if not p.current_price:
+                continue
+            c = p.currency
+            code = c.code if c else "INR"
+            symbol = c.symbol if c else "\u20b9"
+            name = c.name if c else "Indian Rupee"
+            bucket = currency_totals.setdefault(
+                code, {"symbol": symbol, "code": code, "name": name, "total": 0.0}
+            )
+            bucket["total"] += (p.current_price or 0) * (p.quantity or 1)
+        currency_totals_list = sorted(currency_totals.values(), key=lambda b: b["code"])
+
+        # Active tag object (for header display)
+        active_tag_obj = None
+        if tag_filter:
+            try:
+                active_tag_obj = Tag.query.get(int(tag_filter))
+            except (TypeError, ValueError):
+                active_tag_obj = None
 
         return render_template(
             "shopping_list.html",
             products=products,
             tags=tags,
             active_tag=tag_filter,
-            total_value=total_value,
-            price_drops=price_drops,
-            price_rises=price_rises,
+            active_tag_obj=active_tag_obj,
+            currency_totals=currency_totals_list,
         )
 
     # ── Add Item ──────────────────────────────────────────────────────────────

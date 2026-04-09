@@ -5,12 +5,34 @@
 <div class="page-header">
   <div class="page-header-top">
     <div class="page-header-inline">
-      <div class="page-title">Shopping List</div>
+      <div class="page-title">
+        {% if active_tag_obj %}
+          <span class="tag-dot" style="background:{{ active_tag_obj.colour }};display:inline-block;width:12px;height:12px;border-radius:50%;vertical-align:middle;margin-right:6px;"></span>
+          {{ active_tag_obj.name }}
+        {% else %}
+          Shopping List
+        {% endif %}
+      </div>
     </div>
     <div class="header-actions">
       <a href="{{ url_for('add_item') }}" class="btn btn-primary btn-sm">+ Add Item</a>
     </div>
   </div>
+  {% if currency_totals %}
+  <div class="flex gap-12 flex-wrap" style="margin-top:10px;align-items:baseline;">
+    <span class="text-xs text-faint" style="text-transform:uppercase;letter-spacing:0.05em;">Total value</span>
+    {% for bucket in currency_totals %}
+    <span class="text-sm" style="font-weight:600;">
+      {{ bucket.symbol }}{{ "{:,.0f}".format(bucket.total) }}
+      {% if currency_totals|length > 1 %}
+      <span class="text-xs text-faint" style="font-weight:400;">&nbsp;{{ bucket.code }}</span>
+      {% endif %}
+    </span>
+    {% if not loop.last %}<span class="text-faint">&middot;</span>{% endif %}
+    {% endfor %}
+    <span class="text-xs text-faint">&middot; {{ products|length }} item{{ 's' if products|length != 1 }}</span>
+  </div>
+  {% endif %}
 </div>
 
 <div class="page-body">
