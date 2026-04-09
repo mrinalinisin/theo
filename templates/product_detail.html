@@ -135,12 +135,11 @@
           <!-- Actions -->
           <div class="flex gap-8 flex-wrap">
             <a href="{{ product.url }}" target="_blank" class="btn btn-secondary btn-sm" style="text-decoration:none;">&#x1f517; Open Product Page</a>
-            <button class="btn btn-ghost btn-sm" onclick="document.getElementById('modal-edit').classList.add('open')">&#x270f;&#xfe0f; Edit</button>
             <form method="POST" action="{{ url_for('product_delete', product_id=product.id) }}"
-              style="margin-left:auto;"
               onsubmit="return confirm('Remove this product from your list?')">
               <button type="submit" class="btn btn-danger btn-sm">&#x1f5d1; Remove</button>
             </form>
+            <button class="btn btn-ghost btn-sm" style="margin-left:auto;" onclick="document.getElementById('modal-edit').classList.add('open')">&#x270f;&#xfe0f; Edit</button>
           </div>
         </div>
       </div>
