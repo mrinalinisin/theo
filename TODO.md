@@ -12,9 +12,11 @@
 [x] Remove unnecessary stats from /shopping-list UI 
 [x] Add x button to images scraped automatically so that user can choose which images to save 
 [x] Add Currency field to /add-item form 
-[ ] Add x button to images when editing a listing so that you can remove images not required
+[x] Add x button to images when editing a listing so that you can remove images not required
+
+
 [ ] Clean up junk metadata in existing scrapes like random pricing
-[ ] Add quantity and variant urls and pictures [needs thinking to sort of link to other scrapes]
+[ ] Add variant urls and pictures [needs thinking to sort of link to other scrapes]
 [ ] Each tagged view can have a total value
 [ ] Remove the default alt text in the URL textbox in /add-item
 [ ] Nuke everything after ? and # in url before scraping

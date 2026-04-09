@@ -220,6 +220,18 @@ def create_app():
         # Checkbox: present → True, absent → False
         product.track_price = bool(request.form.get("track_price"))
 
+        # Image list + main image can be trimmed by the X buttons on the detail page
+        images_raw = request.form.get("images")
+        if images_raw is not None:
+            try:
+                parsed_images = json.loads(images_raw)
+                if isinstance(parsed_images, list):
+                    product.images = parsed_images
+            except (json.JSONDecodeError, TypeError):
+                pass
+        if "image_url" in request.form:
+            product.image_url = request.form.get("image_url", "") or ""
+
         tag_ids = request.form.getlist("tag_ids")
         product.tags.clear()
         for tid in tag_ids:

@@ -38,13 +38,14 @@
             {% endif %}
           </div>
           {% if product.images %}
-          <div class="photo-strip">
+          <div class="photo-strip" id="productPhotoStrip">
             {% for img in product.images %}
-            <div class="photo-thumb {{ 'active' if loop.first }}" onclick="setMainPhoto(this, '{{ img }}')">
+            <div class="photo-thumb {{ 'active' if img == product.image_url or (loop.first and not product.image_url) }}" data-src="{{ img }}">
               <img src="{{ img }}" alt="Photo {{ loop.index }}">
             </div>
             {% endfor %}
           </div>
+          <div class="text-xs text-faint" style="margin-top:6px;">Click a photo to set as main &middot; open Edit to remove photos</div>
           {% endif %}
         </div>
       </div>
@@ -187,11 +188,26 @@
 <div class="modal-overlay" id="modal-edit">
   <div class="modal">
     <form method="POST" action="{{ url_for('product_edit', product_id=product.id) }}">
+      <input type="hidden" name="images" id="editImagesField" value="{{ product.images|tojson_safe }}">
+      <input type="hidden" name="image_url" id="editImageUrlField" value="{{ product.image_url }}">
       <div class="modal-header">
         <div class="modal-title">Edit Product</div>
         <button type="button" class="btn btn-ghost btn-sm" onclick="document.getElementById('modal-edit').classList.remove('open')">&#x2715;</button>
       </div>
       <div class="modal-body">
+        {% if product.images %}
+        <div class="form-group">
+          <label class="form-label">Photos <span class="text-xs text-faint">(click to set main &middot; &times; to remove)</span></label>
+          <div class="photo-strip" id="editPhotoStrip">
+            {% for img in product.images %}
+            <div class="photo-thumb {{ 'active' if img == product.image_url or (loop.first and not product.image_url) }}" data-src="{{ img }}">
+              <img src="{{ img }}" alt="Photo {{ loop.index }}">
+              <span class="remove-btn" title="Remove">&times;</span>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
         <div class="form-group">
           <label class="form-label">Name</label>
           <input type="text" name="name" class="form-input" value="{{ product.name }}">
@@ -308,12 +324,92 @@
 
 {% block scripts %}
 <script>
-function setMainPhoto(thumb, src) {
-  document.querySelectorAll('.photo-thumb').forEach(t => t.classList.remove('active'));
-  thumb.classList.add('active');
-  const main = document.getElementById('main-photo');
-  main.innerHTML = '<img src="' + src + '" alt="Product">';
-}
+// ── Photo gallery: two strips (display outside, editable inside modal) stay in sync ──
+(function() {
+  const outerStrip = document.getElementById('productPhotoStrip');
+  const editStrip = document.getElementById('editPhotoStrip');
+  const mainPhoto = document.getElementById('main-photo');
+  const imagesField = document.getElementById('editImagesField');
+  const imageUrlField = document.getElementById('editImageUrlField');
+
+  function currentSrcs() {
+    // Edit strip is the source of truth (where removals happen)
+    const src = editStrip || outerStrip;
+    return Array.from(src?.querySelectorAll('.photo-thumb[data-src]') || [])
+      .map(t => t.dataset.src);
+  }
+
+  function syncHiddenFields() {
+    if (imagesField) imagesField.value = JSON.stringify(currentSrcs());
+  }
+
+  function highlightMain(src) {
+    [outerStrip, editStrip].forEach(strip => {
+      if (!strip) return;
+      strip.querySelectorAll('.photo-thumb').forEach(t => {
+        t.classList.toggle('active', t.dataset.src === src);
+      });
+    });
+  }
+
+  function setMain(src) {
+    highlightMain(src);
+    if (imageUrlField) imageUrlField.value = src;
+    if (mainPhoto) {
+      mainPhoto.innerHTML = '<img src="' + src + '" alt="Product">';
+    }
+  }
+
+  function clearMain() {
+    if (imageUrlField) imageUrlField.value = '';
+    if (mainPhoto) {
+      mainPhoto.innerHTML = '<div style="font-size:40px;">\u{1F6CD}\u{FE0F}</div><div class="text-faint text-sm">No product photo</div>';
+    }
+  }
+
+  function removeBySrc(src) {
+    // Remove from both strips
+    [outerStrip, editStrip].forEach(strip => {
+      if (!strip) return;
+      const thumb = strip.querySelector(`.photo-thumb[data-src="${CSS.escape(src)}"]`);
+      if (thumb) thumb.remove();
+    });
+    syncHiddenFields();
+
+    // If that was the main photo, fall back to the first remaining thumb
+    const wasMain = imageUrlField && imageUrlField.value === src;
+    if (wasMain) {
+      const fallback = (editStrip || outerStrip)?.querySelector('.photo-thumb[data-src]');
+      if (fallback) {
+        setMain(fallback.dataset.src);
+      } else {
+        clearMain();
+      }
+    }
+  }
+
+  function wireStrip(strip, {allowRemove}) {
+    if (!strip) return;
+    strip.addEventListener('click', (e) => {
+      const thumb = e.target.closest('.photo-thumb');
+      if (!thumb) return;
+
+      if (allowRemove && e.target.classList.contains('remove-btn')) {
+        e.stopPropagation();
+        removeBySrc(thumb.dataset.src);
+        return;
+      }
+
+      setMain(thumb.dataset.src);
+    });
+  }
+
+  wireStrip(outerStrip, {allowRemove: false});
+  wireStrip(editStrip, {allowRemove: true});
+
+  // Seed once at load so edit-form hidden fields match the live DOM
+  syncHiddenFields();
+})();
 
 function openPurchaseModal() {
   const today = new Date().toISOString().split('T')[0];
