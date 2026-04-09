@@ -528,6 +528,7 @@ def create_app():
         if not name:
             flash("Tag name is required.", "error")
             return redirect(url_for("tags"))
+        name = name[:1].upper() + name[1:]
         if Tag.query.filter_by(name=name).first():
             flash(f"Tag \"{name}\" already exists.", "error")
             return redirect(url_for("tags"))
