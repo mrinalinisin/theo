@@ -22,6 +22,8 @@ from models import db, Product, Tag, PriceHistory, Purchase, Settings, Currency,
 def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
+    # Allow large form posts (base64 pasted images in edit forms can get chunky).
+    app.config["MAX_CONTENT_LENGTH"] = 64 * 1024 * 1024  # 64 MB
     db.init_app(app)
 
     with app.app_context():

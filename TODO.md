@@ -24,7 +24,8 @@
 [x] Add hyperlink to / upon click of app title in the sidebar
 [x] Create new tag with a random unique colour from the color wheel
 [x] Assign random unique colors to existing tags
-[ ] Before saving new tag capitalize first letter of tag
+[x] Before saving new tag capitalize first letter of tag
+[ ] Fix Entity Too Large for editing a listing
 
 
 [ ] Add a search by name, domain
