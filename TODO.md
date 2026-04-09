@@ -37,8 +37,13 @@
 [x] Purchases page also has grouped new card view
 [x] Make new cards UI as default in /shopping-list
 [x] Small UI tweaks
-[ ] Group by domain 
+[ ] Add group by domain view
+[ ] Add filter by domain 
+[ ] Add a /stats-stack page for stats on db size, LOC, stack details 
 [ ] Add keyboard shortcuts for search Ctrl / CMD + K and Ctrl / CMD + N for new item
+[ ] Ability to add item as purchased in "Add item" modal itself 
+[ ] Add Pinterest style cards and endless scroll of your closet items 
+[ ] Scheduled job for dead links / How to fetch google cached / wayback machine version of the page?
 
 [ ] Add a new item shouldn't take a page refresh, if unable to fetch show unable to fetch and allow user to manually add details 
 [ ] Size chart should be a special image under each listing
