@@ -13,7 +13,11 @@
           Shopping List
         {% endif %}
       </div>
-      <form id="searchForm" method="GET" action="{{ url_for('shopping_list') }}" style="margin-left:auto;flex:0 1 320px;min-width:200px;">
+      <div class="view-toggle" id="viewToggle" role="group" aria-label="Switch view" style="margin-left:auto;">
+        <button type="button" data-view="table" aria-pressed="true" title="Table view">&#x2630; Table</button>
+        <button type="button" data-view="card" aria-pressed="false" title="Card view">&#x25a6; Cards</button>
+      </div>
+      <form id="searchForm" method="GET" action="{{ url_for('shopping_list') }}" style="flex:0 1 320px;min-width:200px;">
         {% if active_tag %}<input type="hidden" name="tag" value="{{ active_tag }}">{% endif %}
         <input
           type="search"
@@ -44,7 +48,18 @@
   {% endif %}
 </div>
 
-<div class="page-body">
+<div class="page-body" id="shoppingListBody">
+  <script>
+    // Apply saved view preference before first paint to avoid a flash.
+    (function() {
+      try {
+        var v = localStorage.getItem('shoppingListView');
+        if (v === 'card') {
+          document.getElementById('shoppingListBody').setAttribute('data-view', 'card');
+        }
+      } catch (e) {}
+    })();
+  </script>
   {% if products %}
 
   <!-- Desktop table view -->
@@ -202,6 +217,41 @@ document.getElementById('modal-purchase').addEventListener('click', e => {
 
   // Allow Enter to submit immediately (default form behavior) —
   // the form element itself handles that without extra code.
+})();
+
+// ── View toggle (Table ⇄ Card) ──
+(function() {
+  const toggle = document.getElementById('viewToggle');
+  const body = document.getElementById('shoppingListBody');
+  if (!toggle || !body) return;
+
+  const KEY = 'shoppingListView';
+  const saved = (function() {
+    try { return localStorage.getItem(KEY); } catch (e) { return null; }
+  })() || 'table';
+
+  function apply(view) {
+    if (view === 'card') {
+      body.setAttribute('data-view', 'card');
+    } else {
+      body.removeAttribute('data-view');
+    }
+    toggle.querySelectorAll('button').forEach(btn => {
+      const isActive = btn.dataset.view === view;
+      btn.classList.toggle('active', isActive);
+      btn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+    });
+  }
+
+  apply(saved);
+
+  toggle.addEventListener('click', (e) => {
+    const btn = e.target.closest('button[data-view]');
+    if (!btn) return;
+    const view = btn.dataset.view;
+    try { localStorage.setItem(KEY, view); } catch (e) {}
+    apply(view);
+  });
 })();
 
 // ── Endless scroll via IntersectionObserver ──

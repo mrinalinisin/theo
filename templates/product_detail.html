@@ -100,7 +100,9 @@
           </div>
           {% endif %}
 
+          {% if product.variants or product.notes %}
           <div class="divider"></div>
+          {% endif %}
 
           <!-- Variants -->
           {% if product.variants %}

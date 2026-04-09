@@ -206,6 +206,21 @@ textarea.form-input { resize: vertical; min-height: 80px; }
 .table-desktop { display: none; }
 .card-list-mobile { display: block; }
 
+/* ── View toggle (Table ⇄ Card) ────────────────────────────────────────────── */
+.view-toggle {
+  display: none; /* shown on desktop only */
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
+  overflow: hidden; background: var(--surface);
+}
+.view-toggle button {
+  background: transparent; border: none; padding: 6px 12px;
+  font-size: 12px; font-weight: 500; color: var(--text-faint);
+  cursor: pointer; display: inline-flex; align-items: center; gap: 6px;
+}
+.view-toggle button + button { border-left: 1px solid var(--border); }
+.view-toggle button.active { background: var(--bg); color: var(--text); }
+.view-toggle button:hover:not(.active) { color: var(--text); }
+
 /* ── Product card (mobile list item) ───────────────────────────────────────── */
 .product-card {
   background: var(--surface); border: 1px solid var(--border);
@@ -584,9 +599,22 @@ textarea.form-input { resize: vertical; min-height: 80px; }
   .page-body { padding: 24px 28px; }
   .flash-messages { padding: 0 28px; }
 
-  /* Show table, hide card list */
+  /* Show table, hide card list (default desktop view) */
   .table-desktop { display: block; }
   .card-list-mobile { display: none; }
+
+  /* View toggle visible on desktop only */
+  .view-toggle { display: inline-flex; }
+
+  /* When user opts into card view on desktop, flip the visibility and
+     render cards in a responsive grid instead of a single column. */
+  .page-body[data-view="card"] .table-desktop { display: none; }
+  .page-body[data-view="card"] .card-list-mobile {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 12px;
+  }
+  .page-body[data-view="card"] .product-card { margin-bottom: 0; }
 
   .stat-value { font-size: 26px; }
   .product-photo-main { height: 300px; }
