@@ -11,6 +11,18 @@ product_tags = db.Table(
 )
 
 
+class Currency(db.Model):
+    __tablename__ = "currency"
+
+    id = db.Column(db.Integer, primary_key=True)
+    code = db.Column(db.String(3), nullable=False, unique=True)  # ISO 4217 e.g. INR, USD
+    symbol = db.Column(db.String(4), nullable=False)  # e.g. ₹, $, €
+    name = db.Column(db.String(64), nullable=False)  # e.g. Indian Rupee
+
+    def __repr__(self):
+        return f"<Currency {self.code}>"
+
+
 class Tag(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(64), nullable=False, unique=True)
@@ -35,12 +47,14 @@ class Product(db.Model):
     variants = db.Column(db.JSON, default=dict)  # {sizes: [...], colours: [...]}
     notes = db.Column(db.Text, default="")
     quantity = db.Column(db.Integer, default=1, nullable=False)
+    currency_id = db.Column(db.Integer, db.ForeignKey("currency.id"), nullable=True)
     status = db.Column(db.String(20), default="watching")  # watching | purchased
     check_interval = db.Column(db.Integer, nullable=True)  # per-item override in minutes
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     last_checked_at = db.Column(db.DateTime, nullable=True)
 
     tags = db.relationship("Tag", secondary=product_tags, back_populates="products")
+    currency = db.relationship("Currency", foreign_keys=[currency_id])
     price_history = db.relationship(
         "PriceHistory", backref="product", lazy="select", cascade="all, delete-orphan",
         order_by="PriceHistory.checked_at.desc()"
@@ -48,6 +62,16 @@ class Product(db.Model):
     purchase = db.relationship(
         "Purchase", backref="product", uselist=False, cascade="all, delete-orphan"
     )
+
+    @property
+    def currency_symbol(self):
+        return self.currency.symbol if self.currency else "\u20b9"
+
+    def fmt_price(self, value):
+        """Format a numeric value using this product's currency symbol."""
+        if value is None:
+            return "\u2014"
+        return f"{self.currency_symbol}{value:,.0f}"
 
     @property
     def price_change_pct(self):

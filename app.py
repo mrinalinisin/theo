@@ -16,7 +16,7 @@ import re
 
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
 from config import Config
-from models import db, Product, Tag, PriceHistory, Purchase, Settings, product_tags
+from models import db, Product, Tag, PriceHistory, Purchase, Settings, Currency, product_tags
 
 
 def create_app():
@@ -158,12 +158,14 @@ def create_app():
         product = Product.query.get_or_404(product_id)
         history = sorted(product.price_history, key=lambda h: h.checked_at, reverse=True)
         tags = Tag.query.order_by(Tag.name).all()
+        currencies = Currency.query.order_by(Currency.code).all()
         lowest_price = min((h.price for h in history), default=None) if history else None
         return render_template(
             "product_detail.html",
             product=product,
             history=history,
             tags=tags,
+            currencies=currencies,
             lowest_price=lowest_price,
         )
 
@@ -177,6 +179,15 @@ def create_app():
             product.quantity = max(1, int(request.form.get("quantity", product.quantity) or 1))
         except (TypeError, ValueError):
             pass
+
+        currency_id = request.form.get("currency_id")
+        if currency_id:
+            try:
+                cid = int(currency_id)
+                if Currency.query.get(cid):
+                    product.currency_id = cid
+            except (TypeError, ValueError):
+                pass
 
         tag_ids = request.form.getlist("tag_ids")
         product.tags.clear()
@@ -563,6 +574,7 @@ def _run_lightweight_migrations():
     PRAGMA table_info first so it's safe to re-run on every startup.
     """
     from sqlalchemy import text
+    from models import Currency
 
     def column_exists(table, column):
         rows = db.session.execute(text(f"PRAGMA table_info({table})")).fetchall()
@@ -571,6 +583,36 @@ def _run_lightweight_migrations():
     # Product.quantity added 2026-04
     if not column_exists("product", "quantity"):
         db.session.execute(text("ALTER TABLE product ADD COLUMN quantity INTEGER NOT NULL DEFAULT 1"))
+        db.session.commit()
+
+    # Seed common currencies (idempotent — only inserts missing codes)
+    seed_currencies = [
+        ("INR", "\u20b9", "Indian Rupee"),
+        ("USD", "$", "US Dollar"),
+        ("EUR", "\u20ac", "Euro"),
+        ("GBP", "\u00a3", "British Pound"),
+        ("JPY", "\u00a5", "Japanese Yen"),
+        ("AUD", "A$", "Australian Dollar"),
+        ("CAD", "C$", "Canadian Dollar"),
+        ("SGD", "S$", "Singapore Dollar"),
+        ("AED", "AED ", "UAE Dirham"),
+    ]
+    for code, symbol, name in seed_currencies:
+        if not Currency.query.filter_by(code=code).first():
+            db.session.add(Currency(code=code, symbol=symbol, name=name))
+    db.session.commit()
+
+    # Product.currency_id added 2026-04 — backfill to INR
+    if not column_exists("product", "currency_id"):
+        db.session.execute(text("ALTER TABLE product ADD COLUMN currency_id INTEGER REFERENCES currency(id)"))
+        db.session.commit()
+
+    inr = Currency.query.filter_by(code="INR").first()
+    if inr:
+        db.session.execute(
+            text("UPDATE product SET currency_id = :cid WHERE currency_id IS NULL"),
+            {"cid": inr.id},
+        )
         db.session.commit()
 
 

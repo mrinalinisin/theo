@@ -81,12 +81,12 @@
             <td>
               {% set change = p.price_change_pct %}
               <div class="price {{ 'price-drop' if change and change < 0 else 'price-up' if change and change > 0 else '' }}">
-                {{ p.current_price|fmt_price }}{% if p.quantity and p.quantity > 1 %} <span class="text-xs text-faint">&times;{{ p.quantity }}</span>{% endif %}
+                {{ p.fmt_price(p.current_price) }}{% if p.quantity and p.quantity > 1 %} <span class="text-xs text-faint">&times;{{ p.quantity }}</span>{% endif %}
               </div>
               {% if p.quantity and p.quantity > 1 and p.current_price %}
-              <div class="price-original">= {{ (p.current_price * p.quantity)|fmt_price }}</div>
+              <div class="price-original">= {{ p.fmt_price(p.current_price * p.quantity) }}</div>
               {% elif p.original_price and p.original_price != p.current_price %}
-              <div class="price-original">{{ p.original_price|fmt_price }}</div>
+              <div class="price-original">{{ p.fmt_price(p.original_price) }}</div>
               {% endif %}
             </td>
             <td>
@@ -151,7 +151,7 @@
           <div>
             {% set change = p.price_change_pct %}
             <span class="product-card-price {{ 'price-drop' if change and change < 0 else 'price-up' if change and change > 0 else '' }}">
-              {{ p.current_price|fmt_price }}{% if p.quantity and p.quantity > 1 %} &times;{{ p.quantity }}{% endif %}
+              {{ p.fmt_price(p.current_price) }}{% if p.quantity and p.quantity > 1 %} &times;{{ p.quantity }}{% endif %}
             </span>
             {% if change %}
               {% if change < 0 %}
