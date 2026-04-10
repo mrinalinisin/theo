@@ -5,20 +5,15 @@
 <div class="page-header">
   <div class="page-header-top">
     <div class="page-title">Purchases</div>
-    <div class="header-actions">
-      <select onchange="updateFilters()" id="group-select" class="form-select" style="width:auto;min-height:32px;font-size:12px;padding:4px 28px 4px 10px;">
-        <option value="tag" {{ 'selected' if group_by == 'tag' }}>Group by: Tag</option>
-        <option value="month" {{ 'selected' if group_by == 'month' }}>Group by: Month</option>
-      </select>
-    </div>
+    <div class="header-actions"></div>
   </div>
   <div class="header-filters">
     <div class="filter-chips">
-      <a href="{{ url_for('purchases', period='all', group_by=group_by) }}" class="chip {{ 'active' if period == 'all' }}">All Time</a>
-      <a href="{{ url_for('purchases', period='1m', group_by=group_by) }}" class="chip {{ 'active' if period == '1m' }}">Last Month</a>
-      <a href="{{ url_for('purchases', period='3m', group_by=group_by) }}" class="chip {{ 'active' if period == '3m' }}">Last 3M</a>
-      <a href="{{ url_for('purchases', period='6m', group_by=group_by) }}" class="chip {{ 'active' if period == '6m' }}">Last 6M</a>
-      <a href="{{ url_for('purchases', period='1y', group_by=group_by) }}" class="chip {{ 'active' if period == '1y' }}">Last Year</a>
+      <a href="{{ url_for('purchases', period='all', group_by='tag') }}" class="chip {{ 'active' if period == 'all' }}">All Time</a>
+      <a href="{{ url_for('purchases', period='1m', group_by='tag') }}" class="chip {{ 'active' if period == '1m' }}">Last Month</a>
+      <a href="{{ url_for('purchases', period='3m', group_by='tag') }}" class="chip {{ 'active' if period == '3m' }}">Last 3M</a>
+      <a href="{{ url_for('purchases', period='6m', group_by='tag') }}" class="chip {{ 'active' if period == '6m' }}">Last 6M</a>
+      <a href="{{ url_for('purchases', period='1y', group_by='tag') }}" class="chip {{ 'active' if period == '1y' }}">Last Year</a>
     </div>
   </div>
 </div>
@@ -101,15 +96,4 @@
   </div>
   {% endif %}
 </div>
-{% endblock %}
-
-{% block scripts %}
-<script>
-function updateFilters() {
-  const groupBy = document.getElementById('group-select').value;
-  const url = new URL(window.location);
-  url.searchParams.set('group_by', groupBy);
-  window.location = url;
-}
-</script>
 {% endblock %}
