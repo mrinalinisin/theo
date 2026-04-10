@@ -118,10 +118,9 @@ def create_app():
             except (TypeError, ValueError):
                 active_tag_obj = None
 
-        # Fetch one extra row to detect more pages without a COUNT(*).
-        products_page = query.limit(PAGE_SIZE + 1).all()
-        has_more = len(products_page) > PAGE_SIZE
-        products_page = products_page[:PAGE_SIZE]
+        total_count = query.count()
+        products_page = query.limit(PAGE_SIZE).all()
+        has_more = len(products_page) < total_count
 
         # Total value by currency (only when filtering by tag).
         value_by_currency = []
@@ -148,6 +147,7 @@ def create_app():
             active_tag=tag_filter,
             active_tag_obj=active_tag_obj,
             has_more=has_more,
+            total_count=total_count,
             search_q=search_q,
             sort_key=sort_key,
             order_key=order_key,
@@ -164,11 +164,9 @@ def create_app():
         offset = request.args.get("offset", 0, type=int)
         limit = request.args.get("limit", PAGE_SIZE, type=int)
 
-        # Fetch one extra row to detect whether more pages exist,
-        # avoiding an expensive COUNT(*) on the full filtered set.
-        products = query.offset(offset).limit(limit + 1).all()
-        has_more = len(products) > limit
-        products = products[:limit]
+        total_count = query.count()
+        products = query.offset(offset).limit(limit).all()
+        has_more = (offset + len(products)) < total_count
         next_offset = offset + len(products)
 
         active_tag_obj = None
@@ -183,7 +181,7 @@ def create_app():
             products=products,
             active_tag_obj=active_tag_obj,
         )
-        return jsonify(html=html, has_more=has_more, next_offset=next_offset)
+        return jsonify(html=html, has_more=has_more, next_offset=next_offset, total_count=total_count)
 
     # ── Add Item ──────────────────────────────────────────────────────────────
 

@@ -129,11 +129,10 @@
        data-q="{{ search_q or '' }}">
     {% include '_shopping_list_cards.html' %}
   </div>
-  {% if has_more %}
-  <div id="scroll-sentinel" class="scroll-sentinel">
-    <span class="scroll-sentinel-spinner"></span> Loading more&hellip;
+  <div id="load-more-section" class="load-more-section" {% if not has_more %}style="display:none"{% endif %}>
+    <div id="showing-count" class="showing-count">Showing {{ products|length }} of {{ total_count }} products</div>
+    <button id="load-more-btn" class="load-more-btn">SHOW ME MORE</button>
   </div>
-  {% endif %}
 
 
   {% if products|selectattr('track_price')|list %}
@@ -308,11 +307,13 @@ document.getElementById('modal-purchase').addEventListener('click', e => {
   });
 })();
 
-// ── Infinite scroll for flat cards view ──
+// ── Load more button for flat cards view ──
 (function() {
   const grid = document.getElementById('productCardsFlat');
-  const sentinel = document.getElementById('scroll-sentinel');
-  if (!grid || !sentinel) return;
+  const section = document.getElementById('load-more-section');
+  const btn = document.getElementById('load-more-btn');
+  const countEl = document.getElementById('showing-count');
+  if (!grid || !btn) return;
 
   let loading = false;
   let offset = parseInt(grid.dataset.offset, 10);
@@ -332,28 +333,28 @@ document.getElementById('modal-purchase').addEventListener('click', e => {
   async function loadMore() {
     if (loading || !hasMore) return;
     loading = true;
+    btn.textContent = 'LOADING…';
     try {
       const resp = await fetch(buildUrl());
       const data = await resp.json();
       grid.insertAdjacentHTML('beforeend', data.html);
       offset = data.next_offset;
       hasMore = data.has_more;
+      countEl.textContent = 'Showing ' + offset + ' of ' + data.total_count + ' products';
       if (!hasMore) {
-        sentinel.remove();
-        observer.disconnect();
+        section.style.display = 'none';
+      } else {
+        btn.textContent = 'SHOW ME MORE';
       }
     } catch (e) {
-      console.error('Infinite scroll fetch failed:', e);
+      console.error('Load more fetch failed:', e);
+      btn.textContent = 'SHOW ME MORE';
     } finally {
       loading = false;
     }
   }
 
-  const observer = new IntersectionObserver((entries) => {
-    if (entries[0].isIntersecting) loadMore();
-  }, { rootMargin: '200px' });
-
-  observer.observe(sentinel);
+  btn.addEventListener('click', loadMore);
 })();
 </script>
 {% endblock %}

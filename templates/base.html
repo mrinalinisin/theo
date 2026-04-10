@@ -17,7 +17,7 @@
 
   <!-- ═══ Top Header Nav ═══ -->
   <header class="top-header">
-    <a href="{{ url_for('shopping_list') }}" class="top-header-logo">Gummi<span class="top-header-tagline">Inventory for life</span></a>
+    <a href="/" class="top-header-logo">Gummi<span class="top-header-tagline">Inventory for life</span></a>
     <nav class="top-header-nav">
       <a href="{{ url_for('shopping_list') }}" class="{{ 'active' if request.endpoint == 'shopping_list' }}">
         <span class="icon">🛒</span> Browse
