@@ -12,7 +12,9 @@ warnings.filterwarnings(
 from datetime import datetime, timezone, timedelta
 from urllib.parse import urlparse
 import json
+import os
 import re
+import time
 
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, send_from_directory
 from config import Config
@@ -898,6 +900,44 @@ def create_app():
             "g_sidebar_tags": sidebar_tags,
             "g_active_tag": request.args.get("tag") if request.endpoint == "shopping_list" else None,
         }
+
+    # ── Stats ────────────────────────────────────────────────────────────────
+
+    @app.route("/stats")
+    def stats():
+        # Database size
+        db_path = os.path.join(app.instance_path, "gummi.db")
+        db_bytes = os.path.getsize(db_path)
+        if db_bytes >= 1_048_576:
+            db_size = f"{db_bytes / 1_048_576:.1f} MB"
+        else:
+            db_size = f"{db_bytes / 1024:.1f} KB"
+
+        def _measure(path, fn, **kwargs):
+            with app.test_request_context(path):
+                t0 = time.perf_counter()
+                fn(**kwargs)
+                return f"{(time.perf_counter() - t0) * 1000:.0f} ms"
+
+        load_times = {
+            "/shopping-list": _measure("/shopping-list", shopping_list),
+            "/api/shopping-list": _measure("/api/shopping-list", shopping_list_api),
+            "/add-item": _measure("/add-item", add_item),
+            "/analytics": _measure("/analytics", analytics),
+            "/purchases": _measure("/purchases", purchases),
+            "/purchases/add-purchase": _measure("/purchases/add-purchase", add_purchase),
+            "/tags": _measure("/tags", tags),
+            "/settings": _measure("/settings", settings),
+        }
+
+        # /product/<id> needs a real product; skip if DB is empty
+        sample = Product.query.first()
+        if sample:
+            load_times["/product/<id>"] = _measure(
+                f"/product/{sample.id}", product_detail, product_id=sample.id
+            )
+
+        return jsonify({"db_size": db_size, "load_times": load_times})
 
     return app
 
