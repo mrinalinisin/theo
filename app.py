@@ -1108,24 +1108,6 @@ def _check_budget_warning():
 if __name__ == "__main__":
     app = create_app()
 
-    # Start scheduler
-    from scheduler import start_scheduler
-
-    start_scheduler(app)
-
-    # Register graceful shutdown so APScheduler (and any in-flight Playwright
-    # subprocesses) release their resources cleanly on SIGTERM/SIGINT. Without
-    # this, kill-then-restart cycles can orphan named semaphores on macOS.
-    import atexit
-    import signal
-    from scheduler import scheduler
-
-    def _graceful_shutdown(*_args):
-        if scheduler.running:
-            scheduler.shutdown(wait=False)
-
-    atexit.register(_graceful_shutdown)
-    signal.signal(signal.SIGTERM, lambda *a: (_graceful_shutdown(), exit(0)))
 
     import os
     port = int(os.environ.get("PORT", 5000))

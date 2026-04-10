@@ -15,43 +15,46 @@ def start_scheduler(app):
             from models import db, Product, PriceHistory, Settings
             from scraper import check_price
 
-            settings = Settings.get()
-            default_interval = settings.default_check_interval  # minutes
-            now = datetime.utcnow()
+            try:
+                settings = Settings.get()
+                default_interval = settings.default_check_interval  # minutes
+                now = datetime.utcnow()
 
-            products = Product.query.filter(
-                Product.status.in_(("watching", "awaiting_delivery")),
-                Product.track_price == True,
-            ).all()
+                products = Product.query.filter(
+                    Product.status.in_(("watching", "awaiting_delivery")),
+                    Product.track_price == True,
+                ).all()
 
-            for product in products:
-                interval = product.check_interval or default_interval
-                cutoff = now - timedelta(minutes=interval)
+                for product in products:
+                    interval = product.check_interval or default_interval
+                    cutoff = now - timedelta(minutes=interval)
 
-                # Skip if checked recently
-                if product.last_checked_at and product.last_checked_at > cutoff:
-                    continue
-
-                try:
-                    new_price = check_price(product.url, use_browser=settings.use_browser_rendering)
-                    if new_price is None:
+                    # Skip if checked recently
+                    if product.last_checked_at and product.last_checked_at > cutoff:
                         continue
 
-                    old_price = product.current_price
-                    product.current_price = new_price
-                    product.last_checked_at = now
+                    try:
+                        new_price = check_price(product.url, use_browser=settings.use_browser_rendering)
+                        if new_price is None:
+                            continue
 
-                    # Record price history
-                    ph = PriceHistory(product_id=product.id, price=new_price)
-                    db.session.add(ph)
-                    db.session.commit()
+                        old_price = product.current_price
+                        product.current_price = new_price
+                        product.last_checked_at = now
 
-                    # Send WhatsApp notification if price changed
-                    _notify_price_change(product, old_price, new_price, settings)
+                        # Record price history
+                        ph = PriceHistory(product_id=product.id, price=new_price)
+                        db.session.add(ph)
+                        db.session.commit()
 
-                except Exception as e:
-                    print(f"[Scheduler] Error checking {product.name}: {e}")
-                    db.session.rollback()
+                        # Send WhatsApp notification if price changed
+                        _notify_price_change(product, old_price, new_price, settings)
+
+                    except Exception as e:
+                        print(f"[Scheduler] Error checking {product.name}: {e}")
+                        db.session.rollback()
+            finally:
+                db.session.remove()
 
     # Run the check job every 60 seconds
     scheduler.add_job(price_check_job, "interval", seconds=60, id="price_checker", replace_existing=True)
