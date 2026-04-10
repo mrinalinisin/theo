@@ -4,9 +4,10 @@ Supports two fetching backends:
   1. requests (fast, lightweight) — used by default
   2. Playwright headless Chromium (handles JS-rendered pages, bypasses 403s)
 
-When use_browser=False, requests is tried first. If it gets a 403 or connection
-error, the scraper auto-retries with Playwright. When use_browser=True, Playwright
-is used directly.
+Strategy priority:
+  1. Per-domain override (DomainStrategy table) — highest priority
+  2. Global "use browser rendering" toggle (Settings)
+  3. requests-first with auto-fallback to Playwright on 403/connection errors
 """
 
 import json
@@ -85,14 +86,27 @@ def _fetch_html_playwright(url):
         return html
 
 
+def _domain_strategy(url):
+    """Look up per-domain scraping strategy, or return None for default."""
+    from models import DomainStrategy
+
+    domain = urlparse(url).netloc.replace("www.", "")
+    row = DomainStrategy.query.filter_by(domain=domain).first()
+    return row.strategy if row else None
+
+
 def _fetch_html(url, use_browser=False):
     """
     Fetch page HTML with automatic fallback.
 
-    If use_browser is True, goes straight to Playwright.
-    If False, tries requests first, and falls back to Playwright on
-    403/ConnectionError/Timeout.
+    Priority: per-domain strategy > global use_browser setting > requests-first.
     """
+    strategy = _domain_strategy(url)
+    if strategy == "playwright":
+        use_browser = True
+    elif strategy == "requests":
+        use_browser = False
+
     if use_browser:
         return _fetch_html_playwright(url)
 

@@ -19,7 +19,7 @@ import time
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, send_from_directory
 from sqlalchemy import func
 from config import Config
-from models import db, Product, Tag, PriceHistory, Purchase, Settings, Currency, product_tags
+from models import db, Product, Tag, PriceHistory, Purchase, Settings, Currency, DomainStrategy, product_tags
 
 
 def create_app():
@@ -736,7 +736,9 @@ def create_app():
     def settings():
         s = Settings.get()
         products = Product.query.filter_by(status="watching").order_by(Product.name).all()
-        return render_template("settings.html", settings=s, products=products)
+        domain_strategies = DomainStrategy.query.order_by(DomainStrategy.domain).all()
+        return render_template("settings.html", settings=s, products=products,
+                               domain_strategies=domain_strategies)
 
     @app.route("/settings", methods=["POST"])
     def settings_save():
@@ -759,6 +761,41 @@ def create_app():
                 if product:
                     v = int(val)
                     product.check_interval = v if v != s.default_check_interval else None
+
+        # ── Domain scraping strategies ─────────────────────────────────────
+        # 1. Delete rows marked for removal
+        for key in list(request.form.keys()):
+            if key.startswith("ds_delete_"):
+                ds_id = int(key.replace("ds_delete_", ""))
+                ds = DomainStrategy.query.get(ds_id)
+                if ds:
+                    db.session.delete(ds)
+
+        # 2. Update existing rows
+        for key, val in request.form.items():
+            if key.startswith("ds_domain_") and not key.startswith("ds_domain_new_"):
+                ds_id = int(key.replace("ds_domain_", ""))
+                if request.form.get(f"ds_delete_{ds_id}"):
+                    continue
+                ds = DomainStrategy.query.get(ds_id)
+                if ds:
+                    domain = val.strip().lower()
+                    if domain:
+                        ds.domain = domain
+                        ds.strategy = request.form.get(f"ds_strategy_{ds_id}", "requests")
+
+        # 3. Add new rows
+        idx = 0
+        while f"ds_domain_new_{idx}" in request.form:
+            domain = request.form[f"ds_domain_new_{idx}"].strip().lower()
+            strategy = request.form.get(f"ds_strategy_new_{idx}", "requests")
+            if domain:
+                existing = DomainStrategy.query.filter_by(domain=domain).first()
+                if existing:
+                    existing.strategy = strategy
+                else:
+                    db.session.add(DomainStrategy(domain=domain, strategy=strategy))
+            idx += 1
 
         db.session.commit()
         flash("Settings saved.", "success")

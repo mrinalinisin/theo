@@ -12,9 +12,9 @@
   <form method="POST" action="{{ url_for('settings_save') }}">
 
     <!-- Price Check Intervals -->
-    <div class="card mb-20">
-      <div class="card-header">Price Check Intervals</div>
-      <div class="card-body">
+    <details class="accordion mb-20" open>
+      <summary>Price Check Intervals</summary>
+      <div class="accordion-body">
         <div class="callout callout-info mb-16">
           The server periodically visits each product URL and records the price.
           More frequent checks use more server resources.
@@ -55,12 +55,12 @@
         </div>
         {% endif %}
       </div>
-    </div>
+    </details>
 
     <!-- Notifications -->
-    <div class="card mb-20">
-      <div class="card-header">Notifications (WhatsApp)</div>
-      <div class="card-body">
+    <details class="accordion mb-20">
+      <summary>Notifications (WhatsApp)</summary>
+      <div class="accordion-body">
         {% if not config.TWILIO_ACCOUNT_SID %}
         <div class="callout callout-warning mb-16">
           Twilio is not configured. Set up your <code>.env</code> file to enable WhatsApp notifications.
@@ -119,12 +119,12 @@
           </label>
         </div>
       </div>
-    </div>
+    </details>
 
     <!-- Income & Budget -->
-    <div class="card mb-20">
-      <div class="card-header">Income & Budget</div>
-      <div class="card-body">
+    <details class="accordion mb-20">
+      <summary>Income &amp; Budget</summary>
+      <div class="accordion-body">
         <div class="form-row mb-16">
           <div class="form-group" style="margin-bottom:0;">
             <label class="form-label">Monthly Income</label>
@@ -141,12 +141,12 @@
         </div>
         <div class="form-hint">Budget resets on the 1st of each month.</div>
       </div>
-    </div>
+    </details>
 
     <!-- Scraping -->
-    <div class="card mb-20">
-      <div class="card-header">Scraping</div>
-      <div class="card-body">
+    <details class="accordion mb-20">
+      <summary>Scraping</summary>
+      <div class="accordion-body">
         <div class="toggle-row">
           <div class="toggle-info">
             <div class="toggle-name">Use browser rendering</div>
@@ -172,8 +172,67 @@
             <div class="toggle-switch {{ 'on' if settings.auto_extract_variants }}"></div>
           </label>
         </div>
+
+        <div class="divider"></div>
+
+        <label class="form-label">Domain Scraping Strategies</label>
+        <div class="form-hint" style="margin-bottom:8px;">
+          Override the scraping method per domain. &ldquo;requests&rdquo; is fast; &ldquo;playwright&rdquo; handles JS-heavy sites.
+        </div>
+
+        <div id="domain-strategies">
+          {% for ds in domain_strategies %}
+          <div class="ds-row">
+            <input type="text" name="ds_domain_{{ ds.id }}" class="form-input"
+                   value="{{ ds.domain }}" placeholder="e.g. amazon.in">
+            <select name="ds_strategy_{{ ds.id }}" class="form-select">
+              <option value="requests" {{ 'selected' if ds.strategy == 'requests' }}>requests</option>
+              <option value="playwright" {{ 'selected' if ds.strategy == 'playwright' }}>playwright</option>
+            </select>
+            <button type="button" class="ds-remove" title="Remove">&times;</button>
+          </div>
+          {% endfor %}
+        </div>
+
+        <button type="button" id="ds-add-btn" class="btn btn-sm" style="margin-top:8px;">+ Add domain</button>
       </div>
-    </div>
+    </details>
+
+    <script>
+    (function() {
+      var counter = 0;
+      var container = document.getElementById('domain-strategies');
+      document.getElementById('ds-add-btn').addEventListener('click', function() {
+        var row = document.createElement('div');
+        row.className = 'ds-row';
+        row.innerHTML =
+          '<input type="text" name="ds_domain_new_' + counter + '" class="form-input" placeholder="e.g. amazon.in">' +
+          '<select name="ds_strategy_new_' + counter + '" class="form-select">' +
+            '<option value="requests" selected>requests</option>' +
+            '<option value="playwright">playwright</option>' +
+          '</select>' +
+          '<button type="button" class="ds-remove" title="Remove">&times;</button>';
+        container.appendChild(row);
+        counter++;
+      });
+      container.addEventListener('click', function(e) {
+        if (!e.target.classList.contains('ds-remove')) return;
+        var row = e.target.closest('.ds-row');
+        var inp = row.querySelector('input[name^="ds_domain_"]');
+        var match = inp ? inp.name.match(/^ds_domain_(\d+)$/) : null;
+        if (match) {
+          var hidden = document.createElement('input');
+          hidden.type = 'hidden';
+          hidden.name = 'ds_delete_' + match[1];
+          hidden.value = '1';
+          container.appendChild(hidden);
+          row.style.display = 'none';
+        } else {
+          row.remove();
+        }
+      });
+    })();
+    </script>
 
     <button type="submit" class="btn btn-primary btn-block">Save Settings</button>
   </form>

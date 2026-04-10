@@ -275,6 +275,24 @@ body {
 }
 .card-body { padding: 16px; }
 
+/* ── Accordion (details/summary) ───────────────────────────────────────────── */
+.accordion {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); overflow: hidden;
+}
+.accordion summary {
+  padding: 14px 16px; font-weight: 500; cursor: pointer;
+  list-style: none; display: flex; align-items: center; gap: 10px;
+}
+.accordion summary::-webkit-details-marker { display: none; }
+.accordion summary::before {
+  content: "\25B8"; font-size: 14px; color: var(--text-muted);
+  transition: transform 0.15s ease;
+}
+.accordion[open] > summary::before { transform: rotate(90deg); }
+.accordion[open] > summary { border-bottom: 1px solid var(--border-light); }
+.accordion-body { padding: 16px; }
+
 /* ── Tag pills ─────────────────────────────────────────────────────────────── */
 .tag {
   display: inline-flex; align-items: center; gap: 4px;
@@ -723,6 +741,20 @@ textarea.form-input { resize: vertical; min-height: 80px; }
 .interval-item:last-child { border-bottom: none; }
 .interval-item-name { flex: 1; font-size: 13px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .interval-item .form-select { width: auto; min-height: 36px; font-size: 12px; padding: 4px 28px 4px 8px; }
+
+/* ── Domain strategies ─────────────────────────────────────────────────────── */
+.ds-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 12px; border-bottom: 1px solid var(--border-light);
+}
+.ds-row:last-child { border-bottom: none; }
+.ds-row .form-input { flex: 1; min-height: 36px; font-size: 13px; }
+.ds-row .form-select { width: auto; min-height: 36px; font-size: 12px; padding: 4px 28px 4px 8px; }
+.ds-remove {
+  background: none; border: none; cursor: pointer;
+  font-size: 18px; color: var(--text-muted); padding: 0 4px; line-height: 1;
+}
+.ds-remove:hover { color: var(--danger, #e53e3e); }
 
 /* ── Divider ───────────────────────────────────────────────────────────────── */
 .divider { height: 1px; background: var(--border-light); margin: 16px 0; }

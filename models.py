@@ -111,6 +111,19 @@ class Purchase(db.Model):
     tracking_url = db.Column(db.Text, default="")
 
 
+class DomainStrategy(db.Model):
+    """Per-domain scraping strategy override."""
+
+    __tablename__ = "domain_strategy"
+
+    id = db.Column(db.Integer, primary_key=True)
+    domain = db.Column(db.String(256), nullable=False, unique=True)  # e.g. "amazon.in"
+    strategy = db.Column(db.String(20), nullable=False, default="requests")  # "requests" | "playwright"
+
+    def __repr__(self):
+        return f"<DomainStrategy {self.domain}={self.strategy}>"
+
+
 class Settings(db.Model):
     """Singleton settings row."""
 
