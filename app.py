@@ -578,6 +578,108 @@ def create_app():
             total_savings=total_savings,
         )
 
+    # ── Add Purchase (dual-mode: existing item or new item) ─────────────────
+
+    @app.route("/purchases/add-purchase")
+    def add_purchase():
+        tags = Tag.query.order_by(Tag.name).all()
+        currencies = Currency.query.order_by(Currency.code).all()
+        today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        return render_template(
+            "add_purchase.html",
+            tags=tags,
+            currencies=currencies,
+            today=today,
+        )
+
+    @app.route("/purchases/add-purchase", methods=["POST"])
+    def add_purchase_save():
+        order_details_url = (request.form.get("order_details_url") or "").strip()
+        tracking_url = (request.form.get("tracking_url") or "").strip()
+        if not order_details_url and not tracking_url:
+            flash(
+                "Please provide an Order details URL or a Tracking link.",
+                "error",
+            )
+            return redirect(url_for("add_purchase"))
+
+        purchased_at_str = request.form.get("purchased_at")
+        if purchased_at_str:
+            purchased_at = datetime.strptime(purchased_at_str, "%Y-%m-%d").replace(
+                tzinfo=timezone.utc
+            )
+        else:
+            purchased_at = datetime.now(timezone.utc)
+
+        notes = request.form.get("notes", "")
+
+        name = (request.form.get("name") or "").strip()
+        if not name:
+            flash("Product name is required.", "error")
+            return redirect(url_for("add_purchase"))
+
+        paid = _parse_price(request.form.get("paid_amount", "0"))
+        store = (request.form.get("store") or "").strip()
+        url = (request.form.get("url") or "").strip() or "manual-entry"
+
+        currency_id = None
+        try:
+            raw_cid = request.form.get("currency_id")
+            if raw_cid:
+                cid = int(raw_cid)
+                if Currency.query.get(cid):
+                    currency_id = cid
+        except (TypeError, ValueError):
+            pass
+        if currency_id is None:
+            inr = Currency.query.filter_by(code="INR").first()
+            currency_id = inr.id if inr else None
+
+        product = Product(
+            url=url,
+            name=name,
+            store=store,
+            current_price=paid,
+            original_price=paid,
+            currency_id=currency_id,
+            status="purchased",
+        )
+
+        tag_ids = request.form.getlist("tag_ids")
+        for tid in tag_ids:
+            tag = Tag.query.get(int(tid))
+            if tag:
+                product.tags.append(tag)
+
+        db.session.add(product)
+        db.session.flush()
+
+        # Create or update Purchase row (idempotent)
+        purchase = Purchase.query.filter_by(product_id=product.id).first()
+        if purchase:
+            purchase.paid_amount = paid
+            purchase.purchased_at = purchased_at
+            purchase.notes = notes
+            purchase.order_details_url = order_details_url
+            purchase.tracking_url = tracking_url
+        else:
+            purchase = Purchase(
+                product_id=product.id,
+                paid_amount=paid,
+                purchased_at=purchased_at,
+                notes=notes,
+                order_details_url=order_details_url,
+                tracking_url=tracking_url,
+            )
+            db.session.add(purchase)
+
+        product.status = "purchased"
+        db.session.commit()
+        _check_budget_warning()
+
+        flash(f"Marked \"{product.name}\" as purchased for {_fmt_price(paid)}!", "success")
+        return redirect(url_for("purchases"))
+
     # ── Tags ──────────────────────────────────────────────────────────────────
 
     @app.route("/tags")

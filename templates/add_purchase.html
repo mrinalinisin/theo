@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+{% block title %}Add Purchase — Gummi{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-header-top">
+    <div class="page-title">Add New Purchase</div>
+  </div>
+</div>
+
+<div class="page-body" style="max-width: 680px; margin: 0 auto;">
+
+  <form method="POST" action="{{ url_for('add_purchase_save') }}">
+    <input type="hidden" name="mode" value="new">
+
+    <div class="card mb-20">
+      <div class="card-header">Item Details</div>
+      <div class="card-body">
+        <div class="form-group">
+          <label class="form-label">Product Name</label>
+          <input type="text" name="name" class="form-input" required placeholder="e.g. Uniqlo Airism T-Shirt">
+        </div>
+        <div class="flex gap-8">
+          <div class="form-group" style="flex:2;">
+            <label class="form-label">Price paid</label>
+            <input type="text" name="paid_amount" class="form-input" required placeholder="e.g. 1299">
+          </div>
+          <div class="form-group" style="flex:1;">
+            <label class="form-label">Currency</label>
+            <select name="currency_id" class="form-input">
+              {% for c in currencies %}
+              <option value="{{ c.id }}" {{ 'selected' if c.code == 'INR' }}>
+                {{ c.symbol }} {{ c.code }}
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Store</label>
+          <input type="text" name="store" class="form-input" placeholder="e.g. Amazon, Flipkart">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Product URL (optional)</label>
+          <input type="url" name="url" class="form-input" placeholder="https://...">
+        </div>
+      </div>
+    </div>
+
+    <div class="card mb-20">
+      <div class="card-header">Purchase Details</div>
+      <div class="card-body">
+        <div class="flex gap-8">
+          <div class="form-group" style="flex:1;">
+            <label class="form-label">Date purchased</label>
+            <input type="date" name="purchased_at" class="form-input" value="{{ today }}">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Order details URL</label>
+          <input type="url" name="order_details_url" class="form-input" placeholder="https://...">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Tracking URL</label>
+          <input type="url" name="tracking_url" class="form-input" placeholder="https://...">
+        </div>
+        <div class="form-hint mb-12">At least one URL (order details or tracking) is required.</div>
+
+        <div class="form-group" style="margin-bottom:0;">
+          <label class="form-label">Notes (optional)</label>
+          <textarea name="notes" class="form-input" rows="2" placeholder="Any notes about this purchase…"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tags -->
+    <div class="card mb-20">
+      <div class="card-header">
+        Tags
+        <a href="{{ url_for('tags') }}" class="btn btn-ghost btn-sm">Manage Tags</a>
+      </div>
+      <div class="card-body">
+        {% if tags %}
+        <p class="text-sm text-muted mb-12">Select one or more tags:</p>
+        <div class="flex gap-8 flex-wrap">
+          {% for tag in tags %}
+          <label class="chip" style="cursor:pointer;">
+            <input type="checkbox" name="tag_ids" value="{{ tag.id }}" style="display:none;"
+              onchange="this.parentElement.classList.toggle('active', this.checked)">
+            <span class="tag-dot" style="background:{{ tag.colour }};width:6px;height:6px;border-radius:50;display:inline-block;"></span>
+            {{ tag.name }}
+          </label>
+          {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-sm text-faint">No tags yet. <a href="{{ url_for('tags') }}" style="color:var(--accent);">Create some first</a> or save without tags.</p>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="flex justify-between gap-12">
+      <a href="{{ url_for('purchases') }}" class="btn btn-secondary">&larr; Back</a>
+      <button type="submit" class="btn btn-primary">Add Purchase</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

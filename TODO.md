@@ -37,27 +37,33 @@
 [x] Purchases page also has grouped new card view
 [x] Make new cards UI as default in /shopping-list
 [x] Small UI tweaks
+[ ] Add /purchases/add-purchase UI and backend 
+[ ] 
 [ ] Add group by domain view
 [ ] Add filter by domain 
 [ ] Add a /stats-stack page for stats on db size, LOC, stack details 
 [ ] Add keyboard shortcuts for search Ctrl / CMD + K and Ctrl / CMD + N for new item
+[ ] Deleting a tag should only delete tag and not associated listings
+
+[ ] Add a favicon to the website
+
 [ ] Ability to add item as purchased in "Add item" modal itself 
+[ ] Add a new item shouldn't take a page refresh, if unable to fetch show unable to fetch and allow user to manually add details 
+[ ] Add variant urls and pictures
+
 [ ] Add Pinterest style cards and endless scroll of your closet items 
 [ ] Scheduled job for dead links / How to fetch google cached / wayback machine version of the page?
+[ ] Rehaul Analytics for meaningful graphs on inventory
 
-[ ] Add a new item shouldn't take a page refresh, if unable to fetch show unable to fetch and allow user to manually add details 
 [ ] Size chart should be a special image under each listing
-[ ] Add variant urls and pictures
+
 [ ] Listing should have link to video instructions
-[ ] Is the UI templates in EJS or similar?
-[ ] Improve card view to make image the focal point 
-[ ] Deleting a tag should only delete tag and not associated listings
+
 [ ] Erase price history for all items 
 [ ] Remove "Re-scrape" button for now 
 [ ] Safari extension to scrape listing and create data in locally running app
 [ ] Setup local server + GUI client for a SQLite
 [ ] Push notifications when price drops 
-
 [ ] Bulk scrapes, what is the limit?
 [ ] Separate development app vs `sv` productionized app 
 [ ] Anytype listing, media creator, data filler. Can each tag be a type corresponding to Anytype types? So that I can get Claude to update listings inside Anytype?
