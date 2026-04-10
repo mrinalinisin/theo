@@ -28,7 +28,7 @@
   <div class="hero-card-footer">
     <span class="hero-card-footer-icon">&#x1f3f7;&#xfe0f;</span>
     {% if p.tags %}
-      {{ p.tags|length }} Tag{{ 's' if p.tags|length != 1 }}
+      {{ p.tags|map(attribute='name')|join(', ') }}
     {% else %}
       No tags
     {% endif %}
