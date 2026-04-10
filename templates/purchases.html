@@ -54,7 +54,7 @@
           {% endif %}
             <div class="hero-card-image">
               {% if product and product.image_url %}
-              <img src="{{ product.image_url }}" alt="{{ product.name }}">
+              <img src="{{ image_src(product.image_url) }}" alt="{{ product.name }}">
               {% else %}
               <span class="hero-card-image-placeholder">&#x1f6cd;&#xfe0f;</span>
               {% endif %}

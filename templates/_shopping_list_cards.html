@@ -2,7 +2,7 @@
 <a href="{{ url_for('product_detail', product_id=p.id) }}" class="hero-card">
   <div class="hero-card-image">
     {% if p.image_url %}
-    <img src="{{ p.image_url }}" alt="{{ p.name }}">
+    <img src="{{ image_src(p.image_url) }}" alt="{{ p.name }}">
     {% else %}
     <span class="hero-card-image-placeholder">&#x1f6cd;&#xfe0f;</span>
     {% endif %}

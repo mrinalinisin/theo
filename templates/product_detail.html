@@ -37,7 +37,7 @@
         <div class="card-body">
           <div class="product-photo-main mb-12" id="main-photo">
             {% if product.image_url %}
-            <img src="{{ product.image_url }}" alt="{{ product.name }}">
+            <img src="{{ image_src(product.image_url) }}" alt="{{ product.name }}">
             {% else %}
             <div style="font-size:40px;">&#x1f6cd;&#xfe0f;</div>
             <div class="text-faint text-sm">No product photo</div>
@@ -46,8 +46,8 @@
           {% if product.images %}
           <div class="photo-strip" id="productPhotoStrip">
             {% for img in product.images %}
-            <div class="photo-thumb {{ 'active' if img == product.image_url or (loop.first and not product.image_url) }}" data-src="{{ img }}">
-              <img src="{{ img }}" alt="Photo {{ loop.index }}">
+            <div class="photo-thumb {{ 'active' if img == product.image_url or (loop.first and not product.image_url) }}" data-src="{{ image_src(img) }}">
+              <img src="{{ image_src(img) }}" alt="Photo {{ loop.index }}">
             </div>
             {% endfor %}
           </div>
@@ -240,8 +240,8 @@
           <label class="form-label">Photos <span class="text-xs text-faint">(click to set main &middot; &times; to remove)</span></label>
           <div class="photo-strip" id="editPhotoStrip">
             {% for img in product.images or [] %}
-            <div class="photo-thumb {{ 'active' if img == product.image_url or (loop.first and not product.image_url) }}" data-src="{{ img }}">
-              <img src="{{ img }}" alt="Photo {{ loop.index }}">
+            <div class="photo-thumb {{ 'active' if img == product.image_url or (loop.first and not product.image_url) }}" data-src="{{ image_src(img) }}">
+              <img src="{{ image_src(img) }}" alt="Photo {{ loop.index }}">
               <span class="remove-btn" title="Remove">&times;</span>
             </div>
             {% endfor %}

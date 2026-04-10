@@ -14,7 +14,7 @@ from urllib.parse import urlparse
 import json
 import re
 
-from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, send_from_directory
 from config import Config
 from models import db, Product, Tag, PriceHistory, Purchase, Settings, Currency, product_tags
 
@@ -22,9 +22,9 @@ from models import db, Product, Tag, PriceHistory, Purchase, Settings, Currency,
 def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
-    # Allow large form posts (base64 pasted images in edit forms can get chunky).
-    app.config["MAX_CONTENT_LENGTH"] = 64 * 1024 * 1024  # 64 MB total body
-    app.config["MAX_FORM_MEMORY_SIZE"] = 64 * 1024 * 1024  # urlencoded form fields
+    # Allow large form posts (pasted images still arrive as base64 in form POSTs).
+    app.config["MAX_CONTENT_LENGTH"] = 32 * 1024 * 1024  # 32 MB total body
+    app.config["MAX_FORM_MEMORY_SIZE"] = 32 * 1024 * 1024  # urlencoded form fields
     app.config["MAX_FORM_PARTS"] = 2000
     db.init_app(app)
 
@@ -33,11 +33,32 @@ def create_app():
         _run_lightweight_migrations()
         Settings.get()  # ensure singleton exists
 
+    # ── Image storage setup ──────────────────────────────────────────────────
+    from image_store import ensure_image_dir
+    ensure_image_dir(app)
+
+    @app.route("/images/<path:filename>")
+    def serve_image(filename):
+        import os
+        return send_from_directory(
+            os.path.join(app.instance_path, "images"), filename
+        )
+
+    @app.context_processor
+    def inject_image_src():
+        def image_src(value):
+            if not value:
+                return ""
+            if value.startswith(("http://", "https://", "data:")):
+                return value
+            return url_for("serve_image", filename=value)
+        return dict(image_src=image_src)
+
     # ── Routes ────────────────────────────────────────────────────────────────
 
     @app.route("/")
     def index():
-        return render_template("home.html")
+        return redirect(url_for("shopping_list"))
 
     # ── Shopping List ─────────────────────────────────────────────────────────
 
@@ -249,6 +270,17 @@ def create_app():
         db.session.add(product)
         db.session.flush()
 
+        # Save images to disk
+        from image_store import save_images_for_product, save_image
+        product.images = save_images_for_product(images, product.id, app)
+        if image_url:
+            saved_main = save_image(image_url, product.id, 0, app)
+            product.image_url = saved_main or ""
+            if saved_main and saved_main not in product.images:
+                product.images.insert(0, saved_main)
+        else:
+            product.image_url = product.images[0] if product.images else ""
+
         # Record initial price history
         if price:
             ph = PriceHistory(product_id=product.id, price=price)
@@ -317,7 +349,10 @@ def create_app():
             try:
                 parsed_images = json.loads(images_raw)
                 if isinstance(parsed_images, list):
-                    product.images = parsed_images
+                    from image_store import save_new_images_for_product
+                    product.images = save_new_images_for_product(
+                        parsed_images, product.id, app
+                    )
             except (json.JSONDecodeError, TypeError):
                 pass
         if "image_url" in request.form:
@@ -431,6 +466,8 @@ def create_app():
     @app.route("/product/<int:product_id>/delete", methods=["POST"])
     def product_delete(product_id):
         product = Product.query.get_or_404(product_id)
+        from image_store import delete_product_images
+        delete_product_images(product.id, app)
         db.session.delete(product)
         db.session.commit()
         flash(f"Removed \"{product.name}\".", "success")
