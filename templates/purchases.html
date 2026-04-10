@@ -6,7 +6,6 @@
   <div class="page-header-top">
     <div class="page-title">Purchases</div>
     <div class="header-actions">
-      <a href="{{ url_for('add_purchase') }}" class="btn btn-primary btn-sm">&#xff0b; Add Purchase</a>
       <select onchange="updateFilters()" id="group-select" class="form-select" style="width:auto;min-height:32px;font-size:12px;padding:4px 28px 4px 10px;">
         <option value="tag" {{ 'selected' if group_by == 'tag' }}>Group by: Tag</option>
         <option value="month" {{ 'selected' if group_by == 'month' }}>Group by: Month</option>
