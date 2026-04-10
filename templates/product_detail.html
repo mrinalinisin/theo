@@ -9,9 +9,6 @@
       <div class="page-title">Product Detail</div>
     </div>
     <div class="header-actions">
-      <form method="POST" action="{{ url_for('product_rescrape', product_id=product.id) }}" style="display:inline;">
-        <button type="submit" class="btn btn-secondary btn-sm">&#x1f504; Re-scrape</button>
-      </form>
       {% if product.status == 'watching' %}
       <button class="btn btn-secondary btn-sm"
         onclick='openPurchaseModal("awaiting_delivery")'>
