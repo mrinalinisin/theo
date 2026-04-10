@@ -45,6 +45,9 @@ def create_app():
     def shopping_list():
         tag_filter = request.args.get("tag")
         search_q = (request.args.get("q") or "").strip()
+        status_filter = request.args.get("status", "watching")
+        if status_filter not in ("watching", "purchased", "all"):
+            status_filter = "watching"
 
         # Sort controls. Whitelist the inputs so we never interpolate raw
         # user strings into the ORDER BY — everything maps to a known column.
@@ -60,7 +63,9 @@ def create_app():
             order_key = "desc"
         sort_col = SORT_COLUMNS[sort_key]
 
-        query = Product.query.filter_by(status="watching")
+        query = Product.query
+        if status_filter != "all":
+            query = query.filter_by(status=status_filter)
         if tag_filter:
             query = query.filter(Product.tags.any(Tag.id == int(tag_filter)))
         if search_q:
@@ -124,6 +129,7 @@ def create_app():
             search_q=search_q,
             sort_key=sort_key,
             order_key=order_key,
+            status_filter=status_filter,
         )
 
     # ── Add Item ──────────────────────────────────────────────────────────────

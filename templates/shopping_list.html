@@ -7,6 +7,11 @@
   <form id="sortForm" method="GET" action="{{ url_for('shopping_list') }}" style="display:flex;flex-direction:column;gap:8px;padding:0 4px;">
     {% if active_tag %}<input type="hidden" name="tag" value="{{ active_tag }}">{% endif %}
     {% if search_q %}<input type="hidden" name="q" value="{{ search_q }}">{% endif %}
+    <select name="status" id="statusSelect" class="form-input" style="width:100%;padding:6px 8px;" title="Status filter">
+      <option value="watching" {% if status_filter == 'watching' %}selected{% endif %}>Watching</option>
+      <option value="purchased" {% if status_filter == 'purchased' %}selected{% endif %}>Purchased</option>
+      <option value="all" {% if status_filter == 'all' %}selected{% endif %}>All</option>
+    </select>
     <select name="sort" id="sortSelect" class="form-input" style="width:100%;padding:6px 8px;">
       <option value="created" {% if sort_key == 'created' %}selected{% endif %}>Created date</option>
       <option value="modified" {% if sort_key == 'modified' %}selected{% endif %}>Last modified</option>
@@ -92,6 +97,7 @@
 
   <form id="searchForm" class="floating-search" method="GET" action="{{ url_for('shopping_list') }}">
     {% if active_tag %}<input type="hidden" name="tag" value="{{ active_tag }}">{% endif %}
+    <input type="hidden" name="status" value="{{ status_filter }}">
     <input type="hidden" name="sort" value="{{ sort_key }}">
     <input type="hidden" name="order" value="{{ order_key }}">
     <input
