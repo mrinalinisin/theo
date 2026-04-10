@@ -371,20 +371,7 @@ document.getElementById('modal-purchase').addEventListener('click', e => {
     }
   });
 
-  let timer = null;
-  const initial = input.value;
-
-  input.addEventListener('input', () => {
-    clearTimeout(timer);
-    timer = setTimeout(() => {
-      if (input.value !== initial || input.value === '') {
-        form.submit();
-      }
-    }, 300);
-  });
-
-  // Allow Enter to submit immediately (default form behavior) —
-  // the form element itself handles that without extra code.
+  // Submit on Enter (default form behavior handles this).
 })();
 
 // ── Sort controls: submit on change ──
