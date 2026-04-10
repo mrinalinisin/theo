@@ -28,7 +28,12 @@
 <div class="page-header">
   <div class="page-header-top">
     <div class="page-header-inline" style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;width:100%;">
-      {% if not active_tag_obj %}
+      {% if active_tag_obj %}
+      <div class="page-title">
+        <span class="tag-dot" style="background:{{ active_tag_obj.colour }};display:inline-block;width:12px;height:12px;border-radius:50%;vertical-align:middle;margin-right:6px;"></span>
+        {{ active_tag_obj.name }}
+      </div>
+      {% else %}
       <div class="view-toggle" id="viewToggle" role="group" aria-label="Switch view">
         <button type="button" data-view="cards" aria-pressed="true" title="Default view">&#x25a6; Default view</button>
         <button type="button" data-view="grouped" aria-pressed="false" title="Grouped by tag">&#x1f5c2;&#xfe0f; Grouped</button>
@@ -146,6 +151,7 @@
   <div class="hero-card-groups" id="productCardsGrouped">
     {% for group in groups %}
     <section class="hero-card-group">
+      {% if not active_tag_obj %}
       <h2 class="hero-card-group-heading">
         {% if group.tag %}
           <span class="tag-dot" style="background: {{ group.tag.colour }};"></span>
@@ -156,6 +162,7 @@
         {% endif %}
         <span class="hero-card-group-count">{{ group.products|length }}</span>
       </h2>
+      {% endif %}
       <div class="hero-card-grid">
         {% for p in group.products %}
         <a href="{{ url_for('product_detail', product_id=p.id) }}" class="hero-card">
@@ -186,6 +193,7 @@
               {% endif %}
             </div>
           </div>
+          {% if not active_tag_obj %}
           <div class="hero-card-footer">
             <span class="hero-card-footer-icon">&#x1f3f7;&#xfe0f;</span>
             {% if p.tags %}
@@ -194,6 +202,7 @@
               No tags
             {% endif %}
           </div>
+          {% endif %}
         </a>
         {% endfor %}
       </div>

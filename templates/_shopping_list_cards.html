@@ -27,6 +27,7 @@
       {% endif %}
     </div>
   </div>
+  {% if not active_tag_obj %}
   <div class="hero-card-footer">
     <span class="hero-card-footer-icon">&#x1f3f7;&#xfe0f;</span>
     {% if p.tags %}
@@ -35,5 +36,6 @@
       No tags
     {% endif %}
   </div>
+  {% endif %}
 </a>
 {% endfor %}
