@@ -4,8 +4,13 @@
 {% block header_filters %}
 <div class="header-filters">
   <form id="sortForm" method="GET" action="{{ url_for('shopping_list') }}">
-    {% if active_tag %}<input type="hidden" name="tag" value="{{ active_tag }}">{% endif %}
     {% if search_q %}<input type="hidden" name="q" value="{{ search_q }}">{% endif %}
+    <select name="tag" id="tagSelect" class="form-input" title="Filter by tag">
+      <option value="">All Tags</option>
+      {% for tag in tags %}
+      <option value="{{ tag.id }}" {% if active_tag|string == tag.id|string %}selected{% endif %}>{{ tag.name }}</option>
+      {% endfor %}
+    </select>
     <select name="status" id="statusSelect" class="form-input" title="Status filter">
       <option value="watching" {% if status_filter == 'watching' %}selected{% endif %}>Watching</option>
       <option value="awaiting_delivery" {% if status_filter == 'awaiting_delivery' %}selected{% endif %}>Awaiting Delivery</option>
