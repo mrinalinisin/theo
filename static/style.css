@@ -808,16 +808,14 @@ textarea.form-input { resize: vertical; min-height: 80px; }
 .empty-desc { font-size: 13px; margin-top: 6px; max-width: 280px; }
 
 /* ── Tag card (tags page) ──────────────────────────────────────────────────── */
-.tag-card { padding: 14px; }
-.tag-card-top { display: flex; gap: 12px; align-items: flex-start; }
-.tag-colour {
-  width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0; margin-top: 2px;
+.tag-hero-link { text-decoration: none; color: inherit; }
+.tag-hero-count {
+  font-size: 32px; font-weight: 700; color: white;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
 }
-.tag-card-info { flex: 1; min-width: 0; }
-.tag-card-name { font-size: 15px; font-weight: 600; }
-.tag-card-meta { display: flex; gap: 8px; align-items: center; margin-top: 4px; flex-wrap: wrap; }
-.tag-card-desc { font-size: 13px; color: var(--text-muted); margin-top: 6px; }
-.tag-card-actions { display: flex; gap: 6px; flex-shrink: 0; }
+.tag-hero-footer {
+  justify-content: flex-end; gap: 6px;
+}
 
 /* ── Scrollbar ─────────────────────────────────────────────────────────────── */
 ::-webkit-scrollbar { width: 5px; height: 5px; }

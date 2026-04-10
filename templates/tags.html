@@ -9,40 +9,29 @@
   </div>
 </div>
 
-<div class="page-body" style="max-width: 720px;">
+<div class="page-body">
   {% if tags %}
-  <div class="flex-col gap-12">
+  <div class="hero-card-grid">
     {% for tag in tags %}
-    <div class="card">
-      <div class="card-body tag-card">
-        <div class="tag-card-top">
-          <div class="tag-colour" style="background: {{ tag.colour }};"></div>
-          <div class="tag-card-info">
-            <div class="tag-card-name">{{ tag.name }}</div>
-            <div class="tag-card-meta">
-              <span class="tag" style="color: {{ tag.colour }}; background: {{ tag.colour }}18;">
-                <span class="tag-dot" style="background: {{ tag.colour }};"></span>
-                {{ tag.products|length }} items
-              </span>
-            </div>
-            {% if tag.description %}
-            <div class="tag-card-desc">{{ tag.description }}</div>
-            {% else %}
-            <div class="tag-card-desc text-faint" style="font-style: italic;">
-              No description yet.
-              <a href="#" style="color:var(--accent);" onclick="openEditTag({{ tag.id }}, '{{ tag.name }}', '{{ tag.colour }}', '{{ tag.description|e }}'); return false;">Add one</a>
-            </div>
-            {% endif %}
-          </div>
-          <div class="tag-card-actions">
-            <button class="btn btn-ghost btn-sm"
-              onclick="openEditTag({{ tag.id }}, '{{ tag.name }}', '{{ tag.colour }}', `{{ tag.description|e }}`)">Edit</button>
-            <form method="POST" action="{{ url_for('tag_delete', tag_id=tag.id) }}"
-              onsubmit="return confirm('Delete tag &quot;{{ tag.name }}&quot;? Items won\'t be deleted.')">
-              <button type="submit" class="btn btn-danger btn-sm">Delete</button>
-            </form>
-          </div>
+    <div class="hero-card tag-hero-card">
+      <a href="{{ url_for('shopping_list', tag=tag.id) }}" class="tag-hero-link">
+        <div class="hero-card-image" style="background: {{ tag.colour }};">
+          <span class="tag-hero-count">{{ tag.products|length }}</span>
         </div>
+        <div class="hero-card-body">
+          <div class="hero-card-title">{{ tag.name }}</div>
+          {% if tag.description %}
+          <div class="hero-card-description">{{ tag.description }}</div>
+          {% endif %}
+        </div>
+      </a>
+      <div class="hero-card-footer tag-hero-footer">
+        <button class="btn btn-ghost btn-sm"
+          onclick="openEditTag({{ tag.id }}, '{{ tag.name }}', '{{ tag.colour }}', `{{ tag.description|e }}`)">Edit</button>
+        <form method="POST" action="{{ url_for('tag_delete', tag_id=tag.id) }}"
+          onsubmit="return confirm('Delete tag &quot;{{ tag.name }}&quot;? Items won\'t be deleted.')">
+          <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+        </form>
       </div>
     </div>
     {% endfor %}
