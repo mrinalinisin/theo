@@ -595,10 +595,10 @@ textarea.form-input { resize: vertical; min-height: 80px; }
   display: flex; align-items: center; justify-content: center;
 }
 .flash-icon svg { width: 28px; height: 28px; fill: #fff; }
-.flash-success { background: #4caf50; }
-.flash-error   { background: #e5383b; }
-.flash-warning { background: #f0a028; }
-.flash-info    { background: #4a9bd9; }
+.flash-success { background: rgba(76, 175, 80, 0.85); }
+.flash-error   { background: rgba(229, 56, 59, 0.85); }
+.flash-warning { background: rgba(240, 160, 40, 0.85); }
+.flash-info    { background: rgba(74, 155, 217, 0.85); }
 .flash-close {
   margin-left: auto; cursor: pointer; background: none; border: none;
   color: #fff; font-size: 20px; opacity: 0.8; line-height: 1;
