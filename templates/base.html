@@ -34,6 +34,22 @@
       <a href="{{ url_for('analytics') }}" class="{{ 'active' if request.endpoint == 'analytics' }}">
         <span class="icon">&#x1f4ca;</span> Analytics
       </a>
+      <a href="/stats" class="{{ 'active' if request.path == '/stats' }}">
+        <span class="icon">&#x1f4c8;</span> Stats
+      </a>
+      <div class="nav-dropdown">
+        <button class="nav-dropdown-toggle {{ 'active' if request.endpoint in ('tags', 'tag_create', 'tag_edit', 'settings', 'settings_save') }}">
+          <span class="icon">&#x2699;&#xfe0f;</span> Manage <span class="nav-dropdown-arrow">&#x25BE;</span>
+        </button>
+        <div class="nav-dropdown-menu">
+          <a href="{{ url_for('tags') }}" class="{{ 'active' if request.endpoint in ('tags', 'tag_create', 'tag_edit') }}">
+            <span class="icon">&#x1f3f7;&#xfe0f;</span> Tags
+          </a>
+          <a href="{{ url_for('settings') }}" class="{{ 'active' if request.endpoint in ('settings', 'settings_save') }}">
+            <span class="icon">&#x2699;&#xfe0f;</span> Settings
+          </a>
+        </div>
+      </div>
     </nav>
     <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Menu">&#x2630;</button>
   </header>
@@ -56,6 +72,15 @@
     <a href="{{ url_for('analytics') }}" class="{{ 'active' if request.endpoint == 'analytics' }}">
       <span class="icon">&#x1f4ca;</span> Analytics
     </a>
+    <a href="/stats" class="{{ 'active' if request.path == '/stats' }}">
+      <span class="icon">&#x1f4c8;</span> Stats
+    </a>
+    <a href="{{ url_for('tags') }}" class="{{ 'active' if request.endpoint in ('tags', 'tag_create', 'tag_edit') }}">
+      <span class="icon">&#x1f3f7;&#xfe0f;</span> Tags
+    </a>
+    <a href="{{ url_for('settings') }}" class="{{ 'active' if request.endpoint in ('settings', 'settings_save') }}">
+      <span class="icon">&#x2699;&#xfe0f;</span> Settings
+    </a>
   </div>
 
   <div class="app-body">
@@ -66,55 +91,17 @@
     {% if g_sidebar_tags %}
     <div class="sidebar-section">
       <div class="sidebar-section-label">Tags</div>
-      <a href="{{ url_for('shopping_list') }}"
-         class="nav-item {{ 'active' if request.endpoint == 'shopping_list' and not g_active_tag }}">
-        <span class="tag-dot" style="background: var(--text-faint);"></span>
-        All Items
-        {% if g_watching_count %}<span class="nav-badge">{{ g_watching_count }}</span>{% endif %}
-      </a>
       {% for t in g_sidebar_tags %}
       <a href="{{ url_for('shopping_list', tag=t.id) }}"
          class="nav-item {{ 'active' if g_active_tag and g_active_tag|int == t.id }}">
         <span class="tag-dot" style="background: {{ t.colour }};"></span>
         {{ t.name }}
-        {% if t.count %}<span class="nav-badge">{{ t.count }}</span>{% endif %}
+        <span class="nav-badge">{{ t.count }}</span>
       </a>
       {% endfor %}
     </div>
     {% endif %}
 
-    <div class="sidebar-section">
-      <div class="sidebar-section-label">Manage</div>
-      <a href="{{ url_for('tags') }}" class="nav-item {{ 'active' if request.endpoint in ('tags', 'tag_create', 'tag_edit') }}">
-        <span class="icon">&#x1f3f7;&#xfe0f;</span> Tags
-      </a>
-      <a href="{{ url_for('settings') }}" class="nav-item {{ 'active' if request.endpoint in ('settings', 'settings_save') }}">
-        <span class="icon">&#x2699;&#xfe0f;</span> Settings
-      </a>
-    </div>
-
-    <div class="sidebar-footer">
-      {% if g_settings.shopping_budget %}
-      <div class="budget-label">{{ g_month_name }}</div>
-      <div class="flex items-center gap-8" style="margin-top: 6px;">
-        <div class="progress-track" style="flex:1;">
-          <div class="progress-fill {{ 'danger' if g_budget_pct >= 90 else 'warning' if g_budget_pct >= 60 else '' }}"
-               style="width: {{ g_budget_pct }}%;"></div>
-        </div>
-        <div class="text-sm" style="font-weight:600;
-          color: {{ 'var(--danger)' if g_budget_pct >= 90 else 'var(--warning)' if g_budget_pct >= 60 else 'var(--accent)' }};">
-          {{ g_budget_pct|int }}%
-        </div>
-      </div>
-      <div class="text-xs text-faint" style="margin-top:3px;">
-        {{ g_month_spent|fmt_price }} of {{ g_settings.shopping_budget|fmt_price }} used
-      </div>
-      {% else %}
-      <div class="text-xs text-faint">
-        <a href="{{ url_for('settings') }}" style="color:var(--accent);">Set your budget &rarr;</a>
-      </div>
-      {% endif %}
-    </div>
   </aside>
 
   {% with messages = get_flashed_messages(with_categories=true) %}
@@ -166,6 +153,16 @@
     menuBtn.addEventListener('click', () => {
       mobileMenu.classList.toggle('open');
     });
+  }
+  // Manage dropdown toggle
+  const dropdownToggle = document.querySelector('.nav-dropdown-toggle');
+  const dropdown = document.querySelector('.nav-dropdown');
+  if (dropdownToggle && dropdown) {
+    dropdownToggle.addEventListener('click', (e) => {
+      e.stopPropagation();
+      dropdown.classList.toggle('open');
+    });
+    document.addEventListener('click', () => dropdown.classList.remove('open'));
   }
 </script>
 {% block scripts %}{% endblock %}

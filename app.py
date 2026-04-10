@@ -17,6 +17,7 @@ import re
 import time
 
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, send_from_directory
+from sqlalchemy import func
 from config import Config
 from models import db, Product, Tag, PriceHistory, Purchase, Settings, Currency, product_tags
 
@@ -122,6 +123,24 @@ def create_app():
         has_more = len(products_page) > PAGE_SIZE
         products_page = products_page[:PAGE_SIZE]
 
+        # Total value by currency (only when filtering by tag).
+        value_by_currency = []
+        if tag_filter:
+            val_query = db.session.query(
+                Currency.symbol, func.sum(Product.current_price * Product.quantity)
+            ).outerjoin(Currency, Product.currency_id == Currency.id)
+            if status_filter != "all":
+                val_query = val_query.filter(Product.status == status_filter)
+            val_query = val_query.filter(Product.tags.any(Tag.id == int(tag_filter)))
+            if search_q:
+                escaped = search_q.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+                val_query = val_query.filter(Product.name.ilike(f"%{escaped}%", escape="\\"))
+            value_by_currency = [
+                (symbol or "₹", total)
+                for symbol, total in val_query.group_by(Currency.symbol).all()
+                if total
+            ]
+
         return render_template(
             "shopping_list.html",
             products=products_page,
@@ -133,6 +152,7 @@ def create_app():
             sort_key=sort_key,
             order_key=order_key,
             status_filter=status_filter,
+            value_by_currency=value_by_currency,
         )
 
     @app.route("/api/shopping-list")

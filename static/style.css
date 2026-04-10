@@ -74,11 +74,8 @@ body {
   align-items: center;
   gap: 2px;
   margin-left: auto;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
+  overflow: visible;
 }
-.top-header-nav::-webkit-scrollbar { display: none; }
 .top-header-nav a {
   display: flex;
   align-items: center;
@@ -95,6 +92,59 @@ body {
 .top-header-nav a:hover { background: var(--bg); color: var(--text); }
 .top-header-nav a.active { background: var(--accent-light); color: var(--accent); }
 .top-header-nav a .icon { font-size: 14px; }
+
+/* ── Nav dropdown ─────────────────────────────────────────────────────────── */
+.nav-dropdown { position: relative; }
+.nav-dropdown-toggle {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-muted);
+  background: none;
+  border: none;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.12s;
+  font-family: inherit;
+}
+.nav-dropdown-toggle:hover { background: var(--bg); color: var(--text); }
+.nav-dropdown-toggle.active { background: var(--accent-light); color: var(--accent); }
+.nav-dropdown-toggle .icon { font-size: 14px; }
+.nav-dropdown-arrow { font-size: 11px; margin-left: 1px; }
+.nav-dropdown-menu {
+  display: none;
+  position: absolute;
+  right: 0;
+  top: 100%;
+  margin-top: 4px;
+  min-width: 140px;
+  background: white;
+  border-radius: var(--radius);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+  padding: 4px;
+  z-index: 200;
+}
+.nav-dropdown-menu a {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-muted);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.nav-dropdown-menu a:hover { background: var(--bg); color: var(--text); }
+.nav-dropdown-menu a.active { color: var(--accent); }
+.nav-dropdown:hover .nav-dropdown-menu,
+.nav-dropdown:focus-within .nav-dropdown-menu,
+.nav-dropdown.open .nav-dropdown-menu { display: block; }
 
 /* ── Mobile menu ──────────────────────────────────────────────────────────── */
 .mobile-menu-btn {

@@ -33,6 +33,13 @@
         <span class="tag-dot" style="background:{{ active_tag_obj.colour }};display:inline-block;width:12px;height:12px;border-radius:50%;vertical-align:middle;margin-right:6px;"></span>
         {{ active_tag_obj.name }}
       </div>
+      {% if value_by_currency %}
+      <div class="page-value" style="margin-left:auto;font-size:0.95rem;color:#666;">
+        {% for symbol, total in value_by_currency %}
+        <span style="{% if not loop.first %}margin-left:12px;{% endif %}">{{ symbol }}{{ "{:,.0f}".format(total) }}</span>
+        {% endfor %}
+      </div>
+      {% endif %}
     </div>
   </div>
 </div>
