@@ -37,7 +37,7 @@ def create_app():
 
     @app.route("/")
     def index():
-        return redirect(url_for("shopping_list"))
+        return render_template("home.html")
 
     # ── Shopping List ─────────────────────────────────────────────────────────
 

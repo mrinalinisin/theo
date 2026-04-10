@@ -35,6 +35,9 @@
       <a href="{{ url_for('analytics') }}" class="nav-item {{ 'active' if request.endpoint == 'analytics' }}">
         <span class="icon">&#x1f4ca;</span> Analytics
       </a>
+      <a href="{{ url_for('shopping_list') }}" class="nav-item {{ 'active' if request.endpoint == 'shopping_list' }}">
+        <span class="icon">🛒</span> Browse
+      </a>
     </div>
 
     {% block sidebar_filters %}{% endblock %}

@@ -207,6 +207,39 @@ textarea.form-input { resize: vertical; min-height: 80px; }
 .table-desktop { display: none; }
 .card-list-mobile { display: block; }
 
+/* ── Home page grid ────────────────────────────────────────────────────────── */
+.home-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 16px;
+}
+.home-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 32px 16px;
+  background: var(--surface);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius);
+  text-decoration: none;
+  color: var(--text);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.home-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+}
+.home-card-icon {
+  font-size: 36px;
+}
+.home-card-label {
+  font-size: 15px;
+  font-weight: 600;
+  text-align: center;
+}
+
 /* ── Shopping list view switching (Cards ⇄ Grouped) ────────────────────────
    The flat "cards" view is the default. The "grouped" view is shown when
    the body has data-view="grouped". Both are always rendered server-side
