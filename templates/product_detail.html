@@ -46,7 +46,7 @@
           {% if product.images %}
           <div class="photo-strip" id="productPhotoStrip">
             {% for img in product.images %}
-            <div class="photo-thumb {{ 'active' if img == product.image_url or (loop.first and not product.image_url) }}" data-src="{{ image_src(img) }}">
+            <div class="photo-thumb {{ 'active' if img == product.image_url or (loop.first and not product.image_url) }}" data-src="{{ img }}">
               <img src="{{ image_src(img) }}" alt="Photo {{ loop.index }}">
             </div>
             {% endfor %}
@@ -240,7 +240,7 @@
           <label class="form-label">Photos <span class="text-xs text-faint">(click to set main &middot; &times; to remove)</span></label>
           <div class="photo-strip" id="editPhotoStrip">
             {% for img in product.images or [] %}
-            <div class="photo-thumb {{ 'active' if img == product.image_url or (loop.first and not product.image_url) }}" data-src="{{ image_src(img) }}">
+            <div class="photo-thumb {{ 'active' if img == product.image_url or (loop.first and not product.image_url) }}" data-src="{{ img }}">
               <img src="{{ image_src(img) }}" alt="Photo {{ loop.index }}">
               <span class="remove-btn" title="Remove">&times;</span>
             </div>
@@ -437,11 +437,17 @@
     });
   }
 
+  function resolveImageSrc(value) {
+    if (!value) return '';
+    if (value.startsWith('http://') || value.startsWith('https://') || value.startsWith('data:')) return value;
+    return '/images/' + value;
+  }
+
   function setMain(src) {
     highlightMain(src);
     if (imageUrlField) imageUrlField.value = src;
     if (mainPhoto) {
-      mainPhoto.innerHTML = '<img src="' + src + '" alt="Product">';
+      mainPhoto.innerHTML = '<img src="' + resolveImageSrc(src) + '" alt="Product">';
     }
   }
 

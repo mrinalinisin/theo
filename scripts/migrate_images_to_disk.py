@@ -72,11 +72,10 @@ def migrate():
         else:
             new_main = new_images[0] if new_images else ""
 
-        # Apply changes
-        if new_images != old_images:
-            product.images = new_images
-        if new_main != old_main:
-            product.image_url = new_main
+        # Always apply — avoids partial-run issues where files were saved
+        # but the DB update was skipped due to stale comparisons.
+        product.images = new_images
+        product.image_url = new_main
         db.session.commit()
 
         if idx % 10 == 0 or idx == total_products:
