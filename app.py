@@ -832,16 +832,6 @@ def create_app():
             Product.status.in_(active_statuses)
         ).count()
 
-        # Sidebar tag list with per-tag active counts
-        sidebar_tags = []
-        for tag in Tag.query.order_by(Tag.name).all():
-            count = (
-                Product.query.filter(Product.status.in_(active_statuses))
-                .filter(Product.tags.any(Tag.id == tag.id))
-                .count()
-            )
-            sidebar_tags.append({"id": tag.id, "name": tag.name, "colour": tag.colour, "count": count})
-
         return {
             "g_settings": settings,
             "g_month_spent": month_spent,
@@ -849,8 +839,6 @@ def create_app():
             "g_budget_remaining": budget_remaining,
             "g_month_name": now.strftime("%B %Y"),
             "g_watching_count": watching_count,
-            "g_sidebar_tags": sidebar_tags,
-            "g_active_tag": request.args.get("tag") if request.endpoint == "shopping_list" else None,
         }
 
     # ── Stats ────────────────────────────────────────────────────────────────

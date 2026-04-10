@@ -65,25 +65,6 @@
   </div>
 
   <div class="app-body">
-  <!-- ═══ Desktop Sidebar ═══ -->
-  <aside class="sidebar">
-    {% block sidebar_filters %}{% endblock %}
-
-    {% if g_sidebar_tags %}
-    <div class="sidebar-section">
-      <div class="sidebar-section-label">Tags</div>
-      {% for t in g_sidebar_tags %}
-      <a href="{{ url_for('shopping_list', tag=t.id) }}"
-         class="nav-item {{ 'active' if g_active_tag and g_active_tag|int == t.id }}">
-        <span class="tag-dot" style="background: {{ t.colour }};"></span>
-        {{ t.name }}
-        <span class="nav-badge">{{ t.count }}</span>
-      </a>
-      {% endfor %}
-    </div>
-    {% endif %}
-
-  </aside>
 
   {% with messages = get_flashed_messages(with_categories=true) %}
   {% if messages %}
