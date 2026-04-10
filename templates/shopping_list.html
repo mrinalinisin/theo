@@ -210,10 +210,12 @@
     {% endfor %}
   </div>
 
+  {% if products|selectattr('track_price')|list %}
   <div class="text-xs text-faint mt-12 text-right">
     Prices auto-refresh every <strong>{{ g_settings.default_check_interval // 60 }}h</strong> &middot;
     <a href="{{ url_for('settings') }}" style="color:var(--accent);">Change in Settings</a>
   </div>
+  {% endif %}
 
   {% else %}
   {% if search_q %}
