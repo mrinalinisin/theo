@@ -521,72 +521,6 @@ def create_app():
 
         return redirect(url_for("product_detail", product_id=product_id))
 
-    # ── Analytics ─────────────────────────────────────────────────────────────
-
-    @app.route("/analytics")
-    def analytics():
-        settings = Settings.get()
-        now = datetime.utcnow()
-        current_month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-
-        # This month's purchases
-        month_purchases = (
-            Purchase.query.filter(Purchase.purchased_at >= current_month_start).all()
-        )
-        month_spent = sum(p.paid_amount for p in month_purchases)
-
-        # Spending by tag for current month
-        tag_spending = {}
-        tag_item_count = {}
-        for purchase in month_purchases:
-            product = purchase.product
-            if product and product.tags:
-                for tag in product.tags:
-                    tag_spending[tag.name] = tag_spending.get(tag.name, 0) + purchase.paid_amount
-                    tag_item_count[tag.name] = tag_item_count.get(tag.name, 0) + 1
-            else:
-                tag_spending["Uncategorised"] = tag_spending.get("Uncategorised", 0) + purchase.paid_amount
-                tag_item_count["Uncategorised"] = tag_item_count.get("Uncategorised", 0) + 1
-
-        # Get tag colours
-        tags = Tag.query.all()
-        tag_colours = {t.name: t.colour for t in tags}
-        tag_colours["Uncategorised"] = "#a8a29e"
-
-        # Monthly trend (last 6 months)
-        monthly_trend = []
-        for i in range(5, -1, -1):
-            month_date = now - timedelta(days=30 * i)
-            m_start = month_date.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-            if m_start.month == 12:
-                m_end = m_start.replace(year=m_start.year + 1, month=1)
-            else:
-                m_end = m_start.replace(month=m_start.month + 1)
-            m_purchases = Purchase.query.filter(
-                Purchase.purchased_at >= m_start, Purchase.purchased_at < m_end
-            ).all()
-            m_total = sum(p.paid_amount for p in m_purchases)
-            monthly_trend.append({
-                "month": m_start.strftime("%b"),
-                "year": m_start.year,
-                "total": m_total,
-                "is_current": i == 0,
-            })
-
-        max_trend = max((m["total"] for m in monthly_trend), default=1) or 1
-
-        return render_template(
-            "analytics.html",
-            settings=settings,
-            month_spent=month_spent,
-            month_name=now.strftime("%B %Y"),
-            tag_spending=tag_spending,
-            tag_item_count=tag_item_count,
-            tag_colours=tag_colours,
-            monthly_trend=monthly_trend,
-            max_trend=max_trend,
-        )
-
     # ── Purchases ─────────────────────────────────────────────────────────────
 
     @app.route("/purchases")
@@ -941,7 +875,6 @@ def create_app():
             "/shopping-list": _measure("/shopping-list", shopping_list),
             "/api/shopping-list": _measure("/api/shopping-list", shopping_list_api),
             "/add-item": _measure("/add-item", add_item),
-            "/analytics": _measure("/analytics", analytics),
             "/purchases": _measure("/purchases", purchases),
             "/purchases/add-purchase": _measure("/purchases/add-purchase", add_purchase),
             "/tags": _measure("/tags", tags),
