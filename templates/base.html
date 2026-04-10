@@ -17,7 +17,7 @@
 
   <!-- ═══ Top Header Nav ═══ -->
   <header class="top-header">
-    <a href="{{ url_for('shopping_list') }}" class="top-header-logo">Gummi</a>
+    <a href="{{ url_for('shopping_list') }}" class="top-header-logo">Gummi<span class="top-header-tagline">Inventory for life</span></a>
     <nav class="top-header-nav">
       <a href="{{ url_for('shopping_list') }}" class="{{ 'active' if request.endpoint == 'shopping_list' }}">
         <span class="icon">🛒</span> Browse
@@ -35,9 +35,28 @@
         <span class="icon">&#x1f4ca;</span> Analytics
       </a>
     </nav>
+    <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Menu">&#x2630;</button>
   </header>
 
   {% block header_filters %}{% endblock %}
+
+  <div class="mobile-menu" id="mobileMenu">
+    <a href="{{ url_for('shopping_list') }}" class="{{ 'active' if request.endpoint == 'shopping_list' }}">
+      <span class="icon">🛒</span> Browse
+    </a>
+    <a href="{{ url_for('add_item') }}" class="{{ 'active' if request.endpoint in ('add_item', 'add_item_scrape') }}">
+      <span class="icon">😍</span> Add Product
+    </a>
+    <a href="{{ url_for('add_purchase') }}" class="{{ 'active' if request.endpoint in ('add_purchase', 'add_purchase_save') }}">
+      <span class="icon">💸</span> Add Purchase
+    </a>
+    <a href="{{ url_for('purchases') }}" class="{{ 'active' if request.endpoint == 'purchases' }}">
+      <span class="icon">🛍️</span> Purchases
+    </a>
+    <a href="{{ url_for('analytics') }}" class="{{ 'active' if request.endpoint == 'analytics' }}">
+      <span class="icon">&#x1f4ca;</span> Analytics
+    </a>
+  </div>
 
   <div class="app-body">
   <!-- ═══ Desktop Sidebar ═══ -->
@@ -140,6 +159,14 @@
   document.querySelectorAll('.flash').forEach(el => {
     setTimeout(() => el.remove(), 5000);
   });
+  // Mobile menu toggle
+  const menuBtn = document.getElementById('mobileMenuBtn');
+  const mobileMenu = document.getElementById('mobileMenu');
+  if (menuBtn && mobileMenu) {
+    menuBtn.addEventListener('click', () => {
+      mobileMenu.classList.toggle('open');
+    });
+  }
 </script>
 {% block scripts %}{% endblock %}
 </body>
