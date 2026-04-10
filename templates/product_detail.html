@@ -13,8 +13,17 @@
         <button type="submit" class="btn btn-secondary btn-sm">&#x1f504; Re-scrape</button>
       </form>
       {% if product.status == 'watching' %}
+      <button class="btn btn-secondary btn-sm"
+        onclick='openPurchaseModal("awaiting_delivery")'>
+        Mark as Awaiting Delivery
+      </button>
       <button class="btn btn-primary btn-sm"
-        onclick='openPurchaseModal({{ product.id }}, {{ product.name|tojson }}, {{ product.current_price or 0 }})'>
+        onclick='openPurchaseModal("purchased")'>
+        Mark as Purchased
+      </button>
+      {% elif product.status == 'awaiting_delivery' %}
+      <button class="btn btn-primary btn-sm"
+        onclick='openPurchaseModal("purchased")'>
         Mark as Purchased
       </button>
       {% endif %}
@@ -88,11 +97,31 @@
             {% endif %}
           </div>
 
-          {% if not product.track_price and product.status == 'watching' %}
+          {% if not product.track_price and product.status in ('watching', 'awaiting_delivery') %}
           <div class="text-xs text-faint" style="margin-top:6px;">&#128274; Price tracking off &mdash; enable in Edit to record new prices automatically.</div>
           {% endif %}
 
-          {% if product.status == 'purchased' and product.purchase %}
+          {% if product.status == 'awaiting_delivery' and product.purchase %}
+          <div class="callout callout-warning mb-16">
+            &#x1f4e6; Awaiting delivery &mdash; ordered on {{ product.purchase.purchased_at|fmt_date }}
+            for {{ product.fmt_price(product.purchase.paid_amount) }}
+            {% if product.purchase.notes %} &mdash; {{ product.purchase.notes }}{% endif %}
+            {% if product.purchase.order_details_url or product.purchase.tracking_url %}
+            <div style="margin-top:6px;display:flex;gap:12px;flex-wrap:wrap;">
+              {% if product.purchase.order_details_url %}
+              <a href="{{ product.purchase.order_details_url }}" target="_blank" rel="noopener" class="text-sm">
+                &#128196; Order details
+              </a>
+              {% endif %}
+              {% if product.purchase.tracking_url %}
+              <a href="{{ product.purchase.tracking_url }}" target="_blank" rel="noopener" class="text-sm">
+                &#128230; Track shipment
+              </a>
+              {% endif %}
+            </div>
+            {% endif %}
+          </div>
+          {% elif product.status == 'purchased' and product.purchase %}
           <div class="callout callout-success mb-16">
             &#x2705; Purchased on {{ product.purchase.purchased_at|fmt_date }}
             for {{ product.fmt_price(product.purchase.paid_amount) }}
@@ -267,7 +296,7 @@
           <label class="form-label">Notes</label>
           <textarea name="notes" class="form-input">{{ product.notes }}</textarea>
         </div>
-        {% if product.status == 'purchased' and product.purchase %}
+        {% if product.status in ('purchased', 'awaiting_delivery') and product.purchase %}
         <div class="form-group">
           <label class="form-label">Order details URL <span class="text-xs text-faint">(order confirmation / receipt page)</span></label>
           <input type="url" name="order_details_url" class="form-input"
@@ -279,7 +308,7 @@
             value="{{ product.purchase.tracking_url or '' }}" placeholder="https://...">
         </div>
         <div class="text-xs text-faint" style="margin:-8px 0 12px;">
-          At least one of the two links above is required for purchased items.
+          At least one of the two links above is required.
         </div>
         {% endif %}
         <div class="form-group">
@@ -315,8 +344,9 @@
 <div class="modal-overlay" id="modal-purchase">
   <div class="modal">
     <form method="POST" action="{{ url_for('product_purchase', product_id=product.id) }}" onsubmit="return validatePurchaseLinks(this)">
+      <input type="hidden" name="target_status" id="purchaseTargetStatus" value="purchased">
       <div class="modal-header">
-        <div class="modal-title">Mark as Purchased</div>
+        <div class="modal-title" id="purchaseModalTitle">Mark as Purchased</div>
         <button type="button" class="btn btn-ghost btn-sm" onclick="document.getElementById('modal-purchase').classList.remove('open')">&#x2715;</button>
       </div>
       <div class="modal-body">
@@ -611,9 +641,12 @@
   }
 })();
 
-function openPurchaseModal() {
+function openPurchaseModal(targetStatus) {
   const today = new Date().toISOString().split('T')[0];
   document.querySelector('#modal-purchase input[name="purchased_at"]').value = today;
+  document.getElementById('purchaseTargetStatus').value = targetStatus || 'purchased';
+  const title = targetStatus === 'awaiting_delivery' ? 'Mark as Awaiting Delivery' : 'Mark as Purchased';
+  document.getElementById('purchaseModalTitle').textContent = title;
   document.getElementById('modal-purchase').classList.add('open');
 }
 
@@ -637,7 +670,7 @@ function validateEditLinks(form) {
   const order = (orderField.value || '').trim();
   const tracking = (trackingField.value || '').trim();
   if (!order && !tracking) {
-    alert('Purchased items require at least an Order details URL or a Tracking link.');
+    alert('An Order details URL or a Tracking link is required.');
     return false;
   }
   return true;

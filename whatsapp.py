@@ -150,11 +150,13 @@ def _handle_list():
     try:
         from models import Product
 
-        products = Product.query.filter_by(status="watching").order_by(Product.name).all()
+        products = Product.query.filter(
+            Product.status.in_(("watching", "awaiting_delivery"))
+        ).order_by(Product.name).all()
         if not products:
             return "\U0001f6cd\ufe0f No items in your shopping list."
 
-        lines = [f"\U0001f6cd\ufe0f {len(products)} items watching:\n"]
+        lines = [f"\U0001f6cd\ufe0f {len(products)} items:\n"]
         for i, p in enumerate(products[:15], 1):
             price = f"\u20b9{p.current_price:,.0f}" if p.current_price else "?"
             change = ""
@@ -180,7 +182,9 @@ def _handle_drops():
         from models import Product, PriceHistory
 
         week_ago = datetime.utcnow() - timedelta(days=7)
-        products = Product.query.filter_by(status="watching").all()
+        products = Product.query.filter(
+            Product.status.in_(("watching", "awaiting_delivery"))
+        ).all()
 
         drops = []
         for p in products:

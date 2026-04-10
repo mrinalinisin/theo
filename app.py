@@ -46,7 +46,7 @@ def create_app():
         tag_filter = request.args.get("tag")
         search_q = (request.args.get("q") or "").strip()
         status_filter = request.args.get("status", "watching")
-        if status_filter not in ("watching", "purchased", "all"):
+        if status_filter not in ("watching", "awaiting_delivery", "purchased", "all"):
             status_filter = "watching"
 
         # Sort controls. Whitelist the inputs so we never interpolate raw
@@ -331,17 +331,17 @@ def create_app():
                 product.tags.append(tag)
 
         # Order details / tracking link edits — only meaningful for purchased
-        # products (the edit modal only renders those inputs when a Purchase
-        # row exists). We re-enforce the "at least one link" invariant so a
-        # user can't blank both fields on an already-purchased item.
-        if product.status == "purchased" and product.purchase and (
+        # or awaiting_delivery products (the edit modal only renders those
+        # inputs when a Purchase row exists). We re-enforce the "at least one
+        # link" invariant so a user can't blank both fields.
+        if product.status in ("purchased", "awaiting_delivery") and product.purchase and (
             "order_details_url" in request.form or "tracking_url" in request.form
         ):
             order_details_url = (request.form.get("order_details_url") or "").strip()
             tracking_url = (request.form.get("tracking_url") or "").strip()
             if not order_details_url and not tracking_url:
                 flash(
-                    "Purchased items require an Order details URL or a Tracking link.",
+                    "Items require an Order details URL or a Tracking link.",
                     "error",
                 )
                 return redirect(url_for("product_detail", product_id=product_id))
@@ -403,12 +403,18 @@ def create_app():
                 tracking_url=tracking_url,
             )
             db.session.add(purchase)
-        product.status = "purchased"
+        target_status = request.form.get("target_status", "purchased")
+        if target_status not in ("purchased", "awaiting_delivery"):
+            target_status = "purchased"
+        product.status = target_status
         db.session.commit()
 
         # Check budget warning
         _check_budget_warning()
 
+        if target_status == "awaiting_delivery":
+            flash(f"Marked \"{product.name}\" as awaiting delivery for {_fmt_price(paid)}!", "success")
+            return redirect(url_for("product_detail", product_id=product.id))
         flash(f"Marked \"{product.name}\" as purchased for {_fmt_price(paid)}!", "success")
         return redirect(url_for("purchases"))
 
@@ -820,13 +826,16 @@ def create_app():
         budget_pct = (month_spent / budget * 100) if budget > 0 else 0
         budget_remaining = budget - month_spent
 
-        watching_count = Product.query.filter_by(status="watching").count()
+        active_statuses = ("watching", "awaiting_delivery")
+        watching_count = Product.query.filter(
+            Product.status.in_(active_statuses)
+        ).count()
 
-        # Sidebar tag list with per-tag watching counts
+        # Sidebar tag list with per-tag active counts
         sidebar_tags = []
         for tag in Tag.query.order_by(Tag.name).all():
             count = (
-                Product.query.filter_by(status="watching")
+                Product.query.filter(Product.status.in_(active_statuses))
                 .filter(Product.tags.any(Tag.id == tag.id))
                 .count()
             )
