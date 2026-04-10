@@ -112,21 +112,7 @@
       autocomplete="off">
     <button type="button" class="floating-search-toggle" id="searchToggle" aria-label="Search" title="Search">&#x1f50d;</button>
   </form>
-  {% if currency_totals %}
-  <div class="flex gap-12 flex-wrap" style="margin-top:10px;align-items:baseline;">
-    <span class="text-xs text-faint" style="text-transform:uppercase;letter-spacing:0.05em;">Total value</span>
-    {% for bucket in currency_totals %}
-    <span class="text-sm" style="font-weight:600;">
-      {{ bucket.symbol }}{{ "{:,.0f}".format(bucket.total) }}
-      {% if currency_totals|length > 1 %}
-      <span class="text-xs text-faint" style="font-weight:400;">&nbsp;{{ bucket.code }}</span>
-      {% endif %}
-    </span>
-    {% if not loop.last %}<span class="text-faint">&middot;</span>{% endif %}
-    {% endfor %}
-    <span class="text-xs text-faint">&middot; {{ total_count }} item{{ 's' if total_count != 1 }}</span>
-  </div>
-  {% endif %}
+
 </div>
 
 <div class="page-body" id="shoppingListBody">
@@ -144,71 +130,33 @@
   {% if products %}
 
   <!-- ═══ Cards view (flat responsive grid of hero cards) ═══ -->
-  <div class="hero-card-grid" id="productCardsFlat">
+  <div class="hero-card-grid" id="productCardsFlat"
+       data-offset="{{ products|length }}"
+       data-has-more="{{ has_more|default(false)|tojson }}"
+       data-tag="{{ active_tag or '' }}"
+       data-status="{{ status_filter }}"
+       data-sort="{{ sort_key }}"
+       data-order="{{ order_key }}"
+       data-q="{{ search_q or '' }}">
     {% include '_shopping_list_cards.html' %}
   </div>
+  {% if has_more %}
+  <div id="scroll-sentinel" class="scroll-sentinel">
+    <span class="scroll-sentinel-spinner"></span> Loading more&hellip;
+  </div>
+  {% endif %}
 
-  <!-- ═══ Grouped view (hero cards grouped by tag) ═══ -->
-  <div class="hero-card-groups" id="productCardsGrouped">
-    {% for group in groups %}
-    <section class="hero-card-group">
-      {% if not active_tag_obj %}
-      <h2 class="hero-card-group-heading">
-        {% if group.tag %}
-          <span class="tag-dot" style="background: {{ group.tag.colour }};"></span>
-          {{ group.tag.name }}
-        {% else %}
-          <span class="tag-dot" style="background: var(--text-faint);"></span>
-          Untagged
-        {% endif %}
-        <span class="hero-card-group-count">{{ group.products|length }}</span>
-      </h2>
-      {% endif %}
-      <div class="hero-card-grid">
-        {% for p in group.products %}
-        <a href="{{ url_for('product_detail', product_id=p.id) }}" class="hero-card">
-          <div class="hero-card-image">
-            {% if p.image_url %}
-            <img src="{{ p.image_url }}" alt="{{ p.name }}">
-            {% else %}
-            <span class="hero-card-image-placeholder">&#x1f6cd;&#xfe0f;</span>
-            {% endif %}
-          </div>
-          <div class="hero-card-body">
-            <div class="hero-card-title">{{ p.name }}</div>
-            <div class="hero-card-subtitle">
-              Added in {{ p.created_at.strftime('%Y') if p.created_at else '—' }}
-            </div>
-            <div class="hero-card-description">
-              {% if p.store %}
-                From <strong>{{ p.store }}</strong> &middot;
-              {% endif %}
-              {{ p.fmt_price(p.current_price) }}{% if p.quantity and p.quantity > 1 %} &times; {{ p.quantity }}{% endif %}
-              {% set change = p.price_change_pct %}
-              {% if change %}
-                {% if change < 0 %}
-                  <span class="price-drop">({{ "%.0f"|format(change) }}%)</span>
-                {% elif change > 0 %}
-                  <span class="price-up">(+{{ "%.0f"|format(change) }}%)</span>
-                {% endif %}
-              {% endif %}
-            </div>
-          </div>
-          {% if not active_tag_obj %}
-          <div class="hero-card-footer">
-            <span class="hero-card-footer-icon">&#x1f3f7;&#xfe0f;</span>
-            {% if p.tags %}
-              {{ p.tags|map(attribute='name')|join(', ') }}
-            {% else %}
-              No tags
-            {% endif %}
-          </div>
-          {% endif %}
-        </a>
-        {% endfor %}
-      </div>
-    </section>
-    {% endfor %}
+  <!-- ═══ Grouped view (lazy-loaded on demand) ═══ -->
+  <div class="hero-card-groups" id="productCardsGrouped"
+       data-loaded="false"
+       data-tag="{{ active_tag or '' }}"
+       data-status="{{ status_filter }}"
+       data-sort="{{ sort_key }}"
+       data-order="{{ order_key }}"
+       data-q="{{ search_q or '' }}">
+    <div class="scroll-sentinel" id="grouped-loading">
+      <span class="scroll-sentinel-spinner"></span> Loading grouped view&hellip;
+    </div>
   </div>
 
   {% if products|selectattr('track_price')|list %}
@@ -383,10 +331,11 @@ document.getElementById('modal-purchase').addEventListener('click', e => {
   });
 })();
 
-// ── View toggle (Cards ⇄ Grouped) ──
+// ── View toggle (Cards ⇄ Grouped) with lazy loading ──
 (function() {
   const toggle = document.getElementById('viewToggle');
   const body = document.getElementById('shoppingListBody');
+  const grouped = document.getElementById('productCardsGrouped');
   if (!toggle || !body) return;
 
   const KEY = 'shoppingListView';
@@ -394,9 +343,30 @@ document.getElementById('modal-purchase').addEventListener('click', e => {
     try { return localStorage.getItem(KEY); } catch (e) { return null; }
   })() || 'cards';
 
+  function loadGroupedView() {
+    if (!grouped || grouped.dataset.loaded === 'true') return;
+    grouped.dataset.loaded = 'true';
+    const params = new URLSearchParams();
+    if (grouped.dataset.tag) params.set('tag', grouped.dataset.tag);
+    if (grouped.dataset.q) params.set('q', grouped.dataset.q);
+    params.set('status', grouped.dataset.status);
+    params.set('sort', grouped.dataset.sort);
+    params.set('order', grouped.dataset.order);
+    fetch('/api/shopping-list/grouped?' + params.toString())
+      .then(r => r.json())
+      .then(data => {
+        grouped.innerHTML = data.html;
+      })
+      .catch(e => {
+        console.error('Failed to load grouped view:', e);
+        grouped.innerHTML = '<p class="text-faint" style="text-align:center;padding:24px;">Failed to load grouped view.</p>';
+      });
+  }
+
   function apply(view) {
     if (view === 'grouped') {
       body.setAttribute('data-view', 'grouped');
+      loadGroupedView();
     } else {
       body.removeAttribute('data-view');
     }
@@ -416,6 +386,54 @@ document.getElementById('modal-purchase').addEventListener('click', e => {
     try { localStorage.setItem(KEY, view); } catch (e) {}
     apply(view);
   });
+})();
+
+// ── Infinite scroll for flat cards view ──
+(function() {
+  const grid = document.getElementById('productCardsFlat');
+  const sentinel = document.getElementById('scroll-sentinel');
+  if (!grid || !sentinel) return;
+
+  let loading = false;
+  let offset = parseInt(grid.dataset.offset, 10);
+  let hasMore = grid.dataset.hasMore === 'true';
+
+  function buildUrl() {
+    const params = new URLSearchParams();
+    params.set('offset', offset);
+    if (grid.dataset.tag) params.set('tag', grid.dataset.tag);
+    if (grid.dataset.q) params.set('q', grid.dataset.q);
+    params.set('status', grid.dataset.status);
+    params.set('sort', grid.dataset.sort);
+    params.set('order', grid.dataset.order);
+    return '/api/shopping-list?' + params.toString();
+  }
+
+  async function loadMore() {
+    if (loading || !hasMore) return;
+    loading = true;
+    try {
+      const resp = await fetch(buildUrl());
+      const data = await resp.json();
+      grid.insertAdjacentHTML('beforeend', data.html);
+      offset = data.next_offset;
+      hasMore = data.has_more;
+      if (!hasMore) {
+        sentinel.remove();
+        observer.disconnect();
+      }
+    } catch (e) {
+      console.error('Infinite scroll fetch failed:', e);
+    } finally {
+      loading = false;
+    }
+  }
+
+  const observer = new IntersectionObserver((entries) => {
+    if (entries[0].isIntersecting) loadMore();
+  }, { rootMargin: '200px' });
+
+  observer.observe(sentinel);
 })();
 </script>
 {% endblock %}

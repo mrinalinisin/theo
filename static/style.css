@@ -246,7 +246,8 @@ textarea.form-input { resize: vertical; min-height: 80px; }
    so toggling is instant with no re-fetch. */
 #productCardsFlat { /* Flat cards view uses .hero-card-grid styling directly */ }
 .hero-card-groups { display: none; }
-.page-body[data-view="grouped"] #productCardsFlat { display: none; }
+.page-body[data-view="grouped"] #productCardsFlat,
+.page-body[data-view="grouped"] .scroll-sentinel { display: none; }
 .page-body[data-view="grouped"] .hero-card-groups { display: block; }
 
 /* ── View toggle (Cards ⇄ Grouped) ────────────────────────────────────────── */
@@ -837,4 +838,26 @@ textarea.form-input { resize: vertical; min-height: 80px; }
   text-align: center;
   cursor: pointer;
   border: 2px solid #fff;
+}
+
+/* ── Infinite scroll sentinel ── */
+.scroll-sentinel {
+  text-align: center;
+  padding: 24px 0;
+  color: var(--text-faint);
+  font-size: 13px;
+}
+.scroll-sentinel-spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--text-faint);
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: sentinel-spin 0.6s linear infinite;
+  vertical-align: middle;
+  margin-right: 6px;
+}
+@keyframes sentinel-spin {
+  to { transform: rotate(360deg); }
 }

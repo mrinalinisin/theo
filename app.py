@@ -41,16 +41,17 @@ def create_app():
 
     # ── Shopping List ─────────────────────────────────────────────────────────
 
-    @app.route("/shopping-list")
-    def shopping_list():
+    PAGE_SIZE = 10
+
+    def _build_product_query():
+        """Parse request args and return (ordered_query, sort_key, order_key,
+        status_filter, tag_filter, search_q)."""
         tag_filter = request.args.get("tag")
         search_q = (request.args.get("q") or "").strip()
         status_filter = request.args.get("status", "watching")
         if status_filter not in ("watching", "awaiting_delivery", "purchased", "all"):
             status_filter = "watching"
 
-        # Sort controls. Whitelist the inputs so we never interpolate raw
-        # user strings into the ORDER BY — everything maps to a known column.
         SORT_COLUMNS = {
             "created": Product.created_at,
             "modified": Product.updated_at,
@@ -69,47 +70,23 @@ def create_app():
         if tag_filter:
             query = query.filter(Product.tags.any(Tag.id == int(tag_filter)))
         if search_q:
-            # SQLite LIKE is case-insensitive for ASCII; ilike for portability.
-            # Escape LIKE wildcards so "50%" searches literally match "50%".
             escaped = search_q.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
             query = query.filter(Product.name.ilike(f"%{escaped}%", escape="\\"))
-        # Tie-breaker on id keeps ordering stable when timestamps collide
-        # (e.g. two items added in the same second by the seed scraper).
+
         primary = sort_col.asc() if order_key == "asc" else sort_col.desc()
         tiebreak = Product.id.asc() if order_key == "asc" else Product.id.desc()
-        products = query.order_by(primary, tiebreak).all()
-        total_count = len(products)
+        query = query.order_by(primary, tiebreak)
 
-        # Currency totals across the full (filtered) result set.
-        currency_totals = {}  # code -> {"symbol": str, "code": str, "name": str, "total": float}
-        for p in products:
-            if not p.current_price:
-                continue
-            c = p.currency
-            code = c.code if c else "INR"
-            symbol = c.symbol if c else "\u20b9"
-            name = c.name if c else "Indian Rupee"
-            bucket = currency_totals.setdefault(
-                code, {"symbol": symbol, "code": code, "name": name, "total": 0.0}
-            )
-            bucket["total"] += (p.current_price or 0) * (p.quantity or 1)
-        currency_totals_list = sorted(currency_totals.values(), key=lambda b: b["code"])
+        return query, sort_key, order_key, status_filter, tag_filter, search_q
+
+    @app.route("/shopping-list")
+    def shopping_list():
+        query, sort_key, order_key, status_filter, tag_filter, search_q = (
+            _build_product_query()
+        )
 
         tags = Tag.query.order_by(Tag.name).all()
 
-        # Group products by tag for the "grouped" view. A product with multiple
-        # tags appears under each of its tags; products with no tags fall into
-        # a trailing "Untagged" bucket so nothing is hidden.
-        groups = []
-        for t in tags:
-            tag_products = [p for p in products if t in p.tags]
-            if tag_products:
-                groups.append({"tag": t, "products": tag_products})
-        untagged = [p for p in products if not p.tags]
-        if untagged:
-            groups.append({"tag": None, "products": untagged})
-
-        # Active tag object (for header display)
         active_tag_obj = None
         if tag_filter:
             try:
@@ -117,20 +94,86 @@ def create_app():
             except (TypeError, ValueError):
                 active_tag_obj = None
 
+        # Fetch one extra row to detect more pages without a COUNT(*).
+        products_page = query.limit(PAGE_SIZE + 1).all()
+        has_more = len(products_page) > PAGE_SIZE
+        products_page = products_page[:PAGE_SIZE]
+
         return render_template(
             "shopping_list.html",
-            products=products,
-            groups=groups,
+            products=products_page,
+            groups=[],
             tags=tags,
             active_tag=tag_filter,
             active_tag_obj=active_tag_obj,
-            currency_totals=currency_totals_list,
-            total_count=total_count,
+            has_more=has_more,
             search_q=search_q,
             sort_key=sort_key,
             order_key=order_key,
             status_filter=status_filter,
         )
+
+    @app.route("/api/shopping-list")
+    def shopping_list_api():
+        """Return the next page of product cards as an HTML fragment."""
+        query, sort_key, order_key, status_filter, tag_filter, search_q = (
+            _build_product_query()
+        )
+        offset = request.args.get("offset", 0, type=int)
+        limit = request.args.get("limit", PAGE_SIZE, type=int)
+
+        # Fetch one extra row to detect whether more pages exist,
+        # avoiding an expensive COUNT(*) on the full filtered set.
+        products = query.offset(offset).limit(limit + 1).all()
+        has_more = len(products) > limit
+        products = products[:limit]
+        next_offset = offset + len(products)
+
+        active_tag_obj = None
+        if tag_filter:
+            try:
+                active_tag_obj = Tag.query.get(int(tag_filter))
+            except (TypeError, ValueError):
+                active_tag_obj = None
+
+        html = render_template(
+            "_shopping_list_cards.html",
+            products=products,
+            active_tag_obj=active_tag_obj,
+        )
+        return jsonify(html=html, has_more=has_more, next_offset=next_offset)
+
+    @app.route("/api/shopping-list/grouped")
+    def shopping_list_grouped_api():
+        """Return the grouped view HTML fragment (loaded on demand)."""
+        query, sort_key, order_key, status_filter, tag_filter, search_q = (
+            _build_product_query()
+        )
+        all_products = query.all()
+        tags = Tag.query.order_by(Tag.name).all()
+
+        groups = []
+        for t in tags:
+            tag_products = [p for p in all_products if t in p.tags]
+            if tag_products:
+                groups.append({"tag": t, "products": tag_products})
+        untagged = [p for p in all_products if not p.tags]
+        if untagged:
+            groups.append({"tag": None, "products": untagged})
+
+        active_tag_obj = None
+        if tag_filter:
+            try:
+                active_tag_obj = Tag.query.get(int(tag_filter))
+            except (TypeError, ValueError):
+                active_tag_obj = None
+
+        html = render_template(
+            "_shopping_list_grouped.html",
+            groups=groups,
+            active_tag_obj=active_tag_obj,
+        )
+        return jsonify(html=html)
 
     # ── Add Item ──────────────────────────────────────────────────────────────
 
