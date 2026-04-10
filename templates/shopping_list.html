@@ -58,8 +58,8 @@
       height: 52px;
       border-radius: 50%;
       border: none;
-      background: var(--accent, #2d5a27);
-      color: white;
+      background: rgba(255, 255, 255, 0.7);
+      color: #333;
       font-size: 22px;
       cursor: pointer;
       box-shadow: 0 6px 16px rgba(0,0,0,0.18);
@@ -73,7 +73,7 @@
     .floating-search-input {
       width: 0;
       padding: 0;
-      border: 1px solid var(--border, #e5e5e5);
+      border: none;
       opacity: 0;
       pointer-events: none;
       background: white;
@@ -90,7 +90,7 @@
       opacity: 1;
       pointer-events: auto;
     }
-    .floating-search-input:focus { border-color: var(--accent, #2d5a27); }
+    .floating-search-input:focus { border: none; }
     @media (max-width: 768px) {
       .floating-search { bottom: 84px; right: 16px; }
       .floating-search.open .floating-search-input { width: min(260px, calc(100vw - 100px)); }
