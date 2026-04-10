@@ -1,23 +1,22 @@
 {% extends "base.html" %}
 {% block title %}Shopping List — Gummi{% endblock %}
 
-{% block sidebar_filters %}
-<div class="sidebar-section">
-  <div class="sidebar-section-label">Filters</div>
-  <form id="sortForm" method="GET" action="{{ url_for('shopping_list') }}" style="display:flex;flex-direction:column;gap:8px;padding:0 4px;">
+{% block header_filters %}
+<div class="header-filters">
+  <form id="sortForm" method="GET" action="{{ url_for('shopping_list') }}">
     {% if active_tag %}<input type="hidden" name="tag" value="{{ active_tag }}">{% endif %}
     {% if search_q %}<input type="hidden" name="q" value="{{ search_q }}">{% endif %}
-    <select name="status" id="statusSelect" class="form-input" style="width:100%;padding:6px 8px;" title="Status filter">
+    <select name="status" id="statusSelect" class="form-input" title="Status filter">
       <option value="watching" {% if status_filter == 'watching' %}selected{% endif %}>Watching</option>
       <option value="awaiting_delivery" {% if status_filter == 'awaiting_delivery' %}selected{% endif %}>Awaiting Delivery</option>
       <option value="purchased" {% if status_filter == 'purchased' %}selected{% endif %}>Purchased</option>
       <option value="all" {% if status_filter == 'all' %}selected{% endif %}>All</option>
     </select>
-    <select name="sort" id="sortSelect" class="form-input" style="width:100%;padding:6px 8px;">
+    <select name="sort" id="sortSelect" class="form-input">
       <option value="created" {% if sort_key == 'created' %}selected{% endif %}>Created date</option>
       <option value="modified" {% if sort_key == 'modified' %}selected{% endif %}>Last modified</option>
     </select>
-    <select name="order" id="orderSelect" class="form-input" style="width:100%;padding:6px 8px;" title="Sort order">
+    <select name="order" id="orderSelect" class="form-input" title="Sort order">
       <option value="desc" {% if order_key == 'desc' %}selected{% endif %}>&darr; Desc</option>
       <option value="asc" {% if order_key == 'asc' %}selected{% endif %}>&uarr; Asc</option>
     </select>
@@ -26,89 +25,88 @@
 {% endblock %}
 
 {% block content %}
+{% if active_tag_obj %}
 <div class="page-header">
   <div class="page-header-top">
     <div class="page-header-inline" style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;width:100%;">
-      {% if active_tag_obj %}
       <div class="page-title">
         <span class="tag-dot" style="background:{{ active_tag_obj.colour }};display:inline-block;width:12px;height:12px;border-radius:50%;vertical-align:middle;margin-right:6px;"></span>
         {{ active_tag_obj.name }}
       </div>
-      {% endif %}
     </div>
   </div>
-
-  <style>
-    .floating-search {
-      position: fixed;
-      right: 24px;
-      bottom: 24px;
-      z-index: 100;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .floating-search-toggle {
-      width: 52px;
-      height: 52px;
-      border-radius: 50%;
-      border: none;
-      background: rgba(255, 255, 255, 0.7);
-      color: #333;
-      font-size: 22px;
-      cursor: pointer;
-      box-shadow: 0 6px 16px rgba(0,0,0,0.18);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-      transition: transform 0.15s ease;
-    }
-    .floating-search-toggle:hover { transform: scale(1.05); }
-    .floating-search-input {
-      width: 0;
-      padding: 0;
-      border: none;
-      opacity: 0;
-      pointer-events: none;
-      background: white;
-      box-shadow: 0 6px 16px rgba(0,0,0,0.12);
-      border-radius: 26px;
-      height: 52px;
-      font-size: 15px;
-      outline: none;
-      transition: width 0.25s ease, opacity 0.2s ease, padding 0.25s ease;
-    }
-    .floating-search.open .floating-search-input {
-      width: 260px;
-      padding: 0 20px;
-      opacity: 1;
-      pointer-events: auto;
-    }
-    .floating-search-input:focus { border: none; }
-    @media (max-width: 768px) {
-      .floating-search { bottom: 84px; right: 16px; }
-      .floating-search.open .floating-search-input { width: min(260px, calc(100vw - 100px)); }
-    }
-  </style>
-
-  <form id="searchForm" class="floating-search" method="GET" action="{{ url_for('shopping_list') }}">
-    {% if active_tag %}<input type="hidden" name="tag" value="{{ active_tag }}">{% endif %}
-    <input type="hidden" name="status" value="{{ status_filter }}">
-    <input type="hidden" name="sort" value="{{ sort_key }}">
-    <input type="hidden" name="order" value="{{ order_key }}">
-    <input
-      type="search"
-      name="q"
-      id="searchInput"
-      class="floating-search-input"
-      placeholder="Search by product name…"
-      value="{{ search_q or '' }}"
-      autocomplete="off">
-    <button type="button" class="floating-search-toggle" id="searchToggle" aria-label="Search" title="Search">&#x1f50d;</button>
-  </form>
-
 </div>
+{% endif %}
+
+<style>
+  .floating-search {
+    position: fixed;
+    right: 24px;
+    bottom: 24px;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .floating-search-toggle {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(255, 255, 255, 0.7);
+    color: #333;
+    font-size: 22px;
+    cursor: pointer;
+    box-shadow: 0 6px 16px rgba(0,0,0,0.18);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: transform 0.15s ease;
+  }
+  .floating-search-toggle:hover { transform: scale(1.05); }
+  .floating-search-input {
+    width: 0;
+    padding: 0;
+    border: none;
+    opacity: 0;
+    pointer-events: none;
+    background: white;
+    box-shadow: 0 6px 16px rgba(0,0,0,0.12);
+    border-radius: 26px;
+    height: 52px;
+    font-size: 15px;
+    outline: none;
+    transition: width 0.25s ease, opacity 0.2s ease, padding 0.25s ease;
+  }
+  .floating-search.open .floating-search-input {
+    width: 260px;
+    padding: 0 20px;
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .floating-search-input:focus { border: none; }
+  @media (max-width: 768px) {
+    .floating-search { bottom: 24px; right: 16px; }
+    .floating-search.open .floating-search-input { width: min(260px, calc(100vw - 100px)); }
+  }
+</style>
+
+<form id="searchForm" class="floating-search" method="GET" action="{{ url_for('shopping_list') }}">
+  {% if active_tag %}<input type="hidden" name="tag" value="{{ active_tag }}">{% endif %}
+  <input type="hidden" name="status" value="{{ status_filter }}">
+  <input type="hidden" name="sort" value="{{ sort_key }}">
+  <input type="hidden" name="order" value="{{ order_key }}">
+  <input
+    type="search"
+    name="q"
+    id="searchInput"
+    class="floating-search-input"
+    placeholder="Search by product name…"
+    value="{{ search_q or '' }}"
+    autocomplete="off">
+  <button type="button" class="floating-search-toggle" id="searchToggle" aria-label="Search" title="Search">&#x1f50d;</button>
+</form>
 
 <div class="page-body" id="shoppingListBody">
   {% if products %}

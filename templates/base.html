@@ -15,31 +15,33 @@
 <body>
 <div class="app-shell">
 
-  <!-- ═══ Desktop Sidebar ═══ -->
-  <aside class="sidebar">
-    <a href="/" class="sidebar-logo" style="text-decoration:none;color:inherit;display:block;">
-      <div class="wordmark">Gummi</div>
-      <div class="tagline">Inventory for your life</div>
-    </a>
-
-    <div class="sidebar-section">
-      <a href="{{ url_for('add_item') }}" class="nav-item {{ 'active' if request.endpoint in ('add_item', 'add_item_scrape') }}">
-        <span class="icon">😍</span> Add New Product
-      </a>
-      <a href="{{ url_for('add_purchase') }}" class="nav-item {{ 'active' if request.endpoint in ('add_purchase', 'add_purchase_save') }}">
-        <span class="icon">💸</span> Add New Purchase
-      </a>
-      <a href="{{ url_for('purchases') }}" class="nav-item {{ 'active' if request.endpoint == 'purchases' }}">
-        <span class="icon">🛍️</span> Purchases
-      </a>
-      <a href="{{ url_for('analytics') }}" class="nav-item {{ 'active' if request.endpoint == 'analytics' }}">
-        <span class="icon">&#x1f4ca;</span> Analytics
-      </a>
-      <a href="{{ url_for('shopping_list') }}" class="nav-item {{ 'active' if request.endpoint == 'shopping_list' }}">
+  <!-- ═══ Top Header Nav ═══ -->
+  <header class="top-header">
+    <a href="{{ url_for('shopping_list') }}" class="top-header-logo">Gummi</a>
+    <nav class="top-header-nav">
+      <a href="{{ url_for('shopping_list') }}" class="{{ 'active' if request.endpoint == 'shopping_list' }}">
         <span class="icon">🛒</span> Browse
       </a>
-    </div>
+      <a href="{{ url_for('add_item') }}" class="{{ 'active' if request.endpoint in ('add_item', 'add_item_scrape') }}">
+        <span class="icon">😍</span> Add Product
+      </a>
+      <a href="{{ url_for('add_purchase') }}" class="{{ 'active' if request.endpoint in ('add_purchase', 'add_purchase_save') }}">
+        <span class="icon">💸</span> Add Purchase
+      </a>
+      <a href="{{ url_for('purchases') }}" class="{{ 'active' if request.endpoint == 'purchases' }}">
+        <span class="icon">🛍️</span> Purchases
+      </a>
+      <a href="{{ url_for('analytics') }}" class="{{ 'active' if request.endpoint == 'analytics' }}">
+        <span class="icon">&#x1f4ca;</span> Analytics
+      </a>
+    </nav>
+  </header>
 
+  {% block header_filters %}{% endblock %}
+
+  <div class="app-body">
+  <!-- ═══ Desktop Sidebar ═══ -->
+  <aside class="sidebar">
     {% block sidebar_filters %}{% endblock %}
 
     {% if g_sidebar_tags %}
@@ -125,29 +127,8 @@
     {% block content %}{% endblock %}
   </main>
 
-  <!-- ═══ Mobile Bottom Tab Bar ═══ -->
-  <nav class="bottom-nav">
-    <a href="{{ url_for('shopping_list') }}" class="{{ 'active' if request.endpoint == 'shopping_list' }}">
-      <span class="tab-icon">&#x1f6cd;&#xfe0f;</span>
-      <span>List</span>
-    </a>
-    <a href="{{ url_for('add_item') }}" class="{{ 'active' if request.endpoint in ('add_item', 'add_item_scrape') }}">
-      <span class="tab-icon">&#xff0b;</span>
-      <span>Add</span>
-    </a>
-    <a href="{{ url_for('analytics') }}" class="{{ 'active' if request.endpoint == 'analytics' }}">
-      <span class="tab-icon">&#x1f4ca;</span>
-      <span>Analytics</span>
-    </a>
-    <a href="{{ url_for('purchases') }}" class="{{ 'active' if request.endpoint == 'purchases' }}">
-      <span class="tab-icon">&#x2705;</span>
-      <span>Bought</span>
-    </a>
-    <a href="{{ url_for('settings') }}" class="{{ 'active' if request.endpoint in ('settings', 'settings_save', 'tags') }}">
-      <span class="tab-icon">&#x2699;&#xfe0f;</span>
-      <span>More</span>
-    </a>
-  </nav>
+  </div><!-- /.app-body -->
+
 </div>
 
 <script>

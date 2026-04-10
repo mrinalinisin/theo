@@ -41,14 +41,77 @@ body {
   min-height: 100vh;
 }
 
+/* ── Top header nav ───────────────────────────────────────────────────────── */
+.top-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: var(--surface);
+  padding: 0 16px;
+  height: 48px;
+  position: sticky;
+  top: 0;
+  z-index: 110;
+}
+.top-header-logo {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  color: var(--accent);
+  text-decoration: none;
+  flex-shrink: 0;
+}
+.top-header-nav {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin-left: auto;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.top-header-nav::-webkit-scrollbar { display: none; }
+.top-header-nav a {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-muted);
+  text-decoration: none;
+  white-space: nowrap;
+  transition: all 0.12s;
+}
+.top-header-nav a:hover { background: var(--bg); color: var(--text); }
+.top-header-nav a.active { background: var(--accent-light); color: var(--accent); }
+.top-header-nav a .icon { font-size: 14px; }
+
+/* ── Header filters bar ───────────────────────────────────────────────────── */
+.header-filters {
+  background: var(--surface);
+  padding: 8px 16px;
+}
+.header-filters form {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.header-filters .form-input {
+  padding: 5px 8px;
+  font-size: 13px;
+  min-width: 0;
+}
+
+/* ── App body (sidebar + main wrapper) ─────────────────────────────────────── */
+.app-body { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+
 /* ── Sidebar (desktop) ─────────────────────────────────────────────────────── */
 .sidebar {
   display: none;
 }
 
-.sidebar-logo { padding: 20px 18px 16px; border-bottom: 1px solid var(--border-light); }
-.sidebar-logo .wordmark { font-size: 20px; font-weight: 700; letter-spacing: -0.5px; color: var(--accent); }
-.sidebar-logo .tagline { font-size: 11px; color: var(--text-faint); margin-top: 2px; }
 .sidebar-section { padding: 12px 10px 4px; }
 .sidebar-section-label {
   font-size: 10px; font-weight: 600; text-transform: uppercase;
@@ -107,7 +170,6 @@ body {
 .page-header-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .page-title { font-size: 16px; font-weight: 600; }
 .header-actions { display: flex; gap: 8px; align-items: center; }
-.header-filters { margin-top: 10px; }
 
 /* ── Buttons ───────────────────────────────────────────────────────────────── */
 .btn {
@@ -206,39 +268,6 @@ textarea.form-input { resize: vertical; min-height: 80px; }
 /* Hide table on mobile — show card list instead (used by /purchases) */
 .table-desktop { display: none; }
 .card-list-mobile { display: block; }
-
-/* ── Home page grid ────────────────────────────────────────────────────────── */
-.home-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: 16px;
-}
-.home-card {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  padding: 32px 16px;
-  background: var(--surface);
-  border: 1px solid var(--border-light);
-  border-radius: var(--radius);
-  text-decoration: none;
-  color: var(--text);
-  transition: transform 0.15s, box-shadow 0.15s;
-}
-.home-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
-}
-.home-card-icon {
-  font-size: 36px;
-}
-.home-card-label {
-  font-size: 15px;
-  font-weight: 600;
-  text-align: center;
-}
 
 /* ── Product card (mobile list item) ───────────────────────────────────────── */
 .product-card {
@@ -717,7 +746,8 @@ textarea.form-input { resize: vertical; min-height: 80px; }
    DESKTOP (≥ 1024px)
    ═══════════════════════════════════════════════════════════════════════════ */
 @media (min-width: 1024px) {
-  .app-shell { flex-direction: row; height: 100vh; overflow: hidden; }
+  .app-shell { height: 100vh; overflow: hidden; }
+  .app-body { display: flex; flex-direction: row; flex: 1; overflow: hidden; }
 
   .sidebar {
     display: flex; flex-direction: column; flex-shrink: 0;
@@ -725,13 +755,14 @@ textarea.form-input { resize: vertical; min-height: 80px; }
     border-right: 1px solid var(--border); overflow-y: auto;
   }
 
+  .top-header { position: static; }
+
   .bottom-nav { display: none; }
 
-  .main { overflow-y: auto; padding-bottom: 0; }
+  .main { overflow-y: auto; padding-bottom: 0; flex: 1; }
 
   .page-header { padding: 0 28px; height: 56px; display: flex; align-items: center; justify-content: space-between; }
   .page-header-top { flex: 1; }
-  .header-filters { margin-top: 0; margin-left: 16px; }
   .page-header-inline { display: flex; align-items: center; gap: 16px; flex: 1; }
   .page-body { padding: 24px 28px; }
 
