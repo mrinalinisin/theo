@@ -578,17 +578,31 @@ textarea.form-input { resize: vertical; min-height: 80px; }
 }
 
 /* ── Flash messages ────────────────────────────────────────────────────────── */
-.flash-messages { padding: 0 16px; }
-.flash {
-  padding: 10px 14px; border-radius: var(--radius-sm);
-  font-size: 13px; margin-bottom: 8px;
-  display: flex; align-items: center; gap: 8px;
+.flash-messages {
+  position: fixed; top: 16px; right: 16px; z-index: 1000;
+  display: flex; flex-direction: column; gap: 8px;
+  max-width: 380px; width: max-content;
 }
-.flash-success { background: var(--accent-light); color: var(--accent); border: 1px solid #c2dbc0; }
-.flash-error { background: var(--danger-light); color: var(--danger); border: 1px solid #f0c4c2; }
-.flash-warning { background: var(--warning-light); color: var(--warning); border: 1px solid #e8d0a8; }
-.flash-info { background: #e8f3fc; color: #2a4d66; border: 1px solid #b8d4e8; }
-.flash-close { margin-left: auto; cursor: pointer; opacity: 0.6; background: none; border: none; font-size: 16px; }
+.flash {
+  padding: 14px 16px; border-radius: var(--radius-sm);
+  font-size: 14px;
+  display: flex; align-items: center; gap: 12px;
+  color: #fff; font-weight: 500;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+.flash-icon {
+  flex-shrink: 0; width: 28px; height: 28px;
+  display: flex; align-items: center; justify-content: center;
+}
+.flash-icon svg { width: 28px; height: 28px; fill: #fff; }
+.flash-success { background: #4caf50; }
+.flash-error   { background: #e5383b; }
+.flash-warning { background: #f0a028; }
+.flash-info    { background: #4a9bd9; }
+.flash-close {
+  margin-left: auto; cursor: pointer; background: none; border: none;
+  color: #fff; font-size: 20px; opacity: 0.8; line-height: 1;
+}
 .flash-close:hover { opacity: 1; }
 
 /* ── Per-item interval list ────────────────────────────────────────────────── */
@@ -685,7 +699,6 @@ textarea.form-input { resize: vertical; min-height: 80px; }
   .photo-thumb { width: 64px; height: 64px; }
   .page-body { padding: 20px 24px; }
   .page-header { padding: 12px 24px; }
-  .flash-messages { padding: 0 24px; }
 
   .grid-2-tablet { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
 }
@@ -712,7 +725,6 @@ textarea.form-input { resize: vertical; min-height: 80px; }
   .header-filters { margin-top: 0; margin-left: 16px; }
   .page-header-inline { display: flex; align-items: center; gap: 16px; flex: 1; }
   .page-body { padding: 24px 28px; }
-  .flash-messages { padding: 0 28px; }
 
   /* Show table, hide card list on desktop (used by /purchases) */
   .table-desktop { display: block; }
