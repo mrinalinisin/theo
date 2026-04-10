@@ -34,11 +34,6 @@
         <span class="tag-dot" style="background:{{ active_tag_obj.colour }};display:inline-block;width:12px;height:12px;border-radius:50%;vertical-align:middle;margin-right:6px;"></span>
         {{ active_tag_obj.name }}
       </div>
-      {% else %}
-      <div class="view-toggle" id="viewToggle" role="group" aria-label="Switch view">
-        <button type="button" data-view="cards" aria-pressed="true" title="Default view">&#x25a6; Default view</button>
-        <button type="button" data-view="grouped" aria-pressed="false" title="Grouped by tag">&#x1f5c2;&#xfe0f; Grouped view</button>
-      </div>
       {% endif %}
     </div>
   </div>
@@ -116,17 +111,6 @@
 </div>
 
 <div class="page-body" id="shoppingListBody">
-  <script>
-    // Apply saved view preference before first paint to avoid a flash.
-    (function() {
-      try {
-        var v = localStorage.getItem('shoppingListView');
-        if (v === 'grouped') {
-          document.getElementById('shoppingListBody').setAttribute('data-view', 'grouped');
-        }
-      } catch (e) {}
-    })();
-  </script>
   {% if products %}
 
   <!-- ═══ Cards view (flat responsive grid of hero cards) ═══ -->
@@ -146,18 +130,6 @@
   </div>
   {% endif %}
 
-  <!-- ═══ Grouped view (lazy-loaded on demand) ═══ -->
-  <div class="hero-card-groups" id="productCardsGrouped"
-       data-loaded="false"
-       data-tag="{{ active_tag or '' }}"
-       data-status="{{ status_filter }}"
-       data-sort="{{ sort_key }}"
-       data-order="{{ order_key }}"
-       data-q="{{ search_q or '' }}">
-    <div class="scroll-sentinel" id="grouped-loading">
-      <span class="scroll-sentinel-spinner"></span> Loading grouped view&hellip;
-    </div>
-  </div>
 
   {% if products|selectattr('track_price')|list %}
   <div class="text-xs text-faint mt-12 text-right">
@@ -328,63 +300,6 @@ document.getElementById('modal-purchase').addEventListener('click', e => {
   if (!form) return;
   form.querySelectorAll('select').forEach(sel => {
     sel.addEventListener('change', () => form.submit());
-  });
-})();
-
-// ── View toggle (Cards ⇄ Grouped) with lazy loading ──
-(function() {
-  const toggle = document.getElementById('viewToggle');
-  const body = document.getElementById('shoppingListBody');
-  const grouped = document.getElementById('productCardsGrouped');
-  if (!toggle || !body) return;
-
-  const KEY = 'shoppingListView';
-  const saved = (function() {
-    try { return localStorage.getItem(KEY); } catch (e) { return null; }
-  })() || 'cards';
-
-  function loadGroupedView() {
-    if (!grouped || grouped.dataset.loaded === 'true') return;
-    grouped.dataset.loaded = 'true';
-    const params = new URLSearchParams();
-    if (grouped.dataset.tag) params.set('tag', grouped.dataset.tag);
-    if (grouped.dataset.q) params.set('q', grouped.dataset.q);
-    params.set('status', grouped.dataset.status);
-    params.set('sort', grouped.dataset.sort);
-    params.set('order', grouped.dataset.order);
-    fetch('/api/shopping-list/grouped?' + params.toString())
-      .then(r => r.json())
-      .then(data => {
-        grouped.innerHTML = data.html;
-      })
-      .catch(e => {
-        console.error('Failed to load grouped view:', e);
-        grouped.innerHTML = '<p class="text-faint" style="text-align:center;padding:24px;">Failed to load grouped view.</p>';
-      });
-  }
-
-  function apply(view) {
-    if (view === 'grouped') {
-      body.setAttribute('data-view', 'grouped');
-      loadGroupedView();
-    } else {
-      body.removeAttribute('data-view');
-    }
-    toggle.querySelectorAll('button').forEach(btn => {
-      const isActive = btn.dataset.view === view;
-      btn.classList.toggle('active', isActive);
-      btn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
-    });
-  }
-
-  apply(saved);
-
-  toggle.addEventListener('click', (e) => {
-    const btn = e.target.closest('button[data-view]');
-    if (!btn) return;
-    const view = btn.dataset.view;
-    try { localStorage.setItem(KEY, view); } catch (e) {}
-    apply(view);
   });
 })();
 

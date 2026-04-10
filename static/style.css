@@ -240,31 +240,6 @@ textarea.form-input { resize: vertical; min-height: 80px; }
   text-align: center;
 }
 
-/* ── Shopping list view switching (Cards ⇄ Grouped) ────────────────────────
-   The flat "cards" view is the default. The "grouped" view is shown when
-   the body has data-view="grouped". Both are always rendered server-side
-   so toggling is instant with no re-fetch. */
-#productCardsFlat { /* Flat cards view uses .hero-card-grid styling directly */ }
-.hero-card-groups { display: none; }
-.page-body[data-view="grouped"] #productCardsFlat,
-.page-body[data-view="grouped"] .scroll-sentinel { display: none; }
-.page-body[data-view="grouped"] .hero-card-groups { display: block; }
-
-/* ── View toggle (Cards ⇄ Grouped) ────────────────────────────────────────── */
-.view-toggle {
-  display: inline-flex;
-  border: 1px solid var(--border); border-radius: var(--radius-sm);
-  overflow: hidden; background: var(--surface);
-}
-.view-toggle button {
-  background: transparent; border: none; padding: 6px 12px;
-  font-size: 12px; font-weight: 500; color: var(--text-faint);
-  cursor: pointer; display: inline-flex; align-items: center; gap: 6px;
-}
-.view-toggle button + button { border-left: 1px solid var(--border); }
-.view-toggle button.active { background: var(--bg); color: var(--text); }
-.view-toggle button:hover:not(.active) { color: var(--text); }
-
 /* ── Product card (mobile list item) ───────────────────────────────────────── */
 .product-card {
   background: var(--surface); border: 1px solid var(--border);

@@ -102,7 +102,6 @@ def create_app():
         return render_template(
             "shopping_list.html",
             products=products_page,
-            groups=[],
             tags=tags,
             active_tag=tag_filter,
             active_tag_obj=active_tag_obj,
@@ -142,38 +141,6 @@ def create_app():
             active_tag_obj=active_tag_obj,
         )
         return jsonify(html=html, has_more=has_more, next_offset=next_offset)
-
-    @app.route("/api/shopping-list/grouped")
-    def shopping_list_grouped_api():
-        """Return the grouped view HTML fragment (loaded on demand)."""
-        query, sort_key, order_key, status_filter, tag_filter, search_q = (
-            _build_product_query()
-        )
-        all_products = query.all()
-        tags = Tag.query.order_by(Tag.name).all()
-
-        groups = []
-        for t in tags:
-            tag_products = [p for p in all_products if t in p.tags]
-            if tag_products:
-                groups.append({"tag": t, "products": tag_products})
-        untagged = [p for p in all_products if not p.tags]
-        if untagged:
-            groups.append({"tag": None, "products": untagged})
-
-        active_tag_obj = None
-        if tag_filter:
-            try:
-                active_tag_obj = Tag.query.get(int(tag_filter))
-            except (TypeError, ValueError):
-                active_tag_obj = None
-
-        html = render_template(
-            "_shopping_list_grouped.html",
-            groups=groups,
-            active_tag_obj=active_tag_obj,
-        )
-        return jsonify(html=html)
 
     # ── Add Item ──────────────────────────────────────────────────────────────
 
