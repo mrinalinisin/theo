@@ -135,8 +135,7 @@
     {% include '_shopping_list_cards.html' %}
   </div>
   <div id="load-more-section" class="load-more-section" {% if not has_more %}style="display:none"{% endif %}>
-    <div id="showing-count" class="showing-count">Showing {{ products|length }} of {{ total_count }} products</div>
-    <button id="load-more-btn" class="load-more-btn">SHOW ME MORE</button>
+    <button id="load-more-btn" class="load-more-btn" data-total="{{ total_count }}">{{ total_count - products|length }} more products to go!</button>
   </div>
 
 
@@ -317,12 +316,17 @@ document.getElementById('modal-purchase').addEventListener('click', e => {
   const grid = document.getElementById('productCardsFlat');
   const section = document.getElementById('load-more-section');
   const btn = document.getElementById('load-more-btn');
-  const countEl = document.getElementById('showing-count');
   if (!grid || !btn) return;
 
   let loading = false;
   let offset = parseInt(grid.dataset.offset, 10);
   let hasMore = grid.dataset.hasMore === 'true';
+  const totalCount = parseInt(btn.dataset.total, 10);
+
+  function updateBtnText() {
+    const remaining = totalCount - offset;
+    btn.textContent = remaining + ' more products to go!';
+  }
 
   function buildUrl() {
     const params = new URLSearchParams();
@@ -345,15 +349,14 @@ document.getElementById('modal-purchase').addEventListener('click', e => {
       grid.insertAdjacentHTML('beforeend', data.html);
       offset = data.next_offset;
       hasMore = data.has_more;
-      countEl.textContent = 'Showing ' + offset + ' of ' + data.total_count + ' products';
       if (!hasMore) {
         section.style.display = 'none';
       } else {
-        btn.textContent = 'SHOW ME MORE';
+        updateBtnText();
       }
     } catch (e) {
       console.error('Load more fetch failed:', e);
-      btn.textContent = 'SHOW ME MORE';
+      updateBtnText();
     } finally {
       loading = false;
     }
