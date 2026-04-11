@@ -527,9 +527,14 @@ def create_app():
     def purchases():
         period = request.args.get("period", "all")
         group_by = request.args.get("group_by", "tag")
+        tag_filter = request.args.get("tag", "")
+        sort_key = request.args.get("sort", "date")
+        order_key = request.args.get("order", "desc")
         now = datetime.utcnow()
 
-        query = Purchase.query
+        tags = Tag.query.order_by(Tag.name).all()
+
+        query = Purchase.query.join(Product, Purchase.product_id == Product.id, isouter=True)
         if period == "1m":
             query = query.filter(Purchase.purchased_at >= now - timedelta(days=30))
         elif period == "3m":
@@ -539,7 +544,20 @@ def create_app():
         elif period == "1y":
             query = query.filter(Purchase.purchased_at >= now - timedelta(days=365))
 
-        all_purchases = query.order_by(Purchase.purchased_at.desc()).all()
+        if tag_filter:
+            try:
+                query = query.filter(Product.tags.any(Tag.id == int(tag_filter)))
+            except (TypeError, ValueError):
+                pass
+
+        # Sort
+        if sort_key == "amount":
+            sort_col = Purchase.paid_amount
+        else:
+            sort_col = Purchase.purchased_at
+        query = query.order_by(sort_col.asc() if order_key == "asc" else sort_col.desc())
+
+        all_purchases = query.all()
         total_spent = sum(p.paid_amount for p in all_purchases)
         total_items = len(all_purchases)
         avg_per_item = total_spent / total_items if total_items else 0
@@ -577,8 +595,12 @@ def create_app():
         return render_template(
             "purchases.html",
             grouped=grouped,
+            tags=tags,
+            active_tag=tag_filter,
             period=period,
             group_by=group_by,
+            sort_key=sort_key,
+            order_key=order_key,
             total_spent=total_spent,
             total_items=total_items,
             avg_per_item=avg_per_item,

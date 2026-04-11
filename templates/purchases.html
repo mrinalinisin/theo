@@ -1,23 +1,35 @@
 {% extends "base.html" %}
 {% block title %}Purchases — Gummi{% endblock %}
 
-{% block content %}
-<div class="page-header">
-  <div class="page-header-top">
-    <div class="page-title">Purchases</div>
-    <div class="header-actions"></div>
-  </div>
-  <div class="header-filters">
-    <div class="filter-chips">
-      <a href="{{ url_for('purchases', period='all', group_by='tag') }}" class="chip {{ 'active' if period == 'all' }}">All Time</a>
-      <a href="{{ url_for('purchases', period='1m', group_by='tag') }}" class="chip {{ 'active' if period == '1m' }}">Last Month</a>
-      <a href="{{ url_for('purchases', period='3m', group_by='tag') }}" class="chip {{ 'active' if period == '3m' }}">Last 3M</a>
-      <a href="{{ url_for('purchases', period='6m', group_by='tag') }}" class="chip {{ 'active' if period == '6m' }}">Last 6M</a>
-      <a href="{{ url_for('purchases', period='1y', group_by='tag') }}" class="chip {{ 'active' if period == '1y' }}">Last Year</a>
-    </div>
-  </div>
+{% block header_filters %}
+<div class="header-filters">
+  <form id="sortForm" method="GET" action="{{ url_for('purchases') }}">
+    <select name="tag" id="tagSelect" class="form-input" title="Filter by tag">
+      <option value="">All Tags</option>
+      {% for tag in tags %}
+      <option value="{{ tag.id }}" {% if active_tag|string == tag.id|string %}selected{% endif %}>{{ tag.name }}</option>
+      {% endfor %}
+    </select>
+    <select name="period" id="periodSelect" class="form-input" title="Time period">
+      <option value="all" {% if period == 'all' %}selected{% endif %}>All Time</option>
+      <option value="1m" {% if period == '1m' %}selected{% endif %}>Last Month</option>
+      <option value="3m" {% if period == '3m' %}selected{% endif %}>Last 3M</option>
+      <option value="6m" {% if period == '6m' %}selected{% endif %}>Last 6M</option>
+      <option value="1y" {% if period == '1y' %}selected{% endif %}>Last Year</option>
+    </select>
+    <select name="sort" id="sortSelect" class="form-input" title="Sort by">
+      <option value="date" {% if sort_key == 'date' %}selected{% endif %}>Purchase Date</option>
+      <option value="amount" {% if sort_key == 'amount' %}selected{% endif %}>Amount Paid</option>
+    </select>
+    <select name="order" id="orderSelect" class="form-input" title="Sort order">
+      <option value="desc" {% if order_key == 'desc' %}selected{% endif %}>&darr; Desc</option>
+      <option value="asc" {% if order_key == 'asc' %}selected{% endif %}>&uarr; Asc</option>
+    </select>
+  </form>
 </div>
+{% endblock %}
 
+{% block content %}
 <div class="page-body">
   {% if grouped %}
 
@@ -96,4 +108,17 @@
   </div>
   {% endif %}
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// ── Sort controls: submit on change ──
+(function() {
+  const form = document.getElementById('sortForm');
+  if (!form) return;
+  form.querySelectorAll('select').forEach(sel => {
+    sel.addEventListener('change', () => form.submit());
+  });
+})();
+</script>
 {% endblock %}
