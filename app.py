@@ -527,7 +527,7 @@ def create_app():
     def purchases():
         period = request.args.get("period", "all")
         tag_filter = request.args.get("tag", "")
-        sort_key = request.args.get("sort", "date")
+        sort_key = request.args.get("sort", "modified")
         order_key = request.args.get("order", "desc")
         now = datetime.utcnow()
 
@@ -552,6 +552,8 @@ def create_app():
         # Sort
         if sort_key == "amount":
             sort_col = Purchase.paid_amount
+        elif sort_key == "modified":
+            sort_col = Product.updated_at
         else:
             sort_col = Purchase.purchased_at
         query = query.order_by(sort_col.asc() if order_key == "asc" else sort_col.desc())

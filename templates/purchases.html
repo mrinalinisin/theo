@@ -19,6 +19,7 @@
     </select>
     <select name="sort" id="sortSelect" class="form-input" title="Sort by">
       <option value="date" {% if sort_key == 'date' %}selected{% endif %}>Purchase Date</option>
+      <option value="modified" {% if sort_key == 'modified' %}selected{% endif %}>Last Modified</option>
       <option value="amount" {% if sort_key == 'amount' %}selected{% endif %}>Amount Paid</option>
     </select>
     <select name="order" id="orderSelect" class="form-input" title="Sort order">
