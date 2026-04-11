@@ -913,7 +913,7 @@ def create_app():
                 f"/product/{sample.id}", product_detail, product_id=sample.id
             )
 
-        return jsonify({"db_size": db_size, "load_times": load_times})
+        return render_template("stats.html", db_size=db_size, load_times=load_times)
 
     return app
 
