@@ -418,6 +418,20 @@ def create_app():
         flash("Product updated.", "success")
         return redirect(url_for("product_detail", product_id=product_id))
 
+    @app.route("/product/<int:product_id>/toggle-tag/<int:tag_id>", methods=["POST"])
+    def product_toggle_tag(product_id, tag_id):
+        """Add or remove a tag from a product (used by the quick tag selector)."""
+        product = Product.query.get_or_404(product_id)
+        tag = Tag.query.get_or_404(tag_id)
+        if tag in product.tags:
+            product.tags.remove(tag)
+            active = False
+        else:
+            product.tags.append(tag)
+            active = True
+        db.session.commit()
+        return jsonify({"active": active})
+
     @app.route("/product/<int:product_id>/purchase", methods=["POST"])
     def product_purchase(product_id):
         product = Product.query.get_or_404(product_id)

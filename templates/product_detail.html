@@ -172,6 +172,29 @@
           </div>
           {% endif %}
 
+          <!-- Quick Tag Selector -->
+          {% if tags %}
+          <div class="divider"></div>
+          <div class="section-label">Tags</div>
+          <div class="flex gap-6 flex-wrap mb-16" id="tag-selector">
+            {% set active_ids = product.tags | map(attribute='id') | list %}
+            {% for tag in tags %}
+            <button type="button"
+              class="tag tag-toggle {{ 'active' if tag.id in active_ids }}"
+              data-tag-id="{{ tag.id }}"
+              data-colour="{{ tag.colour }}"
+              style="cursor:pointer;
+                     {% if tag.id in active_ids %}
+                     border:1.5px solid {{ tag.colour }}40; color:{{ tag.colour }}; background:{{ tag.colour }}18;
+                     {% else %}
+                     border:1.5px solid var(--border); color:var(--text-muted); background:var(--surface);
+                     {% endif %}">
+              <span class="tag-dot" style="{% if tag.id in active_ids %}background:{{ tag.colour }};{% else %}background:var(--text-faint);{% endif %}"></span>{{ tag.name }}
+            </button>
+            {% endfor %}
+          </div>
+          {% endif %}
+
           <div class="divider"></div>
 
           <!-- Actions -->
@@ -181,7 +204,7 @@
               onsubmit="return confirm('Remove this product from your list?')">
               <button type="submit" class="btn btn-danger btn-sm">&#x1f5d1; Remove</button>
             </form>
-            <button class="btn btn-ghost btn-sm" style="margin-left:auto;" onclick="document.getElementById('modal-edit').classList.add('open')">&#x270f;&#xfe0f; Edit</button>
+            <button class="btn btn-secondary btn-sm" style="margin-left:auto;" onclick="document.getElementById('modal-edit').classList.add('open')">&#x270f;&#xfe0f; Edit</button>
           </div>
         </div>
       </div>
@@ -683,5 +706,52 @@ function validateEditLinks(form) {
 document.querySelectorAll('.modal-overlay').forEach(o => {
   o.addEventListener('click', e => { if (e.target === o) o.classList.remove('open'); });
 });
+
+// ── Quick tag toggle ────────────────────────────────────────────────────────
+(function() {
+  var selector = document.getElementById('tag-selector');
+  if (!selector) return;
+  selector.addEventListener('click', function(e) {
+    var btn = e.target.closest('.tag-toggle');
+    if (!btn) return;
+    var tagId = btn.dataset.tagId;
+    var url = '/product/{{ product.id }}/toggle-tag/' + tagId;
+    btn.style.opacity = '0.5';
+    fetch(url, { method: 'POST' })
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        var colour = btn.dataset.colour;
+        btn.style.opacity = '1';
+        if (data.active) {
+          btn.classList.add('active');
+          btn.style.color = colour;
+          btn.style.borderColor = colour + '40';
+          btn.style.background = colour + '18';
+          btn.querySelector('.tag-dot').style.background = colour;
+        } else {
+          btn.classList.remove('active');
+          btn.style.color = 'var(--text-muted)';
+          btn.style.borderColor = 'var(--border)';
+          btn.style.background = 'var(--surface)';
+          btn.querySelector('.tag-dot').style.background = 'var(--text-faint)';
+        }
+        updateHeaderTags();
+      });
+  });
+
+  function updateHeaderTags() {
+    var header = document.querySelector('.flex.justify-between.items-start');
+    if (!header) return;
+    header.querySelectorAll('.tag:not(.tag-toggle)').forEach(function(t) { t.remove(); });
+    selector.querySelectorAll('.tag-toggle.active').forEach(function(btn) {
+      var colour = btn.dataset.colour;
+      var span = document.createElement('span');
+      span.className = 'tag';
+      span.style.cssText = 'color:' + colour + ';background:' + colour + '18;';
+      span.innerHTML = '<span class="tag-dot" style="background:' + colour + ';"></span>' + btn.textContent.trim();
+      header.appendChild(span);
+    });
+  }
+})();
 </script>
 {% endblock %}
