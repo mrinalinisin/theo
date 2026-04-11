@@ -51,9 +51,9 @@
           {% if product and product.store %}
             From <strong>{{ product.store }}</strong> &middot;
           {% endif %}
-          {{ purchase.paid_amount|fmt_price }}
+          {{ product.fmt_price(purchase.paid_amount) if product else purchase.paid_amount|fmt_price }}
           {% if product and product.original_price and purchase.paid_amount < product.original_price %}
-          <span class="price-drop">(Saved {{ (product.original_price - purchase.paid_amount)|fmt_price }})</span>
+          <span class="price-drop">(Saved {{ product.fmt_price(product.original_price - purchase.paid_amount) }})</span>
           {% endif %}
         </div>
       </div>
