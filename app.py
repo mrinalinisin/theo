@@ -65,7 +65,21 @@ def create_app():
 
     # ── Shopping List ─────────────────────────────────────────────────────────
 
-    PAGE_SIZE = 10
+    DEFAULT_PAGE_SIZE = 10
+
+    def _get_page_size():
+        """Return the number of items to load per page.
+
+        Priority: ?limit query param > page_size cookie > DEFAULT_PAGE_SIZE.
+        Clamped to 6..60 to avoid extremes.
+        """
+        raw = request.args.get("limit") or request.cookies.get("page_size")
+        if raw:
+            try:
+                return max(6, min(60, int(raw)))
+            except (TypeError, ValueError):
+                pass
+        return DEFAULT_PAGE_SIZE
 
     def _build_product_query():
         """Parse request args and return (ordered_query, sort_key, order_key,
@@ -118,8 +132,9 @@ def create_app():
             except (TypeError, ValueError):
                 active_tag_obj = None
 
+        page_size = _get_page_size()
         total_count = query.count()
-        products_page = query.limit(PAGE_SIZE).all()
+        products_page = query.limit(page_size).all()
         has_more = len(products_page) < total_count
 
         # Total value by currency (only when filtering by tag).
@@ -162,7 +177,7 @@ def create_app():
             _build_product_query()
         )
         offset = request.args.get("offset", 0, type=int)
-        limit = request.args.get("limit", PAGE_SIZE, type=int)
+        limit = request.args.get("limit", _get_page_size(), type=int)
 
         total_count = query.count()
         products = query.offset(offset).limit(limit).all()

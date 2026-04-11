@@ -25,11 +25,11 @@
       <a href="{{ url_for('add_item') }}" class="{{ 'active' if request.endpoint in ('add_item', 'add_item_scrape') }}">
         <span class="icon">😍</span> Add Product
       </a>
-      <a href="{{ url_for('add_purchase') }}" class="{{ 'active' if request.endpoint in ('add_purchase', 'add_purchase_save') }}">
-        <span class="icon">💸</span> Add Purchase
-      </a>
       <a href="{{ url_for('purchases') }}" class="{{ 'active' if request.endpoint == 'purchases' }}">
         <span class="icon">&#x1f4e6;</span> Purchases
+      </a>
+      <a href="{{ url_for('add_purchase') }}" class="{{ 'active' if request.endpoint in ('add_purchase', 'add_purchase_save') }}">
+        <span class="icon">💸</span> Add Purchase
       </a>
       <a href="/stats" class="{{ 'active' if request.path == '/stats' }}">
         <span class="icon">&#x1f4c8;</span> Stats
@@ -53,11 +53,11 @@
     <a href="{{ url_for('add_item') }}" class="{{ 'active' if request.endpoint in ('add_item', 'add_item_scrape') }}">
       <span class="icon">😍</span> Add Product
     </a>
-    <a href="{{ url_for('add_purchase') }}" class="{{ 'active' if request.endpoint in ('add_purchase', 'add_purchase_save') }}">
-      <span class="icon">💸</span> Add Purchase
-    </a>
     <a href="{{ url_for('purchases') }}" class="{{ 'active' if request.endpoint == 'purchases' }}">
       <span class="icon">&#x1f4e6;</span> Purchases
+    </a>
+    <a href="{{ url_for('add_purchase') }}" class="{{ 'active' if request.endpoint in ('add_purchase', 'add_purchase_save') }}">
+      <span class="icon">💸</span> Add Purchase
     </a>
     <a href="/stats" class="{{ 'active' if request.path == '/stats' }}">
       <span class="icon">&#x1f4c8;</span> Stats
@@ -132,6 +132,17 @@
     });
     document.addEventListener('click', () => dropdown.classList.remove('open'));
   }
+  // Calculate how many product cards fill the viewport and store as cookie.
+  // Card grid: repeat(auto-fill, minmax(190px, 1fr)), gap 14px.
+  // Each card is roughly 270px tall (190px image + 80px body/footer).
+  (function() {
+    var w = window.innerWidth - 32;    // viewport minus page padding
+    var h = window.innerHeight - 140;  // minus header + filters
+    var cols = Math.max(1, Math.floor((w + 14) / (190 + 14)));
+    var rows = Math.max(1, Math.ceil(h / 270));
+    var count = Math.max(6, Math.min(60, cols * rows));
+    document.cookie = 'page_size=' + count + ';path=/;max-age=31536000;SameSite=Lax';
+  })();
 </script>
 {% block scripts %}{% endblock %}
 </body>
