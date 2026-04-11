@@ -117,7 +117,7 @@ def create_app():
 
         return query, sort_key, order_key, status_filter, tag_filter, search_q
 
-    @app.route("/shopping-list")
+    @app.route("/products")
     def shopping_list():
         query, sort_key, order_key, status_filter, tag_filter, search_q = (
             _build_product_query()
@@ -170,7 +170,7 @@ def create_app():
             value_by_currency=value_by_currency,
         )
 
-    @app.route("/api/shopping-list")
+    @app.route("/api/products")
     def shopping_list_api():
         """Return the next page of product cards as an HTML fragment."""
         query, sort_key, order_key, status_filter, tag_filter, search_q = (
@@ -200,13 +200,13 @@ def create_app():
 
     # ── Add Item ──────────────────────────────────────────────────────────────
 
-    @app.route("/add-item", methods=["GET"])
+    @app.route("/products/new", methods=["GET"])
     def add_item():
         tags = Tag.query.order_by(Tag.name).all()
         currencies = Currency.query.order_by(Currency.code).all()
         return render_template("add_item.html", tags=tags, currencies=currencies, scraped=None)
 
-    @app.route("/add-item", methods=["POST"])
+    @app.route("/products/new", methods=["POST"])
     def add_item_scrape():
         from scraper import scrape_product, sanitize_url
         from markupsafe import Markup, escape
@@ -241,7 +241,7 @@ def create_app():
         currencies = Currency.query.order_by(Currency.code).all()
         return render_template("add_item.html", tags=tags, currencies=currencies, scraped=scraped, url=url)
 
-    @app.route("/add-item/save", methods=["POST"])
+    @app.route("/products/new/save", methods=["POST"])
     def add_item_save():
         from scraper import sanitize_url
         url = sanitize_url(request.form.get("url", ""))
@@ -327,7 +327,7 @@ def create_app():
 
     # ── Product Detail ────────────────────────────────────────────────────────
 
-    @app.route("/product/<int:product_id>")
+    @app.route("/products/<int:product_id>")
     def product_detail(product_id):
         product = Product.query.get_or_404(product_id)
         history = sorted(product.price_history, key=lambda h: h.checked_at, reverse=True)
@@ -343,7 +343,7 @@ def create_app():
             lowest_price=lowest_price,
         )
 
-    @app.route("/product/<int:product_id>/edit", methods=["POST"])
+    @app.route("/products/<int:product_id>/edit", methods=["POST"])
     def product_edit(product_id):
         from scraper import sanitize_url
         product = Product.query.get_or_404(product_id)
@@ -433,7 +433,7 @@ def create_app():
         flash("Product updated.", "success")
         return redirect(url_for("product_detail", product_id=product_id))
 
-    @app.route("/product/<int:product_id>/toggle-tag/<int:tag_id>", methods=["POST"])
+    @app.route("/products/<int:product_id>/tags/<int:tag_id>", methods=["POST"])
     def product_toggle_tag(product_id, tag_id):
         """Add or remove a tag from a product (used by the quick tag selector)."""
         product = Product.query.get_or_404(product_id)
@@ -447,7 +447,7 @@ def create_app():
         db.session.commit()
         return jsonify({"active": active})
 
-    @app.route("/product/<int:product_id>/purchase", methods=["POST"])
+    @app.route("/products/<int:product_id>/purchase", methods=["POST"])
     def product_purchase(product_id):
         product = Product.query.get_or_404(product_id)
         price_mode = request.form.get("price_mode", "listed")
@@ -512,7 +512,7 @@ def create_app():
         flash(f"Marked \"{product.name}\" as purchased for {_fmt_price(paid)}!", "success")
         return redirect(url_for("purchases"))
 
-    @app.route("/product/<int:product_id>/delete", methods=["POST"])
+    @app.route("/products/<int:product_id>/delete", methods=["POST"])
     def product_delete(product_id):
         product = Product.query.get_or_404(product_id)
         from image_store import delete_product_images
@@ -522,7 +522,7 @@ def create_app():
         flash(f"Removed \"{product.name}\".", "success")
         return redirect(url_for("shopping_list"))
 
-    @app.route("/product/<int:product_id>/rescrape", methods=["POST"])
+    @app.route("/products/<int:product_id>/rescrape", methods=["POST"])
     def product_rescrape(product_id):
         from scraper import check_price
 
@@ -626,7 +626,7 @@ def create_app():
 
     # ── Add Purchase (dual-mode: existing item or new item) ─────────────────
 
-    @app.route("/purchases/add-purchase")
+    @app.route("/purchases/new")
     def add_purchase():
         tags = Tag.query.order_by(Tag.name).all()
         currencies = Currency.query.order_by(Currency.code).all()
@@ -638,7 +638,7 @@ def create_app():
             today=today,
         )
 
-    @app.route("/purchases/add-purchase", methods=["POST"])
+    @app.route("/purchases/new", methods=["POST"])
     def add_purchase_save():
         order_details_url = (request.form.get("order_details_url") or "").strip()
         tracking_url = (request.form.get("tracking_url") or "").strip()
@@ -936,20 +936,20 @@ def create_app():
                 return f"{(time.perf_counter() - t0) * 1000:.0f} ms"
 
         load_times = {
-            "/shopping-list": _measure("/shopping-list", shopping_list),
-            "/api/shopping-list": _measure("/api/shopping-list", shopping_list_api),
-            "/add-item": _measure("/add-item", add_item),
+            "/products": _measure("/products", shopping_list),
+            "/api/products": _measure("/api/products", shopping_list_api),
+            "/products/new": _measure("/products/new", add_item),
             "/purchases": _measure("/purchases", purchases),
-            "/purchases/add-purchase": _measure("/purchases/add-purchase", add_purchase),
+            "/purchases/new": _measure("/purchases/new", add_purchase),
             "/tags": _measure("/tags", tags),
             "/settings": _measure("/settings", settings),
         }
 
-        # /product/<id> needs a real product; skip if DB is empty
+        # /products/<id> needs a real product; skip if DB is empty
         sample = Product.query.first()
         if sample:
-            load_times["/product/<id>"] = _measure(
-                f"/product/{sample.id}", product_detail, product_id=sample.id
+            load_times["/products/<id>"] = _measure(
+                f"/products/{sample.id}", product_detail, product_id=sample.id
             )
 
         return render_template("stats.html", db_size=db_size, load_times=load_times)

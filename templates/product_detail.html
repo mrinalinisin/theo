@@ -715,7 +715,7 @@ document.querySelectorAll('.modal-overlay').forEach(o => {
     var btn = e.target.closest('.tag-toggle');
     if (!btn) return;
     var tagId = btn.dataset.tagId;
-    var url = '/product/{{ product.id }}/toggle-tag/' + tagId;
+    var url = '/products/{{ product.id }}/tags/' + tagId;
     btn.style.opacity = '0.5';
     fetch(url, { method: 'POST' })
       .then(function(r) { return r.json(); })

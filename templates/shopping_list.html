@@ -236,7 +236,7 @@ function openPurchaseModal(productId, name, price, currencySymbol) {
   event.preventDefault();
   event.stopPropagation();
   const form = document.getElementById('purchase-form');
-  form.action = '/product/' + productId + '/purchase';
+  form.action = '/products/' + productId + '/purchase';
   document.getElementById('purchase-product-name').textContent = name;
   document.getElementById('purchase-listed-price').textContent = (currencySymbol || '\u20b9') + price.toLocaleString('en-IN');
   // Clear URL fields each time the modal opens (the same form instance is
@@ -336,7 +336,7 @@ document.getElementById('modal-purchase').addEventListener('click', e => {
     params.set('status', grid.dataset.status);
     params.set('sort', grid.dataset.sort);
     params.set('order', grid.dataset.order);
-    return '/api/shopping-list?' + params.toString();
+    return '/api/products?' + params.toString();
   }
 
   async function loadMore() {

@@ -31,7 +31,7 @@
       <a href="{{ url_for('add_purchase') }}" class="{{ 'active' if request.endpoint in ('add_purchase', 'add_purchase_save') }}">
         <span class="icon">💸</span> Add Purchase
       </a>
-      <a href="/stats" class="{{ 'active' if request.path == '/stats' }}">
+      <a href="{{ url_for('stats') }}" class="{{ 'active' if request.path == '/stats' }}">
         <span class="icon">&#x1f4c8;</span> Stats
       </a>
       <a href="{{ url_for('tags') }}" class="{{ 'active' if request.endpoint in ('tags', 'tag_create', 'tag_edit') }}">
@@ -59,7 +59,7 @@
     <a href="{{ url_for('add_purchase') }}" class="{{ 'active' if request.endpoint in ('add_purchase', 'add_purchase_save') }}">
       <span class="icon">💸</span> Add Purchase
     </a>
-    <a href="/stats" class="{{ 'active' if request.path == '/stats' }}">
+    <a href="{{ url_for('stats') }}" class="{{ 'active' if request.path == '/stats' }}">
       <span class="icon">&#x1f4c8;</span> Stats
     </a>
     <a href="{{ url_for('tags') }}" class="{{ 'active' if request.endpoint in ('tags', 'tag_create', 'tag_edit') }}">
