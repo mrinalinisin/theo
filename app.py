@@ -526,7 +526,6 @@ def create_app():
     @app.route("/purchases")
     def purchases():
         period = request.args.get("period", "all")
-        group_by = request.args.get("group_by", "tag")
         tag_filter = request.args.get("tag", "")
         sort_key = request.args.get("sort", "date")
         order_key = request.args.get("order", "desc")
@@ -558,53 +557,15 @@ def create_app():
         query = query.order_by(sort_col.asc() if order_key == "asc" else sort_col.desc())
 
         all_purchases = query.all()
-        total_spent = sum(p.paid_amount for p in all_purchases)
-        total_items = len(all_purchases)
-        avg_per_item = total_spent / total_items if total_items else 0
-
-        # Savings vs original listed price
-        total_savings = 0
-        for p in all_purchases:
-            if p.product and p.product.original_price:
-                total_savings += p.product.original_price - p.paid_amount
-
-        # Group
-        # NOTE: the inner dict key is "purchases" (not "items") because Jinja's
-        # attribute lookup on a dict finds the builtin `dict.items` method
-        # first, shadowing the key and breaking `{{ data.items|length }}`.
-        grouped = {}
-        if group_by == "tag":
-            for purchase in all_purchases:
-                product = purchase.product
-                if product and product.tags:
-                    for tag in product.tags:
-                        grouped.setdefault(tag.name, {"tag": tag, "purchases": [], "total": 0})
-                        grouped[tag.name]["purchases"].append(purchase)
-                        grouped[tag.name]["total"] += purchase.paid_amount
-                else:
-                    grouped.setdefault("Uncategorised", {"tag": None, "purchases": [], "total": 0})
-                    grouped["Uncategorised"]["purchases"].append(purchase)
-                    grouped["Uncategorised"]["total"] += purchase.paid_amount
-        else:
-            for purchase in all_purchases:
-                month_key = purchase.purchased_at.strftime("%B %Y")
-                grouped.setdefault(month_key, {"tag": None, "purchases": [], "total": 0})
-                grouped[month_key]["purchases"].append(purchase)
-                grouped[month_key]["total"] += purchase.paid_amount
 
         return render_template(
             "purchases.html",
-            grouped=grouped,
+            purchases=all_purchases,
             tags=tags,
             active_tag=tag_filter,
             period=period,
-            group_by=group_by,
             sort_key=sort_key,
             order_key=order_key,
-            total_spent=total_spent,
-            total_items=total_items,
-            avg_per_item=avg_per_item,
-            total_savings=total_savings,
         )
 
     # ── Add Purchase (dual-mode: existing item or new item) ─────────────────
