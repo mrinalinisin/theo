@@ -552,15 +552,14 @@ def create_app():
 
     # ── Purchases ─────────────────────────────────────────────────────────────
 
-    @app.route("/purchases")
-    def purchases():
+    def _build_purchase_query():
+        """Parse request args and return (ordered_query, period, tag_filter,
+        sort_key, order_key)."""
         period = request.args.get("period", "all")
         tag_filter = request.args.get("tag", "")
         sort_key = request.args.get("sort", "modified")
         order_key = request.args.get("order", "desc")
         now = datetime.utcnow()
-
-        tags = Tag.query.order_by(Tag.name).all()
 
         query = Purchase.query.join(Product, Purchase.product_id == Product.id, isouter=True)
         if period == "1m":
@@ -578,7 +577,6 @@ def create_app():
             except (TypeError, ValueError):
                 pass
 
-        # Sort
         if sort_key == "amount":
             sort_col = Purchase.paid_amount
         elif sort_key == "modified":
@@ -587,17 +585,44 @@ def create_app():
             sort_col = Purchase.purchased_at
         query = query.order_by(sort_col.asc() if order_key == "asc" else sort_col.desc())
 
-        all_purchases = query.all()
+        return query, period, tag_filter, sort_key, order_key
+
+    @app.route("/purchases")
+    def purchases():
+        query, period, tag_filter, sort_key, order_key = _build_purchase_query()
+        tags = Tag.query.order_by(Tag.name).all()
+
+        page_size = _get_page_size()
+        total_count = query.count()
+        purchases_page = query.limit(page_size).all()
+        has_more = len(purchases_page) < total_count
 
         return render_template(
             "purchases.html",
-            purchases=all_purchases,
+            purchases=purchases_page,
             tags=tags,
             active_tag=tag_filter,
             period=period,
             sort_key=sort_key,
             order_key=order_key,
+            has_more=has_more,
+            total_count=total_count,
         )
+
+    @app.route("/api/purchases")
+    def purchases_api():
+        """Return the next page of purchase cards as an HTML fragment."""
+        query, period, tag_filter, sort_key, order_key = _build_purchase_query()
+        offset = request.args.get("offset", 0, type=int)
+        limit = request.args.get("limit", _get_page_size(), type=int)
+
+        total_count = query.count()
+        purchases_page = query.offset(offset).limit(limit).all()
+        has_more = (offset + len(purchases_page)) < total_count
+        next_offset = offset + len(purchases_page)
+
+        html = render_template("_purchase_cards.html", purchases=purchases_page)
+        return jsonify(html=html, has_more=has_more, next_offset=next_offset, total_count=total_count)
 
     # ── Add Purchase (dual-mode: existing item or new item) ─────────────────
 

@@ -34,39 +34,17 @@
 <div class="page-body">
   {% if purchases %}
 
-  <div class="hero-card-grid">
-    {% for purchase in purchases %}
-    {% set product = purchase.product %}
-    <a href="{{ url_for('product_detail', product_id=product.id) if product else '#' }}" class="hero-card">
-      <div class="hero-card-image">
-        {% if product and product.image_url %}
-        <img src="{{ image_src(product.image_url) }}" alt="{{ product.name }}">
-        {% else %}
-        <span class="hero-card-image-placeholder">&#x1f6cd;&#xfe0f;</span>
-        {% endif %}
-      </div>
-      <div class="hero-card-body">
-        <div class="hero-card-title">{{ product.name if product else 'Unknown' }}</div>
-        <div class="hero-card-description">
-          {% if product and product.store %}
-            From <strong>{{ product.store }}</strong> &middot;
-          {% endif %}
-          {{ product.fmt_price(purchase.paid_amount) if product else purchase.paid_amount|fmt_price }}
-          {% if product and product.original_price and purchase.paid_amount < product.original_price %}
-          <span class="price-drop">(Saved {{ product.fmt_price(product.original_price - purchase.paid_amount) }})</span>
-          {% endif %}
-        </div>
-      </div>
-      <div class="hero-card-footer">
-        <span class="hero-card-footer-icon">&#x1f3f7;&#xfe0f;</span>
-        {% if product and product.tags %}
-          {{ product.tags|map(attribute='name')|join(', ') }}
-        {% else %}
-          No tags
-        {% endif %}
-      </div>
-    </a>
-    {% endfor %}
+  <div class="hero-card-grid" id="purchaseCardsGrid"
+       data-offset="{{ purchases|length }}"
+       data-has-more="{{ has_more|default(false)|tojson }}"
+       data-tag="{{ active_tag or '' }}"
+       data-period="{{ period }}"
+       data-sort="{{ sort_key }}"
+       data-order="{{ order_key }}">
+    {% include '_purchase_cards.html' %}
+  </div>
+  <div id="load-more-section" class="load-more-section" {% if not has_more %}style="display:none"{% endif %}>
+    <button id="load-more-btn" class="load-more-btn" data-total="{{ total_count }}">{{ total_count - purchases|length }} more purchases to go!</button>
   </div>
 
   {% else %}
@@ -88,6 +66,59 @@
   form.querySelectorAll('select').forEach(sel => {
     sel.addEventListener('change', () => form.submit());
   });
+})();
+
+// ── Load more button ──
+(function() {
+  const grid = document.getElementById('purchaseCardsGrid');
+  const section = document.getElementById('load-more-section');
+  const btn = document.getElementById('load-more-btn');
+  if (!grid || !btn) return;
+
+  let loading = false;
+  let offset = parseInt(grid.dataset.offset, 10);
+  let hasMore = grid.dataset.hasMore === 'true';
+  const totalCount = parseInt(btn.dataset.total, 10);
+
+  function updateBtnText() {
+    const remaining = totalCount - offset;
+    btn.textContent = remaining + ' more purchases to go!';
+  }
+
+  function buildUrl() {
+    const params = new URLSearchParams();
+    params.set('offset', offset);
+    if (grid.dataset.tag) params.set('tag', grid.dataset.tag);
+    params.set('period', grid.dataset.period);
+    params.set('sort', grid.dataset.sort);
+    params.set('order', grid.dataset.order);
+    return '/api/purchases?' + params.toString();
+  }
+
+  async function loadMore() {
+    if (loading || !hasMore) return;
+    loading = true;
+    btn.textContent = 'LOADING…';
+    try {
+      const resp = await fetch(buildUrl());
+      const data = await resp.json();
+      grid.insertAdjacentHTML('beforeend', data.html);
+      offset = data.next_offset;
+      hasMore = data.has_more;
+      if (!hasMore) {
+        section.style.display = 'none';
+      } else {
+        updateBtnText();
+      }
+    } catch (e) {
+      console.error('Load more fetch failed:', e);
+      updateBtnText();
+    } finally {
+      loading = false;
+    }
+  }
+
+  btn.addEventListener('click', loadMore);
 })();
 </script>
 {% endblock %}

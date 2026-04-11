@@ -1,0 +1,32 @@
+{% for purchase in purchases %}
+{% set product = purchase.product %}
+<a href="{{ url_for('product_detail', product_id=product.id) if product else '#' }}" class="hero-card">
+  <div class="hero-card-image">
+    {% if product and product.image_url %}
+    <img src="{{ image_src(product.image_url) }}" alt="{{ product.name }}">
+    {% else %}
+    <span class="hero-card-image-placeholder">&#x1f6cd;&#xfe0f;</span>
+    {% endif %}
+  </div>
+  <div class="hero-card-body">
+    <div class="hero-card-title">{{ product.name if product else 'Unknown' }}</div>
+    <div class="hero-card-description">
+      {% if product and product.store %}
+        From <strong>{{ product.store }}</strong> &middot;
+      {% endif %}
+      {{ product.fmt_price(purchase.paid_amount) if product else purchase.paid_amount|fmt_price }}
+      {% if product and product.original_price and purchase.paid_amount < product.original_price %}
+      <span class="price-drop">(Saved {{ product.fmt_price(product.original_price - purchase.paid_amount) }})</span>
+      {% endif %}
+    </div>
+  </div>
+  <div class="hero-card-footer">
+    <span class="hero-card-footer-icon">&#x1f3f7;&#xfe0f;</span>
+    {% if product and product.tags %}
+      {{ product.tags|map(attribute='name')|join(', ') }}
+    {% else %}
+      No tags
+    {% endif %}
+  </div>
+</a>
+{% endfor %}
