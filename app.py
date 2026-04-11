@@ -700,6 +700,27 @@ def create_app():
         db.session.add(product)
         db.session.flush()
 
+        # Save pasted images
+        images_raw = request.form.get("images")
+        if images_raw:
+            try:
+                parsed_images = json.loads(images_raw)
+                if isinstance(parsed_images, list) and parsed_images:
+                    from image_store import save_new_images_for_product
+                    product.images = save_new_images_for_product(
+                        parsed_images, product.id, app
+                    )
+            except (json.JSONDecodeError, TypeError):
+                pass
+        image_url = request.form.get("image_url", "")
+        if image_url and image_url.startswith("data:"):
+            # Main image is a pasted base64 — it'll be in the saved list
+            product.image_url = product.images[0] if product.images else ""
+        elif image_url:
+            product.image_url = image_url
+        elif product.images:
+            product.image_url = product.images[0]
+
         # Create or update Purchase row (idempotent)
         purchase = Purchase.query.filter_by(product_id=product.id).first()
         if purchase:

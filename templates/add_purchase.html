@@ -74,6 +74,25 @@
       </div>
     </div>
 
+    <!-- Images -->
+    <div class="card mb-20">
+      <div class="card-header">Product Image</div>
+      <div class="card-body">
+        <input type="hidden" name="images" value="[]">
+        <input type="hidden" name="image_url" value="">
+        <div id="pasteZone" class="paste-zone mb-16" tabindex="0">
+          <div class="paste-zone-content">
+            <div class="paste-zone-icon">&#128247;</div>
+            <div class="paste-zone-text">
+              Press <kbd>Ctrl+V</kbd> / <kbd>&#8984;V</kbd> to paste an image from clipboard
+            </div>
+            <div class="paste-zone-hint">or drag &amp; drop an image here</div>
+          </div>
+        </div>
+        <div id="pastedPhotos" class="photo-strip mb-16"></div>
+      </div>
+    </div>
+
     <!-- Tags -->
     <div class="card mb-20">
       <div class="card-header">
@@ -105,4 +124,103 @@
     </div>
   </form>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// ── Image paste zone ──
+(function() {
+  const pasteZone = document.getElementById('pasteZone');
+  const pastedPhotos = document.getElementById('pastedPhotos');
+  const imagesField = document.querySelector('input[name="images"]');
+  const imageUrlField = document.querySelector('input[name="image_url"]');
+  if (!pasteZone) return;
+
+  let pastedImages = [];
+
+  function syncHiddenField() {
+    if (imagesField) imagesField.value = JSON.stringify(pastedImages);
+  }
+
+  function setMainImage(src) {
+    document.querySelectorAll('.pasted-thumb').forEach(t => t.classList.remove('active'));
+    const match = Array.from(document.querySelectorAll('.pasted-thumb'))
+      .find(t => t.querySelector('img')?.src === src);
+    if (match) match.classList.add('active');
+    if (imageUrlField) imageUrlField.value = src;
+  }
+
+  function addImage(dataUrl) {
+    pastedImages.push(dataUrl);
+    syncHiddenField();
+    renderThumbs();
+    if (imageUrlField && !imageUrlField.value) {
+      imageUrlField.value = dataUrl;
+    }
+  }
+
+  function removeImage(index) {
+    const removed = pastedImages.splice(index, 1)[0];
+    if (imageUrlField && imageUrlField.value === removed) {
+      imageUrlField.value = pastedImages[0] || '';
+    }
+    syncHiddenField();
+    renderThumbs();
+  }
+
+  function renderThumbs() {
+    pastedPhotos.innerHTML = '';
+    pastedImages.forEach(function(src, i) {
+      var div = document.createElement('div');
+      div.className = 'photo-thumb pasted-thumb' + (imageUrlField && imageUrlField.value === src ? ' active' : '');
+      div.innerHTML = '<img src="' + src + '" alt="Pasted ' + (i+1) + '"><span class="remove-btn" title="Remove">&times;</span>';
+      div.querySelector('.remove-btn').addEventListener('click', function(e) { e.stopPropagation(); removeImage(i); });
+      div.addEventListener('click', function() { setMainImage(src); });
+      pastedPhotos.appendChild(div);
+    });
+    if (pastedImages.length > 0) {
+      pasteZone.querySelector('.paste-zone-text').innerHTML =
+        pastedImages.length + ' image' + (pastedImages.length > 1 ? 's' : '') + ' added — paste more or <kbd>click</kbd> a thumbnail to set as main';
+    }
+  }
+
+  function handleFile(file) {
+    if (!file || !file.type.startsWith('image/')) return;
+    var reader = new FileReader();
+    reader.onload = function(e) { addImage(e.target.result); };
+    reader.readAsDataURL(file);
+  }
+
+  document.addEventListener('paste', function(e) {
+    var items = e.clipboardData?.items;
+    if (!items) return;
+    for (var j = 0; j < items.length; j++) {
+      if (items[j].type.startsWith('image/')) {
+        e.preventDefault();
+        handleFile(items[j].getAsFile());
+        return;
+      }
+    }
+  });
+
+  pasteZone.addEventListener('dragover', function(e) { e.preventDefault(); pasteZone.classList.add('drag-over'); });
+  pasteZone.addEventListener('dragleave', function() { pasteZone.classList.remove('drag-over'); });
+  pasteZone.addEventListener('drop', function(e) {
+    e.preventDefault();
+    pasteZone.classList.remove('drag-over');
+    if (e.dataTransfer?.files) {
+      for (var k = 0; k < e.dataTransfer.files.length; k++) handleFile(e.dataTransfer.files[k]);
+    }
+  });
+
+  pasteZone.addEventListener('click', function() {
+    var input = document.createElement('input');
+    input.type = 'file'; input.accept = 'image/*'; input.multiple = true;
+    input.addEventListener('change', function() {
+      for (var k = 0; k < input.files.length; k++) handleFile(input.files[k]);
+    });
+    input.click();
+  });
+})();
+</script>
 {% endblock %}
