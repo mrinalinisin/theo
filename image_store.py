@@ -8,8 +8,12 @@ import re
 import time
 
 import requests
+from PIL import Image
 
 log = logging.getLogger(__name__)
+
+# Maximum Hamming distance (out of 64 bits) to consider two images as duplicates.
+HASH_DISTANCE_THRESHOLD = 10
 
 _MIME_TO_EXT = {
     "image/jpeg": "jpg",
@@ -60,6 +64,47 @@ def _ext_from_url(url):
     for suffix, ext in _URL_EXT_MAP.items():
         if path.endswith(suffix):
             return ext
+    return None
+
+
+def compute_image_hash(filepath):
+    """Compute an average-hash (aHash) for the image at *filepath*.
+
+    Returns a 16-character hex string (64-bit fingerprint), or None if the
+    image cannot be processed (SVG, corrupt, etc.).
+    """
+    if filepath.lower().endswith(".svg"):
+        return None
+    try:
+        with Image.open(filepath) as img:
+            small = img.convert("L").resize((8, 8), Image.LANCZOS)
+            pixels = list(small.getdata())
+            avg = sum(pixels) / len(pixels)
+            bits = 0
+            for px in pixels:
+                bits = (bits << 1) | (1 if px >= avg else 0)
+            return f"{bits:016x}"
+    except Exception as exc:
+        log.warning("Could not hash %s: %s", filepath, exc)
+        return None
+
+
+def _hamming_distance(h1, h2):
+    """Number of differing bits between two 64-bit hex-string hashes."""
+    return bin(int(h1, 16) ^ int(h2, 16)).count("1")
+
+
+def find_duplicate_by_image(phash, exclude_product_id=None):
+    """Return the first Product whose images perceptually match *phash*, or None."""
+    from models import db, ImageHash
+
+    query = db.session.query(ImageHash)
+    if exclude_product_id is not None:
+        query = query.filter(ImageHash.product_id != exclude_product_id)
+
+    for row in query.all():
+        if _hamming_distance(phash, row.phash) <= HASH_DISTANCE_THRESHOLD:
+            return row.product
     return None
 
 
@@ -130,8 +175,19 @@ def save_image(image_value, product_id, index, app):
     return None
 
 
+def _store_hash(filename, product_id, app):
+    """Compute and persist the perceptual hash for a saved image file."""
+    from models import db, ImageHash
+
+    filepath = os.path.join(_images_dir(app), filename)
+    phash = compute_image_hash(filepath)
+    if phash:
+        db.session.add(ImageHash(product_id=product_id, filename=filename, phash=phash))
+    return phash
+
+
 def save_images_for_product(image_list, product_id, app, start_index=0):
-    """Save every image in *image_list* to disk.
+    """Save every image in *image_list* to disk and store perceptual hashes.
 
     Returns a list of filenames (None entries filtered out).
     """
@@ -142,12 +198,16 @@ def save_images_for_product(image_list, product_id, app, start_index=0):
         fname = save_image(img, product_id, start_index + i, app)
         if fname:
             filenames.append(fname)
+            _store_hash(fname, product_id, app)
     return filenames
 
 
 def save_new_images_for_product(image_list, product_id, app):
     """Save images using timestamp-based filenames to avoid collisions with
-    existing files (used by edit routes adding new images)."""
+    existing files (used by edit routes adding new images).
+
+    Also stores perceptual hashes for newly saved images.
+    """
     if not image_list:
         return []
     ts = int(time.time() * 1000)
@@ -164,6 +224,7 @@ def save_new_images_for_product(image_list, product_id, app):
         fname = save_image(v, product_id, idx, app)
         if fname:
             filenames.append(fname)
+            _store_hash(fname, product_id, app)
     return filenames
 
 

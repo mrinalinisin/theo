@@ -316,6 +316,23 @@ def create_app():
         else:
             product.image_url = product.images[0] if product.images else ""
 
+        # Check for image-based duplicates
+        from image_store import find_duplicate_by_image
+        for ih in product.image_hashes:
+            match = find_duplicate_by_image(ih.phash, exclude_product_id=product.id)
+            if match:
+                from markupsafe import Markup, escape
+                detail_url = url_for("product_detail", product_id=match.id)
+                flash(
+                    Markup(
+                        f'An image on this product looks similar to '
+                        f'<a href="{detail_url}" style="text-decoration:underline;">'
+                        f'{escape(match.name)}</a>. This might be a duplicate.'
+                    ),
+                    "warning",
+                )
+                break
+
         # Record initial price history
         if price:
             ph = PriceHistory(product_id=product.id, price=price)
@@ -720,6 +737,23 @@ def create_app():
             product.image_url = image_url
         elif product.images:
             product.image_url = product.images[0]
+
+        # Check for image-based duplicates
+        from image_store import find_duplicate_by_image
+        for ih in product.image_hashes:
+            match = find_duplicate_by_image(ih.phash, exclude_product_id=product.id)
+            if match:
+                from markupsafe import Markup, escape
+                detail_url = url_for("product_detail", product_id=match.id)
+                flash(
+                    Markup(
+                        f'An image on this purchase looks similar to '
+                        f'<a href="{detail_url}" style="text-decoration:underline;">'
+                        f'{escape(match.name)}</a>. This might be a duplicate.'
+                    ),
+                    "warning",
+                )
+                break
 
         # Create or update Purchase row (idempotent)
         purchase = Purchase.query.filter_by(product_id=product.id).first()

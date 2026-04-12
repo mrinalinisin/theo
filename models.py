@@ -67,6 +67,9 @@ class Product(db.Model):
     purchase = db.relationship(
         "Purchase", backref="product", uselist=False, cascade="all, delete-orphan"
     )
+    image_hashes = db.relationship(
+        "ImageHash", backref="product", cascade="all, delete-orphan"
+    )
 
     @property
     def currency_symbol(self):
@@ -89,6 +92,17 @@ class Product(db.Model):
 
     def __repr__(self):
         return f"<Product {self.name}>"
+
+
+class ImageHash(db.Model):
+    """Perceptual hash of a product image for duplicate detection."""
+
+    __tablename__ = "image_hash"
+
+    id = db.Column(db.Integer, primary_key=True)
+    product_id = db.Column(db.Integer, db.ForeignKey("product.id"), nullable=False)
+    filename = db.Column(db.String(256), nullable=False)
+    phash = db.Column(db.String(16), nullable=False)
 
 
 class PriceHistory(db.Model):
