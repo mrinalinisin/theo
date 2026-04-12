@@ -31,6 +31,22 @@
 {% endblock %}
 
 {% block content %}
+<form id="searchForm" class="floating-search" method="GET" action="{{ url_for('purchases') }}">
+  {% if active_tag %}<input type="hidden" name="tag" value="{{ active_tag }}">{% endif %}
+  <input type="hidden" name="period" value="{{ period }}">
+  <input type="hidden" name="sort" value="{{ sort_key }}">
+  <input type="hidden" name="order" value="{{ order_key }}">
+  <input
+    type="search"
+    name="q"
+    id="searchInput"
+    class="floating-search-input"
+    placeholder="Search by product name…"
+    value="{{ search_q or '' }}"
+    autocomplete="off">
+  <button type="button" class="floating-search-toggle" id="searchToggle" aria-label="Search" title="Search">&#x1f50d;</button>
+</form>
+
 <div class="page-body">
   {% if purchases %}
 
@@ -40,7 +56,8 @@
        data-tag="{{ active_tag or '' }}"
        data-period="{{ period }}"
        data-sort="{{ sort_key }}"
-       data-order="{{ order_key }}">
+       data-order="{{ order_key }}"
+       data-q="{{ search_q or '' }}">
     {% include '_purchase_cards.html' %}
   </div>
   <div id="load-more-section" class="load-more-section" {% if not has_more %}style="display:none"{% endif %}>
@@ -59,6 +76,38 @@
 
 {% block scripts %}
 <script>
+// ── Floating search toggle ──
+(function() {
+  const form = document.getElementById('searchForm');
+  const input = document.getElementById('searchInput');
+  const toggle = document.getElementById('searchToggle');
+  if (!form || !input) return;
+
+  if (input.value) form.classList.add('open');
+
+  if (toggle) {
+    toggle.addEventListener('click', (e) => {
+      e.preventDefault();
+      if (form.classList.contains('open')) {
+        if (input.value.trim()) {
+          form.submit();
+        } else {
+          form.classList.remove('open');
+        }
+      } else {
+        form.classList.add('open');
+        setTimeout(() => input.focus(), 50);
+      }
+    });
+  }
+
+  document.addEventListener('click', (e) => {
+    if (!form.contains(e.target) && !input.value.trim()) {
+      form.classList.remove('open');
+    }
+  });
+})();
+
 // ── Sort controls: submit on change ──
 (function() {
   const form = document.getElementById('sortForm');
@@ -89,6 +138,7 @@
     const params = new URLSearchParams();
     params.set('offset', offset);
     if (grid.dataset.tag) params.set('tag', grid.dataset.tag);
+    if (grid.dataset.q) params.set('q', grid.dataset.q);
     params.set('period', grid.dataset.period);
     params.set('sort', grid.dataset.sort);
     params.set('order', grid.dataset.order);

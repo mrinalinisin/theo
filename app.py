@@ -571,9 +571,10 @@ def create_app():
 
     def _build_purchase_query():
         """Parse request args and return (ordered_query, period, tag_filter,
-        sort_key, order_key)."""
+        sort_key, order_key, search_q)."""
         period = request.args.get("period", "all")
         tag_filter = request.args.get("tag", "")
+        search_q = (request.args.get("q") or "").strip()
         sort_key = request.args.get("sort", "modified")
         order_key = request.args.get("order", "desc")
         now = datetime.utcnow()
@@ -594,6 +595,10 @@ def create_app():
             except (TypeError, ValueError):
                 pass
 
+        if search_q:
+            escaped = search_q.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+            query = query.filter(Product.name.ilike(f"%{escaped}%", escape="\\"))
+
         if sort_key == "amount":
             sort_col = Purchase.paid_amount
         elif sort_key == "modified":
@@ -602,11 +607,11 @@ def create_app():
             sort_col = Purchase.purchased_at
         query = query.order_by(sort_col.asc() if order_key == "asc" else sort_col.desc())
 
-        return query, period, tag_filter, sort_key, order_key
+        return query, period, tag_filter, sort_key, order_key, search_q
 
     @app.route("/purchases")
     def purchases():
-        query, period, tag_filter, sort_key, order_key = _build_purchase_query()
+        query, period, tag_filter, sort_key, order_key, search_q = _build_purchase_query()
         tags = Tag.query.order_by(Tag.name).all()
 
         page_size = _get_page_size()
@@ -622,6 +627,7 @@ def create_app():
             period=period,
             sort_key=sort_key,
             order_key=order_key,
+            search_q=search_q,
             has_more=has_more,
             total_count=total_count,
         )
@@ -629,7 +635,7 @@ def create_app():
     @app.route("/api/purchases")
     def purchases_api():
         """Return the next page of purchase cards as an HTML fragment."""
-        query, period, tag_filter, sort_key, order_key = _build_purchase_query()
+        query, period, tag_filter, sort_key, order_key, search_q = _build_purchase_query()
         offset = request.args.get("offset", 0, type=int)
         limit = request.args.get("limit", _get_page_size(), type=int)
 
