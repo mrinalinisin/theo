@@ -24,15 +24,23 @@
       {% endif %}
     </div>
   </div>
-  {% if not active_tag_obj %}
   <div class="hero-card-footer">
+    {% if not active_tag_obj %}
     <span class="hero-card-footer-icon">&#x1f3f7;&#xfe0f;</span>
     {% if p.tags %}
       {{ p.tags|map(attribute='name')|join(', ') }}
     {% else %}
       No tags
     {% endif %}
+    {% endif %}
+    {% if p.status == 'watching' %}
+    <button type="button"
+      class="btn btn-sm cart-toggle-btn {% if p.id in cart_product_ids %}in-cart{% endif %}"
+      data-product-id="{{ p.id }}"
+      onclick="toggleCart(event, this)">
+      {% if p.id in cart_product_ids %}In Cart &#x2713;{% else %}+ Cart{% endif %}
+    </button>
+    {% endif %}
   </div>
-  {% endif %}
 </a>
 {% endfor %}

@@ -16,7 +16,7 @@ import os
 import re
 import time
 
-from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, send_from_directory
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, send_from_directory, session
 from sqlalchemy import func
 from config import Config
 from models import db, Product, Tag, PriceHistory, Purchase, Settings, Currency, DomainStrategy, product_tags
@@ -56,6 +56,11 @@ def create_app():
                 return value
             return url_for("serve_image", filename=value)
         return dict(image_src=image_src)
+
+    @app.context_processor
+    def inject_cart():
+        cart = session.get("cart", [])
+        return dict(cart_count=len(cart), cart_product_ids=set(cart))
 
     # ── Routes ────────────────────────────────────────────────────────────────
 
@@ -567,6 +572,129 @@ def create_app():
 
         return redirect(url_for("product_detail", product_id=product_id))
 
+    # ── Cart ──────────────────────────────────────────────────────────────────
+
+    @app.route("/cart/add/<int:product_id>", methods=["POST"])
+    def cart_add(product_id):
+        cart = session.get("cart", [])
+        if product_id not in cart:
+            cart.append(product_id)
+            session["cart"] = cart
+        return jsonify(ok=True, cart_count=len(cart), in_cart=True)
+
+    @app.route("/cart/remove/<int:product_id>", methods=["POST"])
+    def cart_remove(product_id):
+        cart = session.get("cart", [])
+        cart = [pid for pid in cart if pid != product_id]
+        session["cart"] = cart
+        return jsonify(ok=True, cart_count=len(cart), in_cart=False)
+
+    @app.route("/cart/clear", methods=["POST"])
+    def cart_clear():
+        session["cart"] = []
+        flash("Cart cleared.", "info")
+        return redirect(url_for("cart"))
+
+    @app.route("/cart")
+    def cart():
+        cart_ids = session.get("cart", [])
+        items = []
+        if cart_ids:
+            items = Product.query.filter(
+                Product.id.in_(cart_ids),
+                Product.status == "watching",
+            ).all()
+            # Prune stale IDs (deleted or already-purchased products).
+            valid_ids = [p.id for p in items]
+            if set(valid_ids) != set(cart_ids):
+                session["cart"] = valid_ids
+
+        # Total value grouped by currency.
+        value_by_currency = {}
+        for p in items:
+            sym = p.currency_symbol
+            qty = p.quantity or 1
+            price = (p.current_price or 0) * qty
+            value_by_currency[sym] = value_by_currency.get(sym, 0) + price
+        value_by_currency = [(sym, total) for sym, total in value_by_currency.items() if total]
+
+        return render_template(
+            "cart.html",
+            items=items,
+            value_by_currency=value_by_currency,
+        )
+
+    @app.route("/cart/checkout", methods=["GET", "POST"])
+    def cart_checkout():
+        cart_ids = session.get("cart", [])
+        items = []
+        if cart_ids:
+            items = Product.query.filter(
+                Product.id.in_(cart_ids),
+                Product.status == "watching",
+            ).all()
+
+        if not items:
+            flash("Your cart is empty.", "warning")
+            return redirect(url_for("cart"))
+
+        if request.method == "GET":
+            return render_template("checkout.html", items=items)
+
+        # ── POST: process checkout ──
+        purchased_at_str = request.form.get("purchased_at")
+        if purchased_at_str:
+            purchased_at = datetime.strptime(purchased_at_str, "%Y-%m-%d").replace(
+                tzinfo=timezone.utc
+            )
+        else:
+            purchased_at = datetime.now(timezone.utc)
+
+        errors = []
+        for p in items:
+            order_url = (request.form.get(f"order_details_url_{p.id}") or "").strip()
+            tracking = (request.form.get(f"tracking_url_{p.id}") or "").strip()
+            if not order_url and not tracking:
+                errors.append(p.name)
+
+        if errors:
+            flash(
+                f"Please provide at least one URL for: {', '.join(errors)}",
+                "error",
+            )
+            return render_template("checkout.html", items=items)
+
+        count = 0
+        for p in items:
+            order_url = (request.form.get(f"order_details_url_{p.id}") or "").strip()
+            tracking = (request.form.get(f"tracking_url_{p.id}") or "").strip()
+            paid_str = request.form.get(f"paid_amount_{p.id}", "")
+            paid = _parse_price(paid_str) if paid_str.strip() else (p.current_price or 0)
+
+            purchase = Purchase.query.filter_by(product_id=p.id).first()
+            if purchase:
+                purchase.paid_amount = paid
+                purchase.purchased_at = purchased_at
+                purchase.order_details_url = order_url
+                purchase.tracking_url = tracking
+            else:
+                purchase = Purchase(
+                    product_id=p.id,
+                    paid_amount=paid,
+                    purchased_at=purchased_at,
+                    order_details_url=order_url,
+                    tracking_url=tracking,
+                )
+                db.session.add(purchase)
+            p.status = "purchased"
+            count += 1
+
+        db.session.commit()
+        session["cart"] = []
+        _check_budget_warning()
+        flash(f"Checked out {count} item{'s' if count != 1 else ''} successfully!", "success")
+        return redirect(url_for("purchases"))
+
     # ── Purchases ─────────────────────────────────────────────────────────────
 
     def _build_purchase_query():
@@ -646,146 +774,6 @@ def create_app():
 
         html = render_template("_purchase_cards.html", purchases=purchases_page)
         return jsonify(html=html, has_more=has_more, next_offset=next_offset, total_count=total_count)
-
-    # ── Add Purchase (dual-mode: existing item or new item) ─────────────────
-
-    @app.route("/purchases/new")
-    def add_purchase():
-        tags = Tag.query.order_by(Tag.name).all()
-        currencies = Currency.query.order_by(Currency.code).all()
-        today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-        return render_template(
-            "add_purchase.html",
-            tags=tags,
-            currencies=currencies,
-            today=today,
-        )
-
-    @app.route("/purchases/new", methods=["POST"])
-    def add_purchase_save():
-        order_details_url = (request.form.get("order_details_url") or "").strip()
-        tracking_url = (request.form.get("tracking_url") or "").strip()
-        if not order_details_url and not tracking_url:
-            flash(
-                "Please provide an Order details URL or a Tracking link.",
-                "error",
-            )
-            return redirect(url_for("add_purchase"))
-
-        purchased_at_str = request.form.get("purchased_at")
-        if purchased_at_str:
-            purchased_at = datetime.strptime(purchased_at_str, "%Y-%m-%d").replace(
-                tzinfo=timezone.utc
-            )
-        else:
-            purchased_at = datetime.now(timezone.utc)
-
-        notes = request.form.get("notes", "")
-
-        name = (request.form.get("name") or "").strip()
-        if not name:
-            flash("Product name is required.", "error")
-            return redirect(url_for("add_purchase"))
-
-        paid = _parse_price(request.form.get("paid_amount", "0"))
-        store = (request.form.get("store") or "").strip()
-        url = (request.form.get("url") or "").strip() or "manual-entry"
-
-        currency_id = None
-        try:
-            raw_cid = request.form.get("currency_id")
-            if raw_cid:
-                cid = int(raw_cid)
-                if Currency.query.get(cid):
-                    currency_id = cid
-        except (TypeError, ValueError):
-            pass
-        if currency_id is None:
-            inr = Currency.query.filter_by(code="INR").first()
-            currency_id = inr.id if inr else None
-
-        product = Product(
-            url=url,
-            name=name,
-            store=store,
-            current_price=paid,
-            original_price=paid,
-            currency_id=currency_id,
-            status="purchased",
-        )
-
-        tag_ids = request.form.getlist("tag_ids")
-        for tid in tag_ids:
-            tag = Tag.query.get(int(tid))
-            if tag:
-                product.tags.append(tag)
-
-        db.session.add(product)
-        db.session.flush()
-
-        # Save pasted images
-        images_raw = request.form.get("images")
-        if images_raw:
-            try:
-                parsed_images = json.loads(images_raw)
-                if isinstance(parsed_images, list) and parsed_images:
-                    from image_store import save_new_images_for_product
-                    product.images = save_new_images_for_product(
-                        parsed_images, product.id, app
-                    )
-            except (json.JSONDecodeError, TypeError):
-                pass
-        image_url = request.form.get("image_url", "")
-        if image_url and image_url.startswith("data:"):
-            # Main image is a pasted base64 — it'll be in the saved list
-            product.image_url = product.images[0] if product.images else ""
-        elif image_url:
-            product.image_url = image_url
-        elif product.images:
-            product.image_url = product.images[0]
-
-        # Check for image-based duplicates
-        from image_store import find_duplicate_by_image
-        for ih in product.image_hashes:
-            match = find_duplicate_by_image(ih.phash, exclude_product_id=product.id)
-            if match:
-                from markupsafe import Markup, escape
-                detail_url = url_for("product_detail", product_id=match.id)
-                flash(
-                    Markup(
-                        f'An image on this purchase looks similar to '
-                        f'<a href="{detail_url}" style="text-decoration:underline;">'
-                        f'{escape(match.name)}</a>. This might be a duplicate.'
-                    ),
-                    "warning",
-                )
-                break
-
-        # Create or update Purchase row (idempotent)
-        purchase = Purchase.query.filter_by(product_id=product.id).first()
-        if purchase:
-            purchase.paid_amount = paid
-            purchase.purchased_at = purchased_at
-            purchase.notes = notes
-            purchase.order_details_url = order_details_url
-            purchase.tracking_url = tracking_url
-        else:
-            purchase = Purchase(
-                product_id=product.id,
-                paid_amount=paid,
-                purchased_at=purchased_at,
-                notes=notes,
-                order_details_url=order_details_url,
-                tracking_url=tracking_url,
-            )
-            db.session.add(purchase)
-
-        product.status = "purchased"
-        db.session.commit()
-        _check_budget_warning()
-
-        flash(f"Marked \"{product.name}\" as purchased for {_fmt_price(paid)}!", "success")
-        return redirect(url_for("purchases"))
 
     # ── Tags ──────────────────────────────────────────────────────────────────
 
@@ -1001,7 +989,6 @@ def create_app():
             "/api/products": _measure("/api/products", shopping_list_api),
             "/products/new": _measure("/products/new", add_item),
             "/purchases": _measure("/purchases", purchases),
-            "/purchases/new": _measure("/purchases/new", add_purchase),
             "/tags": _measure("/tags", tags),
             "/settings": _measure("/settings", settings),
         }

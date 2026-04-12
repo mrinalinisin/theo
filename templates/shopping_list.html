@@ -364,5 +364,32 @@ document.getElementById('modal-purchase').addEventListener('click', e => {
 
   btn.addEventListener('click', loadMore);
 })();
+
+// ── Cart toggle on product cards ──
+function toggleCart(event, btn) {
+  event.preventDefault();
+  event.stopPropagation();
+  var productId = btn.dataset.productId;
+  var inCart = btn.classList.contains('in-cart');
+  var url = inCart ? '/cart/remove/' + productId : '/cart/add/' + productId;
+  btn.style.opacity = '0.5';
+  fetch(url, { method: 'POST' })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      btn.style.opacity = '1';
+      if (data.in_cart) {
+        btn.classList.add('in-cart');
+        btn.innerHTML = 'In Cart &#x2713;';
+      } else {
+        btn.classList.remove('in-cart');
+        btn.innerHTML = '+ Cart';
+      }
+      // Update header badge(s).
+      document.querySelectorAll('.cart-badge').forEach(function(badge) {
+        badge.textContent = data.cart_count;
+        badge.style.display = data.cart_count > 0 ? '' : 'none';
+      });
+    });
+}
 </script>
 {% endblock %}

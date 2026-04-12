@@ -20,16 +20,17 @@
     <a href="/" class="top-header-logo">Gummi<span class="top-header-tagline">Inventory for life</span></a>
     <nav class="top-header-nav">
       <a href="{{ url_for('shopping_list') }}" class="{{ 'active' if request.endpoint == 'shopping_list' }}">
-        <span class="icon">🛒</span> Browse
+        <span class="icon">&#x1f4d6;</span> Browse
+      </a>
+      <a href="{{ url_for('cart') }}" class="nav-cart-link {{ 'active' if request.endpoint in ('cart', 'cart_checkout') }}" title="Cart">
+        <span class="icon">&#x1f6d2;</span> Cart
+        <span class="cart-badge" id="cart-badge" {% if not cart_count %}style="display:none"{% endif %}>{{ cart_count }}</span>
       </a>
       <a href="{{ url_for('add_item') }}" class="{{ 'active' if request.endpoint in ('add_item', 'add_item_scrape') }}">
         <span class="icon">😍</span> Add Product
       </a>
       <a href="{{ url_for('purchases') }}" class="{{ 'active' if request.endpoint == 'purchases' }}">
         <span class="icon">&#x1f4e6;</span> Purchases
-      </a>
-      <a href="{{ url_for('add_purchase') }}" class="{{ 'active' if request.endpoint in ('add_purchase', 'add_purchase_save') }}">
-        <span class="icon">💸</span> Add Purchase
       </a>
       <a href="{{ url_for('stats') }}" class="{{ 'active' if request.path == '/stats' }}">
         <span class="icon">&#x1f4c8;</span> Stats
@@ -48,16 +49,17 @@
 
   <div class="mobile-menu" id="mobileMenu">
     <a href="{{ url_for('shopping_list') }}" class="{{ 'active' if request.endpoint == 'shopping_list' }}">
-      <span class="icon">🛒</span> Browse
+      <span class="icon">&#x1f4d6;</span> Browse
+    </a>
+    <a href="{{ url_for('cart') }}" class="nav-cart-link {{ 'active' if request.endpoint in ('cart', 'cart_checkout') }}">
+      <span class="icon">&#x1f6d2;</span> Cart
+      <span class="cart-badge" id="cart-badge-mobile" {% if not cart_count %}style="display:none"{% endif %}>{{ cart_count }}</span>
     </a>
     <a href="{{ url_for('add_item') }}" class="{{ 'active' if request.endpoint in ('add_item', 'add_item_scrape') }}">
       <span class="icon">😍</span> Add Product
     </a>
     <a href="{{ url_for('purchases') }}" class="{{ 'active' if request.endpoint == 'purchases' }}">
       <span class="icon">&#x1f4e6;</span> Purchases
-    </a>
-    <a href="{{ url_for('add_purchase') }}" class="{{ 'active' if request.endpoint in ('add_purchase', 'add_purchase_save') }}">
-      <span class="icon">💸</span> Add Purchase
     </a>
     <a href="{{ url_for('stats') }}" class="{{ 'active' if request.path == '/stats' }}">
       <span class="icon">&#x1f4c8;</span> Stats

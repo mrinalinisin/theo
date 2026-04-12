@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% block title %}Cart — Gummi{% endblock %}
+
+{% block content %}
+<div class="page-body">
+  {% if items %}
+
+  <div class="cart-summary">
+    <div class="cart-summary-count">{{ items|length }} item{{ 's' if items|length != 1 }} in cart</div>
+    {% if value_by_currency %}
+    <div class="cart-summary-total">
+      Total:
+      {% for sym, total in value_by_currency %}
+        <strong>{{ sym }}{{ "{:,.2f}".format(total) }}</strong>{% if not loop.last %} + {% endif %}
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="card">
+    <div class="card-body" style="padding:0;">
+      <div id="cartItemsList">
+        {% for p in items %}
+        <div class="cart-item" id="cart-item-{{ p.id }}">
+          <div class="cart-item-image">
+            {% if p.image_url %}
+            <img src="{{ image_src(p.image_url) }}" alt="{{ p.name }}">
+            {% else %}
+            <span class="hero-card-image-placeholder" style="font-size:24px;">&#x1f6cd;&#xfe0f;</span>
+            {% endif %}
+          </div>
+          <div class="cart-item-info">
+            <div class="cart-item-name">{{ p.name }}</div>
+            <div class="cart-item-meta">
+              {% if p.store %}{{ p.store }} &middot; {% endif %}
+              {{ p.fmt_price(p.current_price) }}{% if p.quantity and p.quantity > 1 %} &times; {{ p.quantity }}{% endif %}
+            </div>
+          </div>
+          <button type="button" class="btn btn-sm btn-ghost cart-remove-btn"
+                  data-product-id="{{ p.id }}"
+                  onclick="removeFromCart(this)" title="Remove from cart">&times;</button>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <div class="cart-actions">
+    <form method="POST" action="{{ url_for('cart_clear') }}" style="display:inline;">
+      <button type="submit" class="btn btn-secondary">Clear Cart</button>
+    </form>
+    <a href="{{ url_for('cart_checkout') }}" class="btn btn-primary">Proceed to Checkout</a>
+  </div>
+
+  {% else %}
+  <div class="empty-state">
+    <div class="empty-icon">&#x1f6d2;</div>
+    <div class="empty-title">Your cart is empty</div>
+    <div class="empty-desc">Browse products and add items to your cart.</div>
+    <a href="{{ url_for('shopping_list') }}" class="btn btn-primary" style="margin-top:12px;">Browse Products</a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function removeFromCart(btn) {
+  var productId = btn.dataset.productId;
+  btn.style.opacity = '0.5';
+  fetch('/cart/remove/' + productId, { method: 'POST' })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      var row = document.getElementById('cart-item-' + productId);
+      if (row) row.remove();
+      // Update header badges.
+      document.querySelectorAll('.cart-badge').forEach(function(badge) {
+        badge.textContent = data.cart_count;
+        badge.style.display = data.cart_count > 0 ? '' : 'none';
+      });
+      // If cart is now empty, reload to show empty state.
+      if (data.cart_count === 0) {
+        window.location.reload();
+      }
+    });
+}
+</script>
+{% endblock %}
