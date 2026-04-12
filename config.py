@@ -9,10 +9,7 @@ class Config:
     SQLALCHEMY_DATABASE_URI = "sqlite:///gummi.db"
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_ENGINE_OPTIONS = {
-        "pool_size": 10,
-        "max_overflow": 20,
-        "pool_timeout": 60,
-        "pool_recycle": 300,
+        "pool_pre_ping": True,
     }
 
     # Allow pasted/uploaded images (base64 data URLs) in form POSTs.
