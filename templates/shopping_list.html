@@ -384,10 +384,16 @@ function toggleCart(event, btn) {
         btn.classList.remove('in-cart');
         btn.innerHTML = '+ Cart';
       }
-      // Update header badge(s).
+      // Update header badge(s), icon, and label.
       document.querySelectorAll('.cart-badge').forEach(function(badge) {
         badge.textContent = data.cart_count;
         badge.style.display = data.cart_count > 0 ? '' : 'none';
+      });
+      document.querySelectorAll('.cart-icon').forEach(function(icon) {
+        icon.textContent = data.cart_count > 0 ? '\uD83D\uDCB0' : '\uD83D\uDED2';
+      });
+      document.querySelectorAll('.cart-label').forEach(function(label) {
+        label.textContent = data.cart_count > 0 ? 'Checkout' : 'Cart';
       });
     });
 }

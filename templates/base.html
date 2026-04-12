@@ -23,7 +23,8 @@
         <span class="icon">&#x1f4d6;</span> Browse
       </a>
       <a href="{{ url_for('cart') }}" class="nav-cart-link {{ 'active' if request.endpoint in ('cart', 'cart_checkout') }}" title="Cart">
-        <span class="icon">&#x1f6d2;</span> Cart
+        <span class="icon cart-icon">{% if cart_count %}&#x1f4b0;{% else %}&#x1f6d2;{% endif %}</span>
+        <span class="cart-label">{% if cart_count %}Checkout{% else %}Cart{% endif %}</span>
         <span class="cart-badge" id="cart-badge" {% if not cart_count %}style="display:none"{% endif %}>{{ cart_count }}</span>
       </a>
       <a href="{{ url_for('add_item') }}" class="{{ 'active' if request.endpoint in ('add_item', 'add_item_scrape') }}">
@@ -52,7 +53,8 @@
       <span class="icon">&#x1f4d6;</span> Browse
     </a>
     <a href="{{ url_for('cart') }}" class="nav-cart-link {{ 'active' if request.endpoint in ('cart', 'cart_checkout') }}">
-      <span class="icon">&#x1f6d2;</span> Cart
+      <span class="icon cart-icon">{% if cart_count %}&#x1f4b0;{% else %}&#x1f6d2;{% endif %}</span>
+      <span class="cart-label">{% if cart_count %}Checkout{% else %}Cart{% endif %}</span>
       <span class="cart-badge" id="cart-badge-mobile" {% if not cart_count %}style="display:none"{% endif %}>{{ cart_count }}</span>
     </a>
     <a href="{{ url_for('add_item') }}" class="{{ 'active' if request.endpoint in ('add_item', 'add_item_scrape') }}">
