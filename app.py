@@ -3,6 +3,15 @@
 # Suppress harmless multiprocessing semaphore leak warnings that occur when the
 # server is killed abruptly while Playwright has Chromium subprocesses running.
 # macOS cleans up the orphaned semaphores automatically.
+#
+# We set PYTHONWARNINGS so the filter propagates to child processes (the
+# resource_tracker runs as a separate subprocess with its own warning state,
+# so warnings.filterwarnings() in the main process alone has no effect).
+import os
+os.environ.setdefault(
+    "PYTHONWARNINGS",
+    "ignore::UserWarning:multiprocessing.resource_tracker",
+)
 import warnings
 warnings.filterwarnings(
     "ignore",
@@ -345,7 +354,107 @@ def create_app():
 
         db.session.commit()
         flash(f"Added \"{name}\" to your shopping list!", "success")
-        return redirect(url_for("shopping_list"))
+        return redirect(url_for("product_detail", product_id=product.id))
+
+    # ── Browser Extension API ────────────────────────────────────────────────
+
+    @app.route("/products/new_from_browser", methods=["POST", "OPTIONS"])
+    def add_item_from_browser():
+        """JSON endpoint for the Safari extension to send selected content."""
+        if request.method == "OPTIONS":
+            return "", 204
+
+        from scraper import sanitize_url
+        from image_store import save_images_for_product, save_image, find_duplicate_by_image
+
+        data = request.get_json(silent=True)
+        if not data:
+            return jsonify(ok=False, error="Invalid JSON"), 400
+
+        url = sanitize_url(data.get("url", ""))
+        name = (data.get("name") or data.get("selected_text", "")[:256] or "Unknown Product").strip()
+        store = data.get("store", "")
+        price = _parse_price(data.get("price", 0))
+        image_url = data.get("image_url", "")
+        images = data.get("images", [])
+        notes = data.get("notes") or data.get("selected_text", "")
+        track_price = bool(data.get("track_price", False))
+
+        # Resolve currency code to ID
+        currency_code = data.get("currency", "INR")
+        currency = Currency.query.filter_by(code=currency_code).first()
+        if not currency:
+            currency = Currency.query.filter_by(code="INR").first()
+        currency_id = currency.id if currency else None
+
+        # Resolve tag names to Tag objects, creating new ones as needed
+        tag_names = data.get("tag_names", [])
+        tags = []
+        for tn in tag_names:
+            tag = Tag.query.filter(func.lower(Tag.name) == tn.strip().lower()).first()
+            if not tag:
+                tag = Tag(name=tn.strip())
+                db.session.add(tag)
+            tags.append(tag)
+
+        product = Product(
+            url=url,
+            name=name,
+            store=store,
+            current_price=price,
+            original_price=price,
+            image_url=image_url,
+            images=images,
+            variants={},
+            notes=notes,
+            quantity=1,
+            track_price=track_price,
+            currency_id=currency_id,
+            status="watching",
+        )
+        for tag in tags:
+            product.tags.append(tag)
+
+        db.session.add(product)
+        db.session.flush()
+
+        # Save images to disk
+        product.images = save_images_for_product(images, product.id, app)
+        if image_url:
+            saved_main = save_image(image_url, product.id, 0, app)
+            product.image_url = saved_main or ""
+            if saved_main and saved_main not in product.images:
+                product.images.insert(0, saved_main)
+        else:
+            product.image_url = product.images[0] if product.images else ""
+
+        # Check for image-based duplicates
+        duplicate_name = None
+        for ih in product.image_hashes:
+            match = find_duplicate_by_image(ih.phash, exclude_product_id=product.id)
+            if match:
+                duplicate_name = match.name
+                break
+
+        # Record initial price history
+        if price:
+            ph = PriceHistory(product_id=product.id, price=price)
+            db.session.add(ph)
+
+        db.session.commit()
+
+        result = dict(ok=True, product_id=product.id, name=product.name)
+        if duplicate_name:
+            result["warning"] = f"Possible duplicate of \"{duplicate_name}\""
+        return jsonify(result), 201
+
+    @app.after_request
+    def add_cors_for_browser_extension(response):
+        if request.path == "/products/new_from_browser":
+            response.headers["Access-Control-Allow-Origin"] = "*"
+            response.headers["Access-Control-Allow-Methods"] = "POST, OPTIONS"
+            response.headers["Access-Control-Allow-Headers"] = "Content-Type"
+        return response
 
     # ── Product Detail ────────────────────────────────────────────────────────
 
