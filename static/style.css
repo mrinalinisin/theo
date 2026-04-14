@@ -871,6 +871,9 @@ textarea.form-input { resize: vertical; min-height: 80px; }
   .product-photo-main { height: 300px; }
   .photo-thumb { width: 72px; height: 72px; }
   .grid-2-desktop { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  /* Prevent flex/scroll children (e.g. .photo-strip) from blowing out the column.
+     Grid items default to min-width:auto, which equals their intrinsic content width. */
+  .grid-2-desktop > * { min-width: 0; }
 
   /* Wider modals have space */
   .modal { max-width: 520px; }
