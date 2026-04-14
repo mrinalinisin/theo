@@ -245,15 +245,32 @@ def create_app():
             return redirect(url_for("add_item"))
 
         settings = Settings.get()
+        scrape_failed = False
         try:
             scraped = scrape_product(url, use_browser=settings.use_browser_rendering)
         except Exception as e:
-            flash(f"Failed to scrape: {e}", "error")
-            return redirect(url_for("add_item"))
+            flash(f"Failed to scrape: {e}. Fill in the details manually.", "error")
+            scrape_failed = True
+            scraped = {
+                "url": url,
+                "store": "",
+                "name": "",
+                "price": "",
+                "image_url": "",
+                "images": [],
+                "variants": {},
+            }
 
         tags = Tag.query.order_by(Tag.name).all()
         currencies = Currency.query.order_by(Currency.code).all()
-        return render_template("add_item.html", tags=tags, currencies=currencies, scraped=scraped, url=url)
+        return render_template(
+            "add_item.html",
+            tags=tags,
+            currencies=currencies,
+            scraped=scraped,
+            url=url,
+            scrape_failed=scrape_failed,
+        )
 
     @app.route("/products/new/save", methods=["POST"])
     def add_item_save():

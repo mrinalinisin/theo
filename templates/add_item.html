@@ -48,12 +48,31 @@
 
   {% else %}
   <!-- ═══ Step 2+3: Review scraped data + tags ═══ -->
+  {% if scrape_failed %}
+  <div class="callout callout-warning mb-16">
+    &#9888; Couldn't scrape this page automatically. Confirm the URL and fill in the details below.
+  </div>
+  {% else %}
   <div class="callout callout-success mb-16">
     &#x2713; Scraped: <strong>{{ scraped.store }}</strong> &mdash; {{ scraped.url[:60] }}...
   </div>
+  {% endif %}
 
   <form method="POST" action="{{ url_for('add_item_save') }}">
+    {% if scrape_failed %}
+    <div class="card mb-20">
+      <div class="card-header">Product URL</div>
+      <div class="card-body">
+        <div class="form-group" style="margin-bottom:0;">
+          <label class="form-label">URL</label>
+          <input type="url" name="url" class="form-input" value="{{ scraped.url }}" required>
+          <div class="form-hint">Edit if needed — scraping failed, so this URL is stored as-is.</div>
+        </div>
+      </div>
+    </div>
+    {% else %}
     <input type="hidden" name="url" value="{{ scraped.url }}">
+    {% endif %}
     <input type="hidden" name="images" value="{{ scraped.images|tojson_safe }}">
     <input type="hidden" name="variants" value="{{ scraped.variants|tojson }}">
 
