@@ -10,14 +10,19 @@
   <title>{% block title %}Money Penny{% endblock %}</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
-  <link rel="apple-touch-icon" href="{{ url_for('static', filename='icons/icon-192.png') }}">
+  <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='favicon-32.png') }}">
+  <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='favicon-16.png') }}">
+  <link rel="apple-touch-icon" href="{{ url_for('static', filename='apple-touch-icon.png') }}">
 </head>
 <body>
 <div class="app-shell">
 
   <!-- ═══ Top Header Nav ═══ -->
   <header class="top-header">
-    <a href="/" class="top-header-logo">Money Penny<span class="top-header-tagline">Inventory for life</span></a>
+    <a href="/" class="top-header-logo">
+      <img src="{{ url_for('static', filename='logo.png') }}" alt="Money Penny logo" class="logo-mark">
+      <span class="top-header-logo-text">Money Penny<span class="top-header-tagline">Inventory for life</span></span>
+    </a>
     <nav class="top-header-nav">
       <a href="{{ url_for('shopping_list') }}" class="{{ 'active' if request.endpoint == 'shopping_list' }}">
         <span class="icon">&#x1f4d6;</span> Browse

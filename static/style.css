@@ -48,23 +48,34 @@ body {
   gap: 16px;
   background: var(--surface);
   padding: 0 16px;
-  height: 48px;
+  height: 92px;
   position: sticky;
   top: 0;
   z-index: 110;
 }
 .top-header-logo {
-  font-size: 18px;
+  font-size: 24px;
   font-weight: 700;
   letter-spacing: -0.5px;
   color: var(--accent);
   text-decoration: none;
   flex-shrink: 0;
   line-height: 1.1;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+}
+.top-header-logo-text {
+  display: block;
+}
+.logo-mark {
+  height: 76px;
+  width: auto;
+  display: block;
 }
 .top-header-tagline {
   display: block;
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 400;
   color: var(--text-faint);
   letter-spacing: 0;
