@@ -38,6 +38,9 @@
       <a href="{{ url_for('purchases') }}" class="{{ 'active' if request.endpoint == 'purchases' }}">
         <span class="icon">&#x1f4e6;</span> Purchases
       </a>
+      <a href="{{ url_for('purchases_calendar') }}" class="{{ 'active' if request.endpoint == 'purchases_calendar' }}">
+        <span class="icon">&#x1f5d3;&#xfe0f;</span> Calendar
+      </a>
       <a href="{{ url_for('stats') }}" class="{{ 'active' if request.path == '/stats' }}">
         <span class="icon">&#x1f4c8;</span> Stats
       </a>
@@ -67,6 +70,9 @@
     </a>
     <a href="{{ url_for('purchases') }}" class="{{ 'active' if request.endpoint == 'purchases' }}">
       <span class="icon">&#x1f4e6;</span> Purchases
+    </a>
+    <a href="{{ url_for('purchases_calendar') }}" class="{{ 'active' if request.endpoint == 'purchases_calendar' }}">
+      <span class="icon">&#x1f5d3;&#xfe0f;</span> Calendar
     </a>
     <a href="{{ url_for('stats') }}" class="{{ 'active' if request.path == '/stats' }}">
       <span class="icon">&#x1f4c8;</span> Stats
