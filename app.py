@@ -851,7 +851,7 @@ def create_app():
         period = request.args.get("period", "all")
         tag_filter = request.args.get("tag", "")
         search_q = (request.args.get("q") or "").strip()
-        sort_key = request.args.get("sort", "modified")
+        sort_key = request.args.get("sort", "date")
         order_key = request.args.get("order", "desc")
         now = datetime.utcnow()
 
