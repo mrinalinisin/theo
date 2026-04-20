@@ -36,7 +36,7 @@
       </div>
       <div class="card-body" style="padding-top:0;">
         <div class="form-group">
-          <label class="form-label" for="paid_{{ p.id }}">Amount Paid</label>
+          <label class="form-label" for="paid_{{ p.id }}">Amount Paid ({{ p.currency_symbol }})</label>
           <input type="text" name="paid_amount_{{ p.id }}" id="paid_{{ p.id }}" class="form-input"
                  value="{{ ((p.current_price or 0) * (p.quantity or 1)) }}"
                  placeholder="Amount paid">
