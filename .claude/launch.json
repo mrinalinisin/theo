@@ -2,7 +2,7 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "gummi",
+      "name": "money-penny",
       "runtimeExecutable": "/Users/sindhus/Desktop/Gummi/venv/bin/python",
       "runtimeArgs": ["app.py"],
       "port": 5111,

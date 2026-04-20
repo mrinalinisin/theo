@@ -1,6 +1,6 @@
 {
-  "name": "Gummi — Shopping Tracker",
-  "short_name": "Gummi",
+  "name": "Money Penny — Shopping Tracker",
+  "short_name": "Money Penny",
   "description": "Track prices, manage shopping lists, and monitor your spending.",
   "start_url": "/",
   "display": "standalone",
