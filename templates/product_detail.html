@@ -399,8 +399,15 @@
         </div>
 
         <div class="form-group" id="detail-custom-price" style="display:none;">
-          <label class="form-label">Amount Paid</label>
+          <label class="form-label">Amount Paid <span class="text-xs text-faint">(total, not per unit)</span></label>
           <input type="text" name="paid_amount" class="form-input" placeholder="e.g. 2200">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Quantity</label>
+          <input type="number" name="quantity" class="form-input"
+            value="{{ product.quantity or 1 }}" min="1" step="1">
+          <div class="form-hint">How many you actually bought. For &ldquo;listed price&rdquo; mode the total is quantity &times; unit price.</div>
         </div>
 
         <div class="form-group">

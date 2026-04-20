@@ -598,11 +598,23 @@ def create_app():
     @app.route("/products/<int:product_id>/purchase", methods=["POST"])
     def product_purchase(product_id):
         product = Product.query.get_or_404(product_id)
+
+        # Let the user correct the quantity at purchase time — they may have
+        # planned to buy 1 but ended up with a 3-pack. Update the product so
+        # the source of truth stays consistent.
+        try:
+            quantity = max(1, int(request.form.get("quantity", product.quantity or 1)))
+        except (TypeError, ValueError):
+            quantity = product.quantity or 1
+        product.quantity = quantity
+
         price_mode = request.form.get("price_mode", "listed")
         if price_mode == "custom":
+            # Custom amount is the total paid, entered as-is.
             paid = _parse_price(request.form.get("paid_amount", "0"))
         else:
-            paid = product.current_price or 0
+            # Listed price is per unit — multiply by the (possibly updated) quantity.
+            paid = (product.current_price or 0) * quantity
 
         purchased_at_str = request.form.get("purchased_at")
         if purchased_at_str:
