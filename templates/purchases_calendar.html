@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% block title %}Purchases Calendar — Money Penny{% endblock %}
+
+{% block header_filters %}
+<div class="header-filters">
+  <form id="calFilterForm" method="GET" action="{{ url_for('purchases_calendar') }}">
+    <input type="hidden" name="y" value="{{ year }}">
+    <input type="hidden" name="m" value="{{ month }}">
+    <select name="tag" id="calTagSelect" class="form-input" title="Filter by tag">
+      <option value="">All Tags</option>
+      {% for t in tags %}
+      <option value="{{ t.id }}" {% if active_tag|string == t.id|string %}selected{% endif %}>{{ t.name }}</option>
+      {% endfor %}
+    </select>
+  </form>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="page-body">
+  <div class="cal-toolbar">
+    <div class="cal-nav">
+      <a href="{{ url_for('purchases_calendar', y=prev_y, m=prev_m, tag=active_tag or None) }}"
+         class="btn btn-secondary btn-sm" aria-label="Previous month" title="Previous month">&larr;</a>
+      <a href="{{ url_for('purchases_calendar', tag=active_tag or None) }}"
+         class="btn btn-secondary btn-sm">Today</a>
+      <a href="{{ url_for('purchases_calendar', y=next_y, m=next_m, tag=active_tag or None) }}"
+         class="btn btn-secondary btn-sm" aria-label="Next month" title="Next month">&rarr;</a>
+      <h2 class="cal-title">{{ month_name }} {{ year }}</h2>
+    </div>
+    <a href="{{ url_for('purchases', tag=active_tag or None) }}" class="btn btn-ghost btn-sm">List view &rarr;</a>
+  </div>
+
+  <div class="cal-year-strip" aria-label="Monthly totals for {{ year }}">
+    {% for m in range(1, 13) %}
+      {% set is_current = (m == month) %}
+      {% set total = yearly_totals.get(m) %}
+      <a href="{{ url_for('purchases_calendar', y=year, m=m, tag=active_tag or None) }}"
+         class="cal-ym {% if is_current %}cal-ym-active{% endif %}"
+         title="{{ month_abbrs[m-1] }} {{ year }}{% if total %} — total {{ '{:,.0f}'.format(total) }}{% endif %}">
+        <span class="cal-ym-label">{{ month_abbrs[m-1] }}</span>
+        <span class="cal-ym-total">{% if total %}{{ "{:,.0f}".format(total) }}{% else %}&mdash;{% endif %}</span>
+      </a>
+    {% endfor %}
+  </div>
+
+  <div class="cal-grid cal-weekdays">
+    {% for day in ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'] %}
+    <div class="cal-weekday">{{ day }}</div>
+    {% endfor %}
+  </div>
+
+  <div class="cal-grid cal-days">
+    {% for week in weeks %}
+      {% for d in week %}
+        {% set outside = d.month != month %}
+        {% set events = by_day.get(d, []) %}
+        <div class="cal-day {% if outside %}cal-day-outside{% endif %} {% if d == today %}cal-day-today{% endif %}">
+          <div class="cal-day-number">{{ d.day }}</div>
+          {% for p in events[:3] %}
+            {% set product = p.product %}
+            {% set colour = product.tags[0].colour if product and product.tags else '#8892a6' %}
+            <a href="{{ url_for('product_detail', product_id=p.product_id) }}"
+               class="cal-event"
+               style="background-color: {{ colour }}1f; color: {{ colour }}; border-left-color: {{ colour }};"
+               title="{{ product.name if product else 'Unknown' }} — {{ product.fmt_price(p.paid_amount) if product else p.paid_amount }}">
+              <span class="cal-event-title">{{ product.name if product else 'Unknown' }}</span>
+            </a>
+          {% endfor %}
+          {% if events|length > 3 %}
+            <div class="cal-more">+{{ events|length - 3 }} more</div>
+          {% endif %}
+        </div>
+      {% endfor %}
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function() {
+  const sel = document.getElementById('calTagSelect');
+  if (sel) sel.addEventListener('change', () => sel.closest('form').submit());
+})();
+</script>
+{% endblock %}

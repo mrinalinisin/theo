@@ -18,8 +18,9 @@ warnings.filterwarnings(
     message=r".*resource_tracker.*leaked semaphore.*",
 )
 
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone, timedelta, date
 from urllib.parse import urlparse
+import calendar as stdlib_calendar
 import json
 import os
 import re
@@ -922,6 +923,81 @@ def create_app():
 
         html = render_template("_purchase_cards.html", purchases=purchases_page)
         return jsonify(html=html, has_more=has_more, next_offset=next_offset, total_count=total_count)
+
+    @app.route("/purchases/calendar")
+    def purchases_calendar():
+        today = datetime.utcnow().date()
+        try:
+            year = int(request.args.get("y", today.year))
+            month = int(request.args.get("m", today.month))
+            if not (1 <= month <= 12):
+                raise ValueError
+        except (TypeError, ValueError):
+            year, month = today.year, today.month
+
+        tag_id = request.args.get("tag", "")
+
+        first_of_month = date(year, month, 1)
+        next_month_first = (
+            date(year + 1, 1, 1) if month == 12 else date(year, month + 1, 1)
+        )
+
+        month_query = Purchase.query.join(
+            Product, Purchase.product_id == Product.id
+        ).filter(
+            Purchase.purchased_at >= first_of_month,
+            Purchase.purchased_at < next_month_first,
+        )
+        year_start = date(year, 1, 1)
+        year_end = date(year + 1, 1, 1)
+        year_query = Purchase.query.join(
+            Product, Purchase.product_id == Product.id
+        ).filter(
+            Purchase.purchased_at >= year_start,
+            Purchase.purchased_at < year_end,
+        )
+        if tag_id:
+            try:
+                tag_int = int(tag_id)
+                month_query = month_query.filter(Product.tags.any(Tag.id == tag_int))
+                year_query = year_query.filter(Product.tags.any(Tag.id == tag_int))
+            except (TypeError, ValueError):
+                tag_id = ""
+
+        by_day = {}
+        for p in month_query.all():
+            by_day.setdefault(p.purchased_at.date(), []).append(p)
+
+        yearly_totals = {}
+        for p in year_query.all():
+            yearly_totals[p.purchased_at.month] = (
+                yearly_totals.get(p.purchased_at.month, 0) + p.paid_amount
+            )
+
+        # Sunday-first weeks to match Apple Calendar's default.
+        cal = stdlib_calendar.Calendar(firstweekday=6)
+        weeks = cal.monthdatescalendar(year, month)
+
+        prev_y, prev_m = (year - 1, 12) if month == 1 else (year, month - 1)
+        next_y, next_m = (year + 1, 1) if month == 12 else (year, month + 1)
+
+        return render_template(
+            "purchases_calendar.html",
+            year=year,
+            month=month,
+            month_name=stdlib_calendar.month_name[month],
+            month_abbrs=[stdlib_calendar.month_abbr[m] for m in range(1, 13)],
+            weeks=weeks,
+            by_day=by_day,
+            today=today,
+            prev_y=prev_y,
+            prev_m=prev_m,
+            next_y=next_y,
+            next_m=next_m,
+            yearly_totals=yearly_totals,
+            tags=Tag.query.order_by(Tag.name).all(),
+            active_tag=tag_id,
+        )
 
     # ── Tags ──────────────────────────────────────────────────────────────────
 
