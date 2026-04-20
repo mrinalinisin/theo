@@ -672,6 +672,16 @@ def create_app():
         flash(f"Marked \"{product.name}\" as purchased for {_fmt_price(paid)}!", "success")
         return redirect(url_for("purchases"))
 
+    @app.route("/products/<int:product_id>/unpurchase", methods=["POST"])
+    def product_unpurchase(product_id):
+        product = Product.query.get_or_404(product_id)
+        if product.purchase:
+            db.session.delete(product.purchase)
+        product.status = "watching"
+        db.session.commit()
+        flash(f"Moved \"{product.name}\" back to Watching.", "success")
+        return redirect(url_for("shopping_list"))
+
     @app.route("/products/<int:product_id>/delete", methods=["POST"])
     def product_delete(product_id):
         product = Product.query.get_or_404(product_id)
