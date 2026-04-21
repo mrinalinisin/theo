@@ -130,6 +130,27 @@
   });
 })();
 
+// ── Keyboard shortcuts: Ctrl/Cmd+K → search, Ctrl/Cmd+N → add product ──
+(function() {
+  const form = document.getElementById('searchForm');
+  const input = document.getElementById('searchInput');
+  const addUrl = {{ url_for('add_item')|tojson }};
+
+  document.addEventListener('keydown', (e) => {
+    if (!(e.ctrlKey || e.metaKey) || e.altKey || e.shiftKey) return;
+    const key = e.key.toLowerCase();
+    if (key === 'k' && form && input) {
+      e.preventDefault();
+      form.classList.add('open');
+      input.focus();
+      input.select();
+    } else if (key === 'n') {
+      e.preventDefault();
+      window.location.href = addUrl;
+    }
+  });
+})();
+
 // ── Sort controls: submit on change ──
 (function() {
   const form = document.getElementById('sortForm');
