@@ -3,7 +3,7 @@
   "configurations": [
     {
       "name": "money-penny",
-      "runtimeExecutable": "/Users/sindhus/Desktop/Gummi/venv/bin/python",
+      "runtimeExecutable": "/Users/sindhus/Desktop/Money_Penny/venv/bin/python",
       "runtimeArgs": ["app.py"],
       "port": 5111,
       "env": {
