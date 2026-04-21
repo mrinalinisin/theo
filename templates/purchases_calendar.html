@@ -56,18 +56,15 @@
         {% set events = by_day.get(d, []) %}
         <div class="cal-day {% if outside %}cal-day-outside{% endif %} {% if d == today %}cal-day-today{% endif %}">
           <div class="cal-day-number">{{ d.day }}</div>
-          {% for p in events[:3] %}
-            {% set product = p.product %}
-            {% set colour = product.tags[0].colour if product and product.tags else '#8892a6' %}
-            <a href="{{ url_for('product_detail', product_id=p.product_id) }}"
-               class="cal-event"
-               style="background-color: {{ colour }}1f; color: {{ colour }}; border-left-color: {{ colour }};"
-               title="{{ product.name if product else 'Unknown' }} — {{ product.fmt_price(p.paid_amount) if product else p.paid_amount }}">
-              <span class="cal-event-title">{{ product.name if product else 'Unknown' }}</span>
+          {% if events %}
+            {% set day_total = events|sum(attribute='paid_amount') %}
+            {% set n = events|length %}
+            <a href="{{ url_for('purchases', date=d.isoformat(), tag=active_tag or None) }}"
+               class="cal-day-link"
+               title="{{ n }} purchase{{ 's' if n != 1 else '' }} on {{ d.strftime('%b %d, %Y') }} — total {{ '{:,.0f}'.format(day_total) }}">
+              <span class="cal-day-count">&times;{{ n }}</span>
+              <span class="cal-day-total">{{ "{:,.0f}".format(day_total) }}</span>
             </a>
-          {% endfor %}
-          {% if events|length > 3 %}
-            <div class="cal-more">+{{ events|length - 3 }} more</div>
           {% endif %}
         </div>
       {% endfor %}

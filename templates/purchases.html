@@ -4,12 +4,14 @@
 {% block header_filters %}
 <div class="header-filters">
   <form id="sortForm" method="GET" action="{{ url_for('purchases') }}">
+    {% if active_date %}<input type="hidden" name="date" value="{{ active_date.isoformat() }}">{% endif %}
     <select name="tag" id="tagSelect" class="form-input" title="Filter by tag">
       <option value="">All Tags</option>
       {% for tag in tags %}
       <option value="{{ tag.id }}" {% if active_tag|string == tag.id|string %}selected{% endif %}>{{ tag.name }}</option>
       {% endfor %}
     </select>
+    {% if not active_date %}
     <select name="period" id="periodSelect" class="form-input" title="Time period">
       <option value="all" {% if period == 'all' %}selected{% endif %}>All Time</option>
       <option value="1m" {% if period == '1m' %}selected{% endif %}>Last Month</option>
@@ -17,6 +19,7 @@
       <option value="6m" {% if period == '6m' %}selected{% endif %}>Last 6M</option>
       <option value="1y" {% if period == '1y' %}selected{% endif %}>Last Year</option>
     </select>
+    {% endif %}
     <select name="sort" id="sortSelect" class="form-input" title="Sort by">
       <option value="date" {% if sort_key == 'date' %}selected{% endif %}>Purchase Date</option>
       <option value="modified" {% if sort_key == 'modified' %}selected{% endif %}>Last Modified</option>
@@ -31,8 +34,26 @@
 {% endblock %}
 
 {% block content %}
+{% if active_date %}
+<div class="page-header">
+  <div class="page-header-top">
+    <div class="page-header-inline" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;width:100%;">
+      <div class="page-title">
+        Purchases on {{ active_date.strftime('%b %d, %Y') }}
+      </div>
+      <a href="{{ url_for('purchases', tag=active_tag or None) }}"
+         class="btn btn-ghost btn-sm"
+         title="Clear date filter">&times; Clear date</a>
+      <a href="{{ url_for('purchases_calendar', y=active_date.year, m=active_date.month, tag=active_tag or None) }}"
+         class="btn btn-secondary btn-sm" style="margin-left:auto;">&larr; Back to calendar</a>
+    </div>
+  </div>
+</div>
+{% endif %}
+
 <form id="searchForm" class="floating-search" method="GET" action="{{ url_for('purchases') }}">
   {% if active_tag %}<input type="hidden" name="tag" value="{{ active_tag }}">{% endif %}
+  {% if active_date %}<input type="hidden" name="date" value="{{ active_date.isoformat() }}">{% endif %}
   <input type="hidden" name="period" value="{{ period }}">
   <input type="hidden" name="sort" value="{{ sort_key }}">
   <input type="hidden" name="order" value="{{ order_key }}">
@@ -57,6 +78,7 @@
        data-period="{{ period }}"
        data-sort="{{ sort_key }}"
        data-order="{{ order_key }}"
+       data-date="{{ active_date.isoformat() if active_date else '' }}"
        data-q="{{ search_q or '' }}">
     {% include '_purchase_cards.html' %}
   </div>
@@ -139,6 +161,7 @@
     params.set('offset', offset);
     if (grid.dataset.tag) params.set('tag', grid.dataset.tag);
     if (grid.dataset.q) params.set('q', grid.dataset.q);
+    if (grid.dataset.date) params.set('date', grid.dataset.date);
     params.set('period', grid.dataset.period);
     params.set('sort', grid.dataset.sort);
     params.set('order', grid.dataset.order);

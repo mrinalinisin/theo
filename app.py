@@ -848,7 +848,7 @@ def create_app():
 
     def _build_purchase_query():
         """Parse request args and return (ordered_query, period, tag_filter,
-        sort_key, order_key, search_q)."""
+        sort_key, order_key, search_q, active_date)."""
         period = request.args.get("period", "all")
         tag_filter = request.args.get("tag", "")
         search_q = (request.args.get("q") or "").strip()
@@ -856,8 +856,24 @@ def create_app():
         order_key = request.args.get("order", "desc")
         now = datetime.utcnow()
 
+        # Optional single-day filter (YYYY-MM-DD). When set it wins over `period`
+        # — a specific day is strictly narrower than any rolling window.
+        active_date = None
+        date_str = (request.args.get("date") or "").strip()
+        if date_str:
+            try:
+                active_date = datetime.strptime(date_str, "%Y-%m-%d").date()
+            except ValueError:
+                active_date = None
+
         query = Purchase.query.join(Product, Purchase.product_id == Product.id, isouter=True)
-        if period == "1m":
+        if active_date:
+            next_day = active_date + timedelta(days=1)
+            query = query.filter(
+                Purchase.purchased_at >= active_date,
+                Purchase.purchased_at < next_day,
+            )
+        elif period == "1m":
             query = query.filter(Purchase.purchased_at >= now - timedelta(days=30))
         elif period == "3m":
             query = query.filter(Purchase.purchased_at >= now - timedelta(days=90))
@@ -884,11 +900,13 @@ def create_app():
             sort_col = Purchase.purchased_at
         query = query.order_by(sort_col.asc() if order_key == "asc" else sort_col.desc())
 
-        return query, period, tag_filter, sort_key, order_key, search_q
+        return query, period, tag_filter, sort_key, order_key, search_q, active_date
 
     @app.route("/purchases")
     def purchases():
-        query, period, tag_filter, sort_key, order_key, search_q = _build_purchase_query()
+        query, period, tag_filter, sort_key, order_key, search_q, active_date = (
+            _build_purchase_query()
+        )
         tags = Tag.query.order_by(Tag.name).all()
 
         page_size = _get_page_size()
@@ -907,12 +925,15 @@ def create_app():
             search_q=search_q,
             has_more=has_more,
             total_count=total_count,
+            active_date=active_date,
         )
 
     @app.route("/api/purchases")
     def purchases_api():
         """Return the next page of purchase cards as an HTML fragment."""
-        query, period, tag_filter, sort_key, order_key, search_q = _build_purchase_query()
+        query, period, tag_filter, sort_key, order_key, search_q, _active_date = (
+            _build_purchase_query()
+        )
         offset = request.args.get("offset", 0, type=int)
         limit = request.args.get("limit", _get_page_size(), type=int)
 
