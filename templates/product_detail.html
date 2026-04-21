@@ -10,14 +10,6 @@
     </div>
     <div class="header-actions">
       <a href="{{ product.url }}" target="_blank" class="btn btn-secondary btn-sm" style="text-decoration:none;">Open Product Page</a>
-      {% if product.status == 'watching' %}
-      <button type="button" id="detail-cart-btn"
-        class="btn btn-secondary btn-sm {% if product.id in cart_product_ids %}in-cart{% endif %}"
-        data-product-id="{{ product.id }}"
-        onclick="toggleCartDetail(this)">
-        {% if product.id in cart_product_ids %}In Cart &#x2713;{% else %}Add to Cart{% endif %}
-      </button>
-      {% endif %}
       <form method="POST" action="{{ url_for('product_delete', product_id=product.id) }}"
         onsubmit="return confirm('Delete this product from your list?')">
         <button type="submit" class="btn btn-secondary btn-sm">Delete</button>
@@ -717,36 +709,6 @@ function validateEditLinks(form) {
     return false;
   }
   return true;
-}
-
-// ── Add to cart toggle ──
-function toggleCartDetail(btn) {
-  var productId = btn.dataset.productId;
-  var inCart = btn.classList.contains('in-cart');
-  var url = inCart ? '/cart/remove/' + productId : '/cart/add/' + productId;
-  btn.disabled = true;
-  fetch(url, { method: 'POST' })
-    .then(function(r) { return r.json(); })
-    .then(function(data) {
-      btn.disabled = false;
-      if (data.in_cart) {
-        btn.classList.add('in-cart');
-        btn.innerHTML = 'In Cart &#x2713;';
-      } else {
-        btn.classList.remove('in-cart');
-        btn.innerHTML = 'Add to Cart';
-      }
-      document.querySelectorAll('.cart-badge').forEach(function(badge) {
-        badge.textContent = data.cart_count;
-        badge.style.display = data.cart_count > 0 ? '' : 'none';
-      });
-      document.querySelectorAll('.cart-icon').forEach(function(icon) {
-        icon.textContent = data.cart_count > 0 ? '\uD83D\uDCB0' : '\uD83D\uDED2';
-      });
-      document.querySelectorAll('.cart-label').forEach(function(label) {
-        label.textContent = data.cart_count > 0 ? 'Checkout' : 'Cart';
-      });
-    });
 }
 
 // Close modals on overlay click
