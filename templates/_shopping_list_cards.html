@@ -33,6 +33,15 @@
       No tags
     {% endif %}
     {% endif %}
+    {% if p.url %}
+    <button type="button"
+      class="product-link-btn"
+      data-url="{{ p.url }}"
+      title="Open product page"
+      onclick="openProductUrl(event, this)">
+      Open &#x2197;
+    </button>
+    {% endif %}
     {% if p.status == 'watching' %}
     <button type="button"
       class="btn btn-sm cart-toggle-btn {% if p.id in cart_product_ids %}in-cart{% endif %}"

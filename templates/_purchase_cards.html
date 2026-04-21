@@ -27,6 +27,15 @@
     {% else %}
       No tags
     {% endif %}
+    {% if product and product.url %}
+    <button type="button"
+      class="product-link-btn"
+      data-url="{{ product.url }}"
+      title="Open product page"
+      onclick="openProductUrl(event, this)">
+      Open &#x2197;
+    </button>
+    {% endif %}
   </div>
 </a>
 {% endfor %}

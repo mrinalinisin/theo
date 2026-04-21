@@ -133,6 +133,14 @@
   document.querySelectorAll('.flash').forEach(el => {
     setTimeout(() => el.remove(), 5000);
   });
+  // Open a product's external URL without triggering the card's own link.
+  // Used by the "Open ↗" button on hero cards (purchases + shopping list).
+  window.openProductUrl = function(event, el) {
+    event.preventDefault();
+    event.stopPropagation();
+    const url = el.dataset.url;
+    if (url) window.open(url, '_blank', 'noopener');
+  };
   // Mobile menu toggle
   const menuBtn = document.getElementById('mobileMenuBtn');
   const mobileMenu = document.getElementById('mobileMenu');

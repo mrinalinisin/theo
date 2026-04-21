@@ -1008,6 +1008,26 @@ textarea.form-input { resize: vertical; min-height: 80px; }
   filter: brightness(0.92);
 }
 
+/* ── External product-page link on hero cards ── */
+.product-link-btn {
+  margin-left: auto;
+  background: var(--surface);
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+  font-size: 11px;
+  padding: 2px 8px;
+  min-height: 22px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  white-space: nowrap;
+}
+.product-link-btn:hover {
+  color: var(--text);
+  border-color: var(--text-muted);
+  background: var(--bg);
+}
+
 /* ── Cart page ── */
 .cart-summary {
   display: flex;
