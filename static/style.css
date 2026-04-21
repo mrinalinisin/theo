@@ -129,7 +129,7 @@ body {
 .nav-dropdown-menu {
   display: none;
   position: absolute;
-  right: 0;
+  left: 0;
   top: 100%;
   margin-top: 4px;
   min-width: 140px;
@@ -194,6 +194,11 @@ body {
   justify-content: flex-end;
 }
 .mobile-menu a:hover { background: var(--accent-light); color: var(--accent); }
+.mobile-menu a.mobile-submenu {
+  padding-right: 28px;
+  font-size: 13px;
+  color: var(--text-faint);
+}
 .mobile-menu a.active { color: var(--accent); }
 
 @media (max-width: 767px) {

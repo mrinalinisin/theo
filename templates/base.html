@@ -35,12 +35,16 @@
       <a href="{{ url_for('add_item') }}" class="{{ 'active' if request.endpoint in ('add_item', 'add_item_scrape') }}">
         <span class="icon">😍</span> Add Product
       </a>
-      <a href="{{ url_for('purchases') }}" class="{{ 'active' if request.endpoint == 'purchases' }}">
-        <span class="icon">&#x1f4e6;</span> Purchases
-      </a>
-      <a href="{{ url_for('purchases_calendar') }}" class="{{ 'active' if request.endpoint == 'purchases_calendar' }}">
-        <span class="icon">&#x1f5d3;&#xfe0f;</span> Calendar
-      </a>
+      <div class="nav-dropdown">
+        <a href="{{ url_for('purchases') }}" class="{{ 'active' if request.endpoint in ('purchases', 'purchases_calendar') }}">
+          <span class="icon">&#x1f4e6;</span> Purchases
+        </a>
+        <div class="nav-dropdown-menu">
+          <a href="{{ url_for('purchases_calendar') }}" class="{{ 'active' if request.endpoint == 'purchases_calendar' }}">
+            <span class="icon">&#x1f4c5;</span> By Month
+          </a>
+        </div>
+      </div>
       <a href="{{ url_for('stats') }}" class="{{ 'active' if request.path == '/stats' }}">
         <span class="icon">&#x1f4c8;</span> Stats
       </a>
@@ -71,8 +75,8 @@
     <a href="{{ url_for('purchases') }}" class="{{ 'active' if request.endpoint == 'purchases' }}">
       <span class="icon">&#x1f4e6;</span> Purchases
     </a>
-    <a href="{{ url_for('purchases_calendar') }}" class="{{ 'active' if request.endpoint == 'purchases_calendar' }}">
-      <span class="icon">&#x1f5d3;&#xfe0f;</span> Calendar
+    <a href="{{ url_for('purchases_calendar') }}" class="mobile-submenu {{ 'active' if request.endpoint == 'purchases_calendar' }}">
+      <span class="icon">&#x1f4c5;</span> By Month
     </a>
     <a href="{{ url_for('stats') }}" class="{{ 'active' if request.path == '/stats' }}">
       <span class="icon">&#x1f4c8;</span> Stats
