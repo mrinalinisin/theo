@@ -9,17 +9,31 @@
       <div class="page-title">Product Detail</div>
     </div>
     <div class="header-actions">
+      <a href="{{ product.url }}" target="_blank" class="btn btn-secondary btn-sm" style="text-decoration:none;">Open Product Page</a>
+      {% if product.status == 'watching' %}
+      <button type="button" id="detail-cart-btn"
+        class="btn btn-secondary btn-sm {% if product.id in cart_product_ids %}in-cart{% endif %}"
+        data-product-id="{{ product.id }}"
+        onclick="toggleCartDetail(this)">
+        {% if product.id in cart_product_ids %}In Cart &#x2713;{% else %}Add to Cart{% endif %}
+      </button>
+      {% endif %}
+      <form method="POST" action="{{ url_for('product_delete', product_id=product.id) }}"
+        onsubmit="return confirm('Delete this product from your list?')">
+        <button type="submit" class="btn btn-secondary btn-sm">Delete</button>
+      </form>
+      <button class="btn btn-secondary btn-sm" onclick="document.getElementById('modal-edit').classList.add('open')">Edit</button>
       {% if product.status == 'watching' %}
       <button class="btn btn-secondary btn-sm"
         onclick='openPurchaseModal("awaiting_delivery")'>
         Mark as Awaiting Delivery
       </button>
-      <button class="btn btn-primary btn-sm"
+      <button class="btn btn-secondary btn-sm"
         onclick='openPurchaseModal("purchased")'>
         Mark as Purchased
       </button>
       {% elif product.status == 'awaiting_delivery' %}
-      <button class="btn btn-primary btn-sm"
+      <button class="btn btn-secondary btn-sm"
         onclick='openPurchaseModal("purchased")'>
         Mark as Purchased
       </button>
@@ -53,14 +67,13 @@
             {% endif %}
           </div>
           {% if product.images %}
-          <div class="photo-strip" id="productPhotoStrip">
+          <div class="photo-strip photo-strip-static" id="productPhotoStrip">
             {% for img in product.images %}
             <div class="photo-thumb {{ 'active' if img == product.image_url or (loop.first and not product.image_url) }}" data-src="{{ img }}">
               <img src="{{ image_src(img) }}" alt="Photo {{ loop.index }}">
             </div>
             {% endfor %}
           </div>
-          <div class="text-xs text-faint" style="margin-top:6px;">Click a photo to set as main &middot; open Edit to remove photos</div>
           {% endif %}
         </div>
       </div>
@@ -204,25 +217,6 @@
           </div>
           {% endif %}
 
-          <div class="divider"></div>
-
-          <!-- Actions -->
-          <div class="flex gap-8 flex-wrap">
-            <a href="{{ product.url }}" target="_blank" class="btn btn-secondary btn-sm" style="text-decoration:none;">&#x1f517; Open Product Page</a>
-            {% if product.status == 'watching' %}
-            <button type="button" id="detail-cart-btn"
-              class="btn btn-sm cart-toggle-btn {% if product.id in cart_product_ids %}in-cart{% endif %}"
-              data-product-id="{{ product.id }}"
-              onclick="toggleCartDetail(this)">
-              {% if product.id in cart_product_ids %}In Cart &#x2713;{% else %}+ Cart{% endif %}
-            </button>
-            {% endif %}
-            <form method="POST" action="{{ url_for('product_delete', product_id=product.id) }}"
-              onsubmit="return confirm('Remove this product from your list?')">
-              <button type="submit" class="btn btn-danger btn-sm">&#x1f5d1; Remove</button>
-            </form>
-            <button class="btn btn-secondary btn-sm" style="margin-left:auto;" onclick="document.getElementById('modal-edit').classList.add('open')">&#x270f;&#xfe0f; Edit</button>
-          </div>
         </div>
       </div>
 
@@ -552,7 +546,6 @@
     });
   }
 
-  wireStrip(outerStrip, {allowRemove: false});
   wireStrip(editStrip, {allowRemove: true});
 
   // Seed once at load so edit-form hidden fields match the live DOM
@@ -741,7 +734,7 @@ function toggleCartDetail(btn) {
         btn.innerHTML = 'In Cart &#x2713;';
       } else {
         btn.classList.remove('in-cart');
-        btn.innerHTML = '+ Cart';
+        btn.innerHTML = 'Add to Cart';
       }
       document.querySelectorAll('.cart-badge').forEach(function(badge) {
         badge.textContent = data.cart_count;

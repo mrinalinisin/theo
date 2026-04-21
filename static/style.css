@@ -257,7 +257,7 @@ body {
 }
 .page-header-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .page-title { font-size: 16px; font-weight: 600; }
-.header-actions { display: flex; gap: 8px; align-items: center; }
+.header-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
 
 /* ── Buttons ───────────────────────────────────────────────────────────────── */
 .btn {
@@ -588,6 +588,7 @@ textarea.form-input { resize: vertical; min-height: 80px; }
 }
 .photo-thumb img { width: 100%; height: 100%; object-fit: cover; }
 .photo-thumb.active { border-color: var(--accent); }
+.photo-strip-static .photo-thumb { cursor: default; }
 
 /* ── Variant pills ─────────────────────────────────────────────────────────── */
 .variant-grid { display: flex; flex-wrap: wrap; gap: 6px; }
