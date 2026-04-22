@@ -22,11 +22,8 @@
   </div>
   <div class="hero-card-footer">
     <span class="hero-card-footer-icon">&#x1f3f7;&#xfe0f;</span>
-    {% if product and product.tags %}
-      {{ product.tags|map(attribute='name')|join(', ') }}
-    {% else %}
-      No tags
-    {% endif %}
+    {% set tag_text = product.tags|map(attribute='name')|join(', ') if product and product.tags else 'No tags' %}
+    <span class="hero-card-footer-tags" title="{{ tag_text }}">{{ tag_text }}</span>
     {% if product and product.url %}
     <button type="button"
       class="product-link-btn"

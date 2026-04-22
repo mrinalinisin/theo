@@ -27,11 +27,8 @@
   <div class="hero-card-footer">
     {% if not active_tag_obj %}
     <span class="hero-card-footer-icon">&#x1f3f7;&#xfe0f;</span>
-    {% if p.tags %}
-      {{ p.tags|map(attribute='name')|join(', ') }}
-    {% else %}
-      No tags
-    {% endif %}
+    {% set tag_text = p.tags|map(attribute='name')|join(', ') if p.tags else 'No tags' %}
+    <span class="hero-card-footer-tags" title="{{ tag_text }}">{{ tag_text }}</span>
     {% endif %}
     {% if p.url %}
     <button type="button"
