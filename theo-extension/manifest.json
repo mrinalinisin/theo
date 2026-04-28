@@ -1,0 +1,23 @@
+{
+  "manifest_version": 3,
+  "name": "Theo Clipper",
+  "version": "0.1.0",
+  "description": "Clip products from any webpage into your Theo shopping list.",
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "storage",
+    "notifications"
+  ],
+  "host_permissions": [
+    "http://localhost:5000/*"
+  ],
+  "action": {
+    "default_title": "Save to Theo",
+    "default_popup": "popup.html"
+  },
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  }
+}
