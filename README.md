@@ -1,8 +1,8 @@
-# Hector
+# Theo
 
 A personal shopping price tracker that monitors product prices, sends alerts on changes, and helps you stay within budget.
 
-Add items by pasting a product URL. Hector scrapes the product name, price, images, and variants automatically. A background scheduler re-checks prices on a configurable interval and notifies you via WhatsApp when prices drop or rise.
+Add items by pasting a product URL. Theo scrapes the product name, price, images, and variants automatically. A background scheduler re-checks prices on a configurable interval and notifies you via WhatsApp when prices drop or rise.
 
 ## Features
 
@@ -61,7 +61,7 @@ The server starts on `http://localhost:5000`. The background price checker start
 
 ## WhatsApp Integration (Twilio Sandbox)
 
-Hector can send you price alerts and accept commands over WhatsApp using Twilio's free sandbox. This is entirely optional — all features work without it.
+Theo can send you price alerts and accept commands over WhatsApp using Twilio's free sandbox. This is entirely optional — all features work without it.
 
 ### Step 1: Create a Twilio account
 
@@ -93,7 +93,7 @@ TWILIO_WHATSAPP_TO=whatsapp:+91XXXXXXXXXX
 
 ### Step 5: Set up the webhook (for incoming messages)
 
-For Hector to receive WhatsApp messages (so you can send URLs and commands), Twilio needs to reach your local server.
+For Theo to receive WhatsApp messages (so you can send URLs and commands), Twilio needs to reach your local server.
 
 **Option A: ngrok (recommended for development)**
 
@@ -117,7 +117,7 @@ http://192.168.x.x:5000/webhook/whatsapp
 
 ### Step 6: Enable notifications in Settings
 
-In the Hector web UI, go to **Settings** and toggle on:
+In the Theo web UI, go to **Settings** and toggle on:
 - **Notify on price drop** — get alerted when a tracked item's price decreases
 - **Notify on price rise** — get alerted when a price increases
 - **Budget warning** — get alerted when spending passes 80% of your budget
@@ -144,7 +144,7 @@ Items added via WhatsApp are tagged as "Uncategorised" — use the web UI to ass
 
 ## Browser rendering
 
-Some sites (e.g. Urban Outfitters) return 403 errors or render product data only via JavaScript. Hector handles this in two ways:
+Some sites (e.g. Urban Outfitters) return 403 errors or render product data only via JavaScript. Theo handles this in two ways:
 
 1. **Auto-fallback** (default) — tries a fast HTTP request first. If the site returns 403 or a connection error, automatically retries with Playwright's headless Chromium.
 2. **Always use browser** — toggle "Use browser rendering" in Settings to force Playwright for all scrapes. Slower but more reliable for JS-heavy sites.

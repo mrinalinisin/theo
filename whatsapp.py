@@ -208,7 +208,7 @@ def _handle_drops():
 def _handle_help():
     """Return help message."""
     return (
-        "\U0001f9c1 *Hector* \u2014 Shopping Tracker\n\n"
+        "\U0001f9c1 *Theo* \u2014 Shopping Tracker\n\n"
         "Send me:\n"
         "\u2022 *A product URL* \u2014 adds it to your shopping list\n"
         "\u2022 *budget* \u2014 current month spending status\n"

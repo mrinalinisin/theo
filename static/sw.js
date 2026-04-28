@@ -1,6 +1,6 @@
-// Hector Service Worker — network-first with shell cache fallback
+// Theo Service Worker — network-first with shell cache fallback
 
-const CACHE_NAME = 'hector-v1';
+const CACHE_NAME = 'theo-v1';
 const SHELL_ASSETS = [
   '/static/style.css',
 ];
