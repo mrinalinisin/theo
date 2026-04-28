@@ -1,6 +1,6 @@
 {
-  "name": "Money Penny — Shopping Tracker",
-  "short_name": "Money Penny",
+  "name": "Hector — Shopping Tracker",
+  "short_name": "Hector",
   "description": "Track prices, manage shopping lists, and monitor your spending.",
   "start_url": "/",
   "display": "standalone",

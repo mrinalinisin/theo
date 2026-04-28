@@ -1,6 +1,6 @@
-// Money Penny Service Worker — network-first with shell cache fallback
+// Hector Service Worker — network-first with shell cache fallback
 
-const CACHE_NAME = 'money-penny-v1';
+const CACHE_NAME = 'hector-v1';
 const SHELL_ASSETS = [
   '/static/style.css',
 ];

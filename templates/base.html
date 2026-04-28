@@ -6,8 +6,8 @@
   <meta name="theme-color" content="#2d5a27">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="apple-mobile-web-app-title" content="Money Penny">
-  <title>{% block title %}Money Penny{% endblock %}</title>
+  <meta name="apple-mobile-web-app-title" content="Hector">
+  <title>{% block title %}Hector{% endblock %}</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
   <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='favicon-32.png') }}">
@@ -20,8 +20,8 @@
   <!-- ═══ Top Header Nav ═══ -->
   <header class="top-header">
     <a href="/" class="top-header-logo">
-      <img src="{{ url_for('static', filename='logo.png') }}" alt="Money Penny logo" class="logo-mark">
-      <span class="top-header-logo-text">Money Penny<span class="top-header-tagline">Inventory for life</span></span>
+      <img src="{{ url_for('static', filename='logo.png') }}" alt="Hector logo" class="logo-mark">
+      <span class="top-header-logo-text">Hector<span class="top-header-tagline">Inventory for life</span></span>
     </a>
     <nav class="top-header-nav">
       <a href="{{ url_for('shopping_list') }}" class="{{ 'active' if request.endpoint == 'shopping_list' }}">

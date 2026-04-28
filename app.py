@@ -1,4 +1,4 @@
-"""Money Penny — Shopping Price Tracker."""
+"""Hector — Shopping Price Tracker."""
 
 # Suppress harmless multiprocessing semaphore leak warnings that occur when the
 # server is killed abruptly while Playwright has Chromium subprocesses running.
@@ -1216,7 +1216,7 @@ def create_app():
     @app.route("/stats")
     def stats():
         # Database size
-        db_path = os.path.join(app.instance_path, "money_penny.db")
+        db_path = os.path.join(app.instance_path, "hector.db")
         db_bytes = os.path.getsize(db_path)
         if db_bytes >= 1_048_576:
             db_size = f"{db_bytes / 1_048_576:.1f} MB"
