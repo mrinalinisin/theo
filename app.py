@@ -57,6 +57,17 @@ def create_app():
             os.path.join(app.instance_path, "images"), filename
         )
 
+    @app.route("/favicon.ico")
+    def favicon():
+        # Browsers (esp. Safari) request /favicon.ico at the origin root in
+        # addition to honoring <link rel="icon"> tags. Without this route the
+        # request 404s and the favicon can disappear on deep routes like
+        # /products/<id> when opened cold. Serve the PNG with the .ico path —
+        # all modern browsers accept PNG content for favicon.ico.
+        return send_from_directory(
+            app.static_folder, "favicon-32.png", mimetype="image/png"
+        )
+
     @app.context_processor
     def inject_image_src():
         def image_src(value):
