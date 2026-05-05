@@ -85,13 +85,6 @@
   </div>
 
 
-  {% if products|selectattr('track_price')|list %}
-  <div class="text-xs text-faint mt-12 text-right">
-    Prices auto-refresh every <strong>{{ g_settings.default_check_interval // 60 }}h</strong> &middot;
-    <a href="{{ url_for('settings') }}" style="color:var(--accent);">Change in Settings</a>
-  </div>
-  {% endif %}
-
   {% else %}
   {% if search_q %}
   <div class="empty-state">
@@ -103,9 +96,8 @@
   {% else %}
   <div class="empty-state">
     <div class="empty-icon">&#x1f6cd;&#xfe0f;</div>
-    <div class="empty-title">Your shopping list is empty</div>
-    <div class="empty-desc">Add products to track their prices over time.</div>
-    <a href="{{ url_for('add_item') }}" class="btn btn-primary mt-16">+ Add Your First Item</a>
+    <div class="empty-title">Your inventory is empty</div>
+    <div class="empty-desc">Use the Roger Safari extension to clip products from any shopping site.</div>
   </div>
   {% endif %}
   {% endif %}
@@ -248,23 +240,19 @@ document.getElementById('modal-purchase').addEventListener('click', e => {
   // Submit on Enter (default form behavior handles this).
 })();
 
-// ── Keyboard shortcuts: Ctrl/Cmd+K → search, Ctrl/Cmd+N → add product ──
+// ── Keyboard shortcut: Ctrl/Cmd+K → search ──
 (function() {
   const form = document.getElementById('searchForm');
   const input = document.getElementById('searchInput');
-  const addUrl = {{ url_for('add_item')|tojson }};
+  if (!form || !input) return;
 
   document.addEventListener('keydown', (e) => {
     if (!(e.ctrlKey || e.metaKey) || e.altKey || e.shiftKey) return;
-    const key = e.key.toLowerCase();
-    if (key === 'k' && form && input) {
+    if (e.key.toLowerCase() === 'k') {
       e.preventDefault();
       form.classList.add('open');
       input.focus();
       input.select();
-    } else if (key === 'n') {
-      e.preventDefault();
-      window.location.href = addUrl;
     }
   });
 })();

@@ -31,9 +31,6 @@
         <span class="cart-label">{% if cart_count %}Checkout{% else %}Cart{% endif %}</span>
         <span class="cart-badge" id="cart-badge" {% if not cart_count %}style="display:none"{% endif %}>{{ cart_count }}</span>
       </a>
-      <a href="{{ url_for('add_item') }}" class="{{ 'active' if request.endpoint in ('add_item', 'add_item_scrape') }}">
-        <span class="icon">😍</span> Add Product
-      </a>
       <div class="nav-dropdown">
         <a href="{{ url_for('purchases') }}" class="{{ 'active' if request.endpoint in ('purchases', 'purchases_calendar') }}">
           <span class="icon">&#x1f4e6;</span> Purchases
@@ -71,9 +68,6 @@
       <span class="icon cart-icon">{% if cart_count %}&#x1f4b0;{% else %}&#x1f6d2;{% endif %}</span>
       <span class="cart-label">{% if cart_count %}Checkout{% else %}Cart{% endif %}</span>
       <span class="cart-badge" id="cart-badge-mobile" {% if not cart_count %}style="display:none"{% endif %}>{{ cart_count }}</span>
-    </a>
-    <a href="{{ url_for('add_item') }}" class="{{ 'active' if request.endpoint in ('add_item', 'add_item_scrape') }}">
-      <span class="icon">😍</span> Add Product
     </a>
     <a href="{{ url_for('purchases') }}" class="{{ 'active' if request.endpoint == 'purchases' }}">
       <span class="icon">&#x1f4e6;</span> Purchases

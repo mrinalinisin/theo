@@ -47,23 +47,15 @@ class Product(db.Model):
     variants = db.Column(db.JSON, default=dict)  # {sizes: [...], colours: [...]}
     notes = db.Column(db.Text, default="")
     quantity = db.Column(db.Integer, default=1, nullable=False)
-    track_price = db.Column(db.Boolean, default=False, nullable=False)
     currency_id = db.Column(db.Integer, db.ForeignKey("currency.id"), nullable=True)
     status = db.Column(db.String(20), default="watching")  # watching | awaiting_delivery | purchased
-    check_interval = db.Column(db.Integer, nullable=True)  # per-item override in minutes
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
-    # Bumped explicitly in the user edit route — NOT via SQLAlchemy onupdate,
-    # because the scraper writes to this row on every price check and we don't
-    # want automated price refreshes to count as "modifications" for sorting.
+    # Bumped explicitly in the user edit route — sorting on "last modified"
+    # only reflects user-initiated edits.
     updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
-    last_checked_at = db.Column(db.DateTime, nullable=True)
 
     tags = db.relationship("Tag", secondary=product_tags, back_populates="products")
     currency = db.relationship("Currency", foreign_keys=[currency_id])
-    price_history = db.relationship(
-        "PriceHistory", backref="product", lazy="select", cascade="all, delete-orphan",
-        order_by="PriceHistory.checked_at.desc()"
-    )
     purchase = db.relationship(
         "Purchase", backref="product", uselist=False, cascade="all, delete-orphan"
     )
@@ -73,12 +65,12 @@ class Product(db.Model):
 
     @property
     def currency_symbol(self):
-        return self.currency.symbol if self.currency else "\u20b9"
+        return self.currency.symbol if self.currency else "₹"
 
     def fmt_price(self, value):
         """Format a numeric value using this product's currency symbol."""
         if value is None:
-            return "\u2014"
+            return "—"
         return f"{self.currency_symbol}{value:,.0f}"
 
     @property
@@ -105,13 +97,6 @@ class ImageHash(db.Model):
     phash = db.Column(db.String(16), nullable=False)
 
 
-class PriceHistory(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    product_id = db.Column(db.Integer, db.ForeignKey("product.id"), nullable=False)
-    price = db.Column(db.Float, nullable=False)
-    checked_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
-
-
 class Purchase(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     product_id = db.Column(db.Integer, db.ForeignKey("product.id"), nullable=False, unique=True)
@@ -125,32 +110,12 @@ class Purchase(db.Model):
     tracking_url = db.Column(db.Text, default="")
 
 
-class DomainStrategy(db.Model):
-    """Per-domain scraping strategy override."""
-
-    __tablename__ = "domain_strategy"
-
-    id = db.Column(db.Integer, primary_key=True)
-    domain = db.Column(db.String(256), nullable=False, unique=True)  # e.g. "amazon.in"
-    strategy = db.Column(db.String(20), nullable=False, default="requests")  # "requests" | "playwright"
-
-    def __repr__(self):
-        return f"<DomainStrategy {self.domain}={self.strategy}>"
-
-
 class Settings(db.Model):
     """Singleton settings row."""
 
     id = db.Column(db.Integer, primary_key=True)
-    default_check_interval = db.Column(db.Integer, default=240)  # minutes
     monthly_income = db.Column(db.Float, default=0)
     shopping_budget = db.Column(db.Float, default=0)
-    use_browser_rendering = db.Column(db.Boolean, default=False)
-    auto_extract_variants = db.Column(db.Boolean, default=True)
-    notify_price_drop = db.Column(db.Boolean, default=True)
-    notify_price_rise = db.Column(db.Boolean, default=True)
-    notify_back_in_stock = db.Column(db.Boolean, default=False)
-    notify_budget_warning = db.Column(db.Boolean, default=True)
 
     @classmethod
     def get(cls):

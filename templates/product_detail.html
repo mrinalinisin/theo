@@ -108,10 +108,6 @@
             {% endif %}
           </div>
 
-          {% if not product.track_price and product.status in ('watching', 'awaiting_delivery') %}
-          <div class="text-xs text-faint" style="margin-top:6px;">&#128274; Price tracking off &mdash; enable in Edit to record new prices automatically.</div>
-          {% endif %}
-
           {% if product.status == 'awaiting_delivery' and product.purchase %}
           <div class="callout callout-warning mb-16">
             &#x1f4e6; Awaiting delivery &mdash; ordered on {{ product.purchase.purchased_at|fmt_date }}
@@ -212,41 +208,6 @@
         </div>
       </div>
 
-      <!-- Price History -->
-      <div class="card">
-        <div class="card-header">
-          Price History
-          <span class="text-xs text-faint">{{ history|length }} records</span>
-        </div>
-        <div class="card-body">
-          {% if history %}
-            {% if lowest_price and product.current_price and product.current_price <= lowest_price %}
-            <div class="callout callout-success mb-12">
-              &#x1f4c9; This is the lowest price recorded &mdash; good time to buy!
-            </div>
-            {% endif %}
-            {% for h in history %}
-            <div class="price-row">
-              <div class="price-row-date">{{ h.checked_at|fmt_date }}</div>
-              <div class="price-row-val">{{ product.fmt_price(h.price) }}</div>
-              {% if not loop.last %}
-                {% set prev = history[loop.index] %}
-                {% set diff = h.price - prev.price %}
-                {% if diff < 0 %}
-                <div class="price-row-delta neg">&darr; {{ product.fmt_price(diff) }}</div>
-                {% elif diff > 0 %}
-                <div class="price-row-delta pos">&uarr; +{{ product.fmt_price(diff) }}</div>
-                {% endif %}
-              {% else %}
-              <div class="price-row-delta" style="color:var(--text-faint);">Added</div>
-              {% endif %}
-            </div>
-            {% endfor %}
-          {% else %}
-          <div class="text-sm text-faint text-center" style="padding:20px;">No price history yet.</div>
-          {% endif %}
-        </div>
-      </div>
     </div>
   </div>
 </div>
@@ -334,13 +295,6 @@
           At least one of the two links above is required.
         </div>
         {% endif %}
-        <div class="form-group">
-          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
-            <input type="checkbox" name="track_price" value="1" {{ 'checked' if product.track_price }}>
-            <span>Automatic price tracking</span>
-          </label>
-          <div class="form-hint">When on, the scheduler re-scrapes this item periodically and records price history.</div>
-        </div>
         <div class="form-group" style="margin-bottom:0;">
           <label class="form-label">Tags</label>
           <div class="flex gap-8 flex-wrap">

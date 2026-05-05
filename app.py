@@ -29,7 +29,7 @@ import time
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, send_from_directory, session
 from sqlalchemy import func
 from config import Config
-from models import db, Product, Tag, PriceHistory, Purchase, Settings, Currency, DomainStrategy, product_tags
+from models import db, Product, Tag, Purchase, Settings, Currency, product_tags
 
 
 def create_app():
@@ -224,167 +224,6 @@ def create_app():
         )
         return jsonify(html=html, has_more=has_more, next_offset=next_offset, total_count=total_count)
 
-    # ── Add Item ──────────────────────────────────────────────────────────────
-
-    @app.route("/products/new", methods=["GET"])
-    def add_item():
-        tags = Tag.query.order_by(Tag.name).all()
-        currencies = Currency.query.order_by(Currency.code).all()
-        return render_template("add_item.html", tags=tags, currencies=currencies, scraped=None)
-
-    @app.route("/products/new", methods=["POST"])
-    def add_item_scrape():
-        from scraper import scrape_product, sanitize_url
-        from markupsafe import Markup, escape
-
-        url = sanitize_url(request.form.get("url", ""))
-        if not url:
-            flash("Please enter a URL.", "error")
-            return redirect(url_for("add_item"))
-
-        # Duplicate check — match against the canonical (sanitized) URL
-        existing = Product.query.filter_by(url=url).first()
-        if existing:
-            detail_url = url_for("product_detail", product_id=existing.id)
-            flash(
-                Markup(
-                    f'This URL is already in your list as '
-                    f'<a href="{detail_url}" style="text-decoration:underline;">'
-                    f'{escape(existing.name)}</a>. Edit the existing listing instead of adding a duplicate.'
-                ),
-                "warning",
-            )
-            return redirect(url_for("add_item"))
-
-        settings = Settings.get()
-        scrape_failed = False
-        try:
-            scraped = scrape_product(url, use_browser=settings.use_browser_rendering)
-        except Exception as e:
-            flash(f"Failed to scrape: {e}. Fill in the details manually.", "error")
-            scrape_failed = True
-            scraped = {
-                "url": url,
-                "store": "",
-                "name": "",
-                "price": "",
-                "image_url": "",
-                "images": [],
-                "variants": {},
-            }
-
-        tags = Tag.query.order_by(Tag.name).all()
-        currencies = Currency.query.order_by(Currency.code).all()
-        return render_template(
-            "add_item.html",
-            tags=tags,
-            currencies=currencies,
-            scraped=scraped,
-            url=url,
-            scrape_failed=scrape_failed,
-        )
-
-    @app.route("/products/new/save", methods=["POST"])
-    def add_item_save():
-        from urls import sanitize_url
-        url = sanitize_url(request.form.get("url", ""))
-        name = request.form.get("name", "Unknown Product")
-        store = request.form.get("store", "")
-        price_str = request.form.get("price", "0")
-        price = _parse_price(price_str)
-        image_url = request.form.get("image_url", "")
-        images_raw = request.form.get("images", "[]")
-        variants_raw = request.form.get("variants", "{}")
-        notes = request.form.get("notes", "")
-        try:
-            quantity = max(1, int(request.form.get("quantity", "1") or 1))
-        except (TypeError, ValueError):
-            quantity = 1
-        track_price = bool(request.form.get("track_price"))
-        currency_id = None
-        try:
-            raw_cid = request.form.get("currency_id")
-            if raw_cid:
-                cid = int(raw_cid)
-                if Currency.query.get(cid):
-                    currency_id = cid
-        except (TypeError, ValueError):
-            currency_id = None
-        if currency_id is None:
-            inr = Currency.query.filter_by(code="INR").first()
-            currency_id = inr.id if inr else None
-        tag_ids = request.form.getlist("tag_ids")
-
-        try:
-            images = json.loads(images_raw)
-        except (json.JSONDecodeError, TypeError):
-            images = []
-        try:
-            variants = json.loads(variants_raw)
-        except (json.JSONDecodeError, TypeError):
-            variants = {}
-
-        product = Product(
-            url=url,
-            name=name,
-            store=store,
-            current_price=price,
-            original_price=price,
-            image_url=image_url,
-            images=images,
-            variants=variants,
-            notes=notes,
-            quantity=quantity,
-            track_price=track_price,
-            currency_id=currency_id,
-            status="watching",
-        )
-
-        for tid in tag_ids:
-            tag = Tag.query.get(int(tid))
-            if tag:
-                product.tags.append(tag)
-
-        db.session.add(product)
-        db.session.flush()
-
-        # Save images to disk
-        from image_store import save_images_for_product, save_image
-        product.images = save_images_for_product(images, product.id, app)
-        if image_url:
-            saved_main = save_image(image_url, product.id, 0, app)
-            product.image_url = saved_main or ""
-            if saved_main and saved_main not in product.images:
-                product.images.insert(0, saved_main)
-        else:
-            product.image_url = product.images[0] if product.images else ""
-
-        # Check for image-based duplicates
-        from image_store import find_duplicate_by_image
-        for ih in product.image_hashes:
-            match = find_duplicate_by_image(ih.phash, exclude_product_id=product.id)
-            if match:
-                from markupsafe import Markup, escape
-                detail_url = url_for("product_detail", product_id=match.id)
-                flash(
-                    Markup(
-                        f'An image on this product looks similar to '
-                        f'<a href="{detail_url}" style="text-decoration:underline;">'
-                        f'{escape(match.name)}</a>. This might be a duplicate.'
-                    ),
-                    "warning",
-                )
-                break
-
-        # Record initial price history
-        if price:
-            ph = PriceHistory(product_id=product.id, price=price)
-            db.session.add(ph)
-
-        db.session.commit()
-        flash(f"Added \"{name}\" to your shopping list!", "success")
-        return redirect(url_for("product_detail", product_id=product.id))
-
     # ── Browser Extension API ────────────────────────────────────────────────
 
     @app.route("/products/new_from_browser", methods=["POST", "OPTIONS"])
@@ -407,7 +246,6 @@ def create_app():
         image_url = data.get("image_url", "")
         images = data.get("images", [])
         notes = data.get("notes") or data.get("selected_text", "")
-        track_price = bool(data.get("track_price", False))
 
         # Resolve currency code to ID
         currency_code = data.get("currency", "INR")
@@ -437,7 +275,6 @@ def create_app():
             variants={},
             notes=notes,
             quantity=1,
-            track_price=track_price,
             currency_id=currency_id,
             status="watching",
         )
@@ -465,11 +302,6 @@ def create_app():
                 duplicate_name = match.name
                 break
 
-        # Record initial price history
-        if price:
-            ph = PriceHistory(product_id=product.id, price=price)
-            db.session.add(ph)
-
         db.session.commit()
 
         result = dict(ok=True, product_id=product.id, name=product.name)
@@ -490,17 +322,13 @@ def create_app():
     @app.route("/products/<int:product_id>")
     def product_detail(product_id):
         product = Product.query.get_or_404(product_id)
-        history = sorted(product.price_history, key=lambda h: h.checked_at, reverse=True)
         tags = Tag.query.order_by(Tag.name).all()
         currencies = Currency.query.order_by(Currency.code).all()
-        lowest_price = min((h.price for h in history), default=None) if history else None
         return render_template(
             "product_detail.html",
             product=product,
-            history=history,
             tags=tags,
             currencies=currencies,
-            lowest_price=lowest_price,
         )
 
     @app.route("/products/<int:product_id>/edit", methods=["POST"])
@@ -515,7 +343,7 @@ def create_app():
         except (TypeError, ValueError):
             pass
 
-        # Price edit: parse, record history if it actually changed
+        # Price edit: parse and update if it actually changed
         price_raw = request.form.get("price")
         if price_raw is not None and price_raw.strip() != "":
             new_price = _parse_price(price_raw)
@@ -523,8 +351,6 @@ def create_app():
                 product.current_price = new_price
                 if product.original_price is None:
                     product.original_price = new_price
-                ph = PriceHistory(product_id=product.id, price=new_price)
-                db.session.add(ph)
 
         currency_id = request.form.get("currency_id")
         if currency_id:
@@ -534,9 +360,6 @@ def create_app():
                     product.currency_id = cid
             except (TypeError, ValueError):
                 pass
-
-        # Checkbox: present → True, absent → False
-        product.track_price = bool(request.form.get("track_price"))
 
         # Image list + main image can be trimmed by the X buttons on the detail page
         images_raw = request.form.get("images")
@@ -675,9 +498,6 @@ def create_app():
         product.status = target_status
         db.session.commit()
 
-        # Check budget warning
-        _check_budget_warning()
-
         if target_status == "awaiting_delivery":
             flash(f"Marked \"{product.name}\" as awaiting delivery for {_fmt_price(paid)}!", "success")
             return redirect(url_for("product_detail", product_id=product.id))
@@ -703,34 +523,6 @@ def create_app():
         db.session.commit()
         flash(f"Removed \"{product.name}\".", "success")
         return redirect(url_for("shopping_list"))
-
-    @app.route("/products/<int:product_id>/rescrape", methods=["POST"])
-    def product_rescrape(product_id):
-        from scraper import check_price
-
-        product = Product.query.get_or_404(product_id)
-        settings = Settings.get()
-        try:
-            new_price = check_price(product.url, use_browser=settings.use_browser_rendering)
-            if new_price is not None:
-                old_price = product.current_price
-                product.current_price = new_price
-                product.last_checked_at = datetime.now(timezone.utc)
-                ph = PriceHistory(product_id=product.id, price=new_price)
-                db.session.add(ph)
-                db.session.commit()
-                if old_price and new_price < old_price:
-                    flash(f"Price dropped: {_fmt_price(old_price)} → {_fmt_price(new_price)}", "success")
-                elif old_price and new_price > old_price:
-                    flash(f"Price rose: {_fmt_price(old_price)} → {_fmt_price(new_price)}", "warning")
-                else:
-                    flash(f"Price unchanged: {_fmt_price(new_price)}", "info")
-            else:
-                flash("Could not extract price from page.", "warning")
-        except Exception as e:
-            flash(f"Scraping failed: {e}", "error")
-
-        return redirect(url_for("product_detail", product_id=product_id))
 
     # ── Cart ──────────────────────────────────────────────────────────────────
 
@@ -851,7 +643,6 @@ def create_app():
 
         db.session.commit()
         session["cart"] = []
-        _check_budget_warning()
         flash(f"Checked out {count} item{'s' if count != 1 else ''} successfully!", "success")
         return redirect(url_for("purchases"))
 
@@ -1093,86 +884,16 @@ def create_app():
     def settings():
         s = Settings.get()
         products = Product.query.filter_by(status="watching").order_by(Product.name).all()
-        domain_strategies = DomainStrategy.query.order_by(DomainStrategy.domain).all()
-        return render_template("settings.html", settings=s, products=products,
-                               domain_strategies=domain_strategies)
+        return render_template("settings.html", settings=s, products=products)
 
     @app.route("/settings", methods=["POST"])
     def settings_save():
         s = Settings.get()
-        s.default_check_interval = int(request.form.get("default_check_interval", 240))
         s.monthly_income = _parse_price(request.form.get("monthly_income", "0"))
         s.shopping_budget = _parse_price(request.form.get("shopping_budget", "0"))
-        s.use_browser_rendering = request.form.get("use_browser_rendering") == "on"
-        s.auto_extract_variants = request.form.get("auto_extract_variants") == "on"
-        s.notify_price_drop = request.form.get("notify_price_drop") == "on"
-        s.notify_price_rise = request.form.get("notify_price_rise") == "on"
-        s.notify_back_in_stock = request.form.get("notify_back_in_stock") == "on"
-        s.notify_budget_warning = request.form.get("notify_budget_warning") == "on"
-
-        # Per-item intervals
-        for key, val in request.form.items():
-            if key.startswith("interval_"):
-                pid = int(key.replace("interval_", ""))
-                product = Product.query.get(pid)
-                if product:
-                    v = int(val)
-                    product.check_interval = v if v != s.default_check_interval else None
-
-        # ── Domain scraping strategies ─────────────────────────────────────
-        # 1. Delete rows marked for removal
-        for key in list(request.form.keys()):
-            if key.startswith("ds_delete_"):
-                ds_id = int(key.replace("ds_delete_", ""))
-                ds = DomainStrategy.query.get(ds_id)
-                if ds:
-                    db.session.delete(ds)
-
-        # 2. Update existing rows
-        for key, val in request.form.items():
-            if key.startswith("ds_domain_") and not key.startswith("ds_domain_new_"):
-                ds_id = int(key.replace("ds_domain_", ""))
-                if request.form.get(f"ds_delete_{ds_id}"):
-                    continue
-                ds = DomainStrategy.query.get(ds_id)
-                if ds:
-                    domain = val.strip().lower()
-                    if domain:
-                        ds.domain = domain
-                        ds.strategy = request.form.get(f"ds_strategy_{ds_id}", "requests")
-
-        # 3. Add new rows
-        idx = 0
-        while f"ds_domain_new_{idx}" in request.form:
-            domain = request.form[f"ds_domain_new_{idx}"].strip().lower()
-            strategy = request.form.get(f"ds_strategy_new_{idx}", "requests")
-            if domain:
-                existing = DomainStrategy.query.filter_by(domain=domain).first()
-                if existing:
-                    existing.strategy = strategy
-                else:
-                    db.session.add(DomainStrategy(domain=domain, strategy=strategy))
-            idx += 1
-
         db.session.commit()
         flash("Settings saved.", "success")
         return redirect(url_for("settings"))
-
-    # ── WhatsApp Webhook ──────────────────────────────────────────────────────
-
-    @app.route("/webhook/whatsapp", methods=["POST"])
-    def whatsapp_webhook():
-        from whatsapp import handle_incoming
-
-        body = request.form.get("Body", "").strip()
-        from_number = request.form.get("From", "")
-        response_text = handle_incoming(body, from_number)
-
-        from twilio.twiml.messaging_response import MessagingResponse
-
-        resp = MessagingResponse()
-        resp.message(response_text)
-        return str(resp), 200, {"Content-Type": "text/xml"}
 
     # ── Template helpers ──────────────────────────────────────────────────────
 
@@ -1256,7 +977,6 @@ def create_app():
         load_times = {
             "/products": _measure("/products", shopping_list),
             "/api/products": _measure("/api/products", shopping_list_api),
-            "/products/new": _measure("/products/new", add_item),
             "/purchases": _measure("/purchases", purchases),
             "/tags": _measure("/tags", tags),
             "/settings": _measure("/settings", settings),
@@ -1294,11 +1014,6 @@ def _run_lightweight_migrations():
     # Product.quantity added 2026-04
     if not column_exists("product", "quantity"):
         db.session.execute(text("ALTER TABLE product ADD COLUMN quantity INTEGER NOT NULL DEFAULT 1"))
-        db.session.commit()
-
-    # Product.track_price added 2026-04 — default OFF for all existing items
-    if not column_exists("product", "track_price"):
-        db.session.execute(text("ALTER TABLE product ADD COLUMN track_price BOOLEAN NOT NULL DEFAULT 0"))
         db.session.commit()
 
     # Purchase.order_details_url / tracking_url added 2026-04 — at least one is
@@ -1456,27 +1171,6 @@ def _fmt_price(value):
     return f"\u20b9{value:,.0f}"
 
 
-def _check_budget_warning():
-    """Send WhatsApp alert if spending exceeds 80% of budget."""
-    try:
-        settings = Settings.get()
-        if not settings.notify_budget_warning or not settings.shopping_budget:
-            return
-        now = datetime.utcnow()
-        month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-        month_purchases = Purchase.query.filter(Purchase.purchased_at >= month_start).all()
-        month_spent = sum(p.paid_amount for p in month_purchases)
-        pct = (month_spent / settings.shopping_budget) * 100
-        if pct >= 80:
-            from whatsapp import send_whatsapp
-
-            send_whatsapp(
-                f"\u26a0\ufe0f Budget Alert: You've spent {_fmt_price(month_spent)} "
-                f"({pct:.0f}%) of your {_fmt_price(settings.shopping_budget)} budget for "
-                f"{now.strftime('%B')}."
-            )
-    except Exception:
-        pass  # WhatsApp is optional
 
 
 # ── Entry point ───────────────────────────────────────────────────────────────
