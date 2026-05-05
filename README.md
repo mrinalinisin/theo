@@ -21,7 +21,7 @@ Add items by pasting a product URL. Theo scrapes the product name, price, images
 ### 1. Clone and create virtual environment
 
 ```bash
-cd Gummi
+cd Theo
 python3 -m venv venv
 source venv/bin/activate
 ```
