@@ -227,7 +227,7 @@ body {
 
 /* ── Search input in top nav (shopping_list, purchases) ──────────────────── */
 .nav-search {
-  margin-left: 8px;
+  margin-right: 8px;
   display: flex;
   align-items: center;
   position: relative;

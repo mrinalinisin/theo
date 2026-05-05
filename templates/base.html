@@ -23,6 +23,23 @@
       <span class="top-header-logo-text">Theo<span class="top-header-tagline">Inventory for life</span></span>
     </a>
     <nav class="top-header-nav">
+      {% if request.endpoint in ('shopping_list', 'purchases') %}
+      <form class="nav-search" method="GET" action="{{ url_for(request.endpoint) }}" role="search">
+        {% for k, v in request.args.items() %}{% if k != 'q' %}
+        <input type="hidden" name="{{ k }}" value="{{ v }}">
+        {% endif %}{% endfor %}
+        <input
+          type="search"
+          name="q"
+          id="searchInput"
+          class="nav-search-input"
+          placeholder="Search…"
+          value="{{ request.args.get('q', '') }}"
+          autocomplete="off"
+          aria-label="Search">
+        <button type="submit" class="nav-search-submit" aria-label="Submit search" tabindex="-1">&#x1f50d;</button>
+      </form>
+      {% endif %}
       <a href="{{ url_for('shopping_list') }}" class="{{ 'active' if request.endpoint == 'shopping_list' }}">
         <span class="icon">&#x1f4d6;</span> Browse
       </a>
@@ -54,23 +71,6 @@
           </a>
         </div>
       </div>
-      {% if request.endpoint in ('shopping_list', 'purchases') %}
-      <form class="nav-search" method="GET" action="{{ url_for(request.endpoint) }}" role="search">
-        {% for k, v in request.args.items() %}{% if k != 'q' %}
-        <input type="hidden" name="{{ k }}" value="{{ v }}">
-        {% endif %}{% endfor %}
-        <input
-          type="search"
-          name="q"
-          id="searchInput"
-          class="nav-search-input"
-          placeholder="Search…"
-          value="{{ request.args.get('q', '') }}"
-          autocomplete="off"
-          aria-label="Search">
-        <button type="submit" class="nav-search-submit" aria-label="Submit search" tabindex="-1">&#x1f50d;</button>
-      </form>
-      {% endif %}
     </nav>
     <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Menu">&#x2630;</button>
   </header>
