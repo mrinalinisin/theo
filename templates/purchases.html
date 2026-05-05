@@ -5,6 +5,14 @@
 <div class="header-filters">
   <form id="sortForm" method="GET" action="{{ url_for('purchases') }}">
     {% if active_date %}<input type="hidden" name="date" value="{{ active_date.isoformat() }}">{% endif %}
+    <input
+      type="search"
+      name="q"
+      id="searchInput"
+      class="form-input header-search"
+      placeholder="Search by name…"
+      value="{{ search_q or '' }}"
+      autocomplete="off">
     <select name="tag" id="tagSelect" class="form-input" title="Filter by tag">
       <option value="">All Tags</option>
       {% for tag in tags %}
@@ -51,23 +59,6 @@
 </div>
 {% endif %}
 
-<form id="searchForm" class="floating-search" method="GET" action="{{ url_for('purchases') }}">
-  {% if active_tag %}<input type="hidden" name="tag" value="{{ active_tag }}">{% endif %}
-  {% if active_date %}<input type="hidden" name="date" value="{{ active_date.isoformat() }}">{% endif %}
-  <input type="hidden" name="period" value="{{ period }}">
-  <input type="hidden" name="sort" value="{{ sort_key }}">
-  <input type="hidden" name="order" value="{{ order_key }}">
-  <input
-    type="search"
-    name="q"
-    id="searchInput"
-    class="floating-search-input"
-    placeholder="Search by product name…"
-    value="{{ search_q or '' }}"
-    autocomplete="off">
-  <button type="button" class="floating-search-toggle" id="searchToggle" aria-label="Search" title="Search">&#x1f50d;</button>
-</form>
-
 <div class="page-body">
   {% if purchases %}
 
@@ -98,49 +89,16 @@
 
 {% block scripts %}
 <script>
-// ── Floating search toggle ──
+
+// ── Keyboard shortcut: Ctrl/Cmd+K → focus search ──
 (function() {
-  const form = document.getElementById('searchForm');
   const input = document.getElementById('searchInput');
-  const toggle = document.getElementById('searchToggle');
-  if (!form || !input) return;
-
-  if (input.value) form.classList.add('open');
-
-  if (toggle) {
-    toggle.addEventListener('click', (e) => {
-      e.preventDefault();
-      if (form.classList.contains('open')) {
-        if (input.value.trim()) {
-          form.submit();
-        } else {
-          form.classList.remove('open');
-        }
-      } else {
-        form.classList.add('open');
-        setTimeout(() => input.focus(), 50);
-      }
-    });
-  }
-
-  document.addEventListener('click', (e) => {
-    if (!form.contains(e.target) && !input.value.trim()) {
-      form.classList.remove('open');
-    }
-  });
-})();
-
-// ── Keyboard shortcut: Ctrl/Cmd+K → search ──
-(function() {
-  const form = document.getElementById('searchForm');
-  const input = document.getElementById('searchInput');
-  if (!form || !input) return;
+  if (!input) return;
 
   document.addEventListener('keydown', (e) => {
     if (!(e.ctrlKey || e.metaKey) || e.altKey || e.shiftKey) return;
     if (e.key.toLowerCase() === 'k') {
       e.preventDefault();
-      form.classList.add('open');
       input.focus();
       input.select();
     }

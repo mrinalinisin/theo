@@ -15,7 +15,7 @@ Ideas and feature requests captured for later. Roughly in capture order — not 
 
 ## UI & layout
 
-- [ ] Move Search into the header area on `/products` and `/purchases`.
+- [x] Move Search into the header area on `/products` and `/purchases`.
 
 ## Capture & scraping flow
 

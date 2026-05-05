@@ -4,7 +4,14 @@
 {% block header_filters %}
 <div class="header-filters">
   <form id="sortForm" method="GET" action="{{ url_for('shopping_list') }}">
-    {% if search_q %}<input type="hidden" name="q" value="{{ search_q }}">{% endif %}
+    <input
+      type="search"
+      name="q"
+      id="searchInput"
+      class="form-input header-search"
+      placeholder="Search by name…"
+      value="{{ search_q or '' }}"
+      autocomplete="off">
     <select name="tag" id="tagSelect" class="form-input" title="Filter by tag">
       <option value="">All Tags</option>
       {% for tag in tags %}
@@ -49,22 +56,6 @@
   </div>
 </div>
 {% endif %}
-
-<form id="searchForm" class="floating-search" method="GET" action="{{ url_for('shopping_list') }}">
-  {% if active_tag %}<input type="hidden" name="tag" value="{{ active_tag }}">{% endif %}
-  <input type="hidden" name="status" value="{{ status_filter }}">
-  <input type="hidden" name="sort" value="{{ sort_key }}">
-  <input type="hidden" name="order" value="{{ order_key }}">
-  <input
-    type="search"
-    name="q"
-    id="searchInput"
-    class="floating-search-input"
-    placeholder="Search by product name…"
-    value="{{ search_q or '' }}"
-    autocomplete="off">
-  <button type="button" class="floating-search-toggle" id="searchToggle" aria-label="Search" title="Search">&#x1f50d;</button>
-</form>
 
 <div class="page-body" id="shoppingListBody">
   {% if products %}
@@ -203,54 +194,15 @@ document.getElementById('modal-purchase').addEventListener('click', e => {
   if (e.target.id === 'modal-purchase') closePurchaseModal();
 });
 
-// ── Debounced search + floating toggle ──
+// ── Keyboard shortcut: Ctrl/Cmd+K → focus search ──
 (function() {
-  const form = document.getElementById('searchForm');
   const input = document.getElementById('searchInput');
-  const toggle = document.getElementById('searchToggle');
-  if (!form || !input) return;
-
-  // If there's already a query, open the search by default so the user sees it.
-  if (input.value) form.classList.add('open');
-
-  if (toggle) {
-    toggle.addEventListener('click', (e) => {
-      e.preventDefault();
-      if (form.classList.contains('open')) {
-        // If open with a value, submit; otherwise just close.
-        if (input.value.trim()) {
-          form.submit();
-        } else {
-          form.classList.remove('open');
-        }
-      } else {
-        form.classList.add('open');
-        setTimeout(() => input.focus(), 50);
-      }
-    });
-  }
-
-  // Close when clicking outside (only if empty).
-  document.addEventListener('click', (e) => {
-    if (!form.contains(e.target) && !input.value.trim()) {
-      form.classList.remove('open');
-    }
-  });
-
-  // Submit on Enter (default form behavior handles this).
-})();
-
-// ── Keyboard shortcut: Ctrl/Cmd+K → search ──
-(function() {
-  const form = document.getElementById('searchForm');
-  const input = document.getElementById('searchInput');
-  if (!form || !input) return;
+  if (!input) return;
 
   document.addEventListener('keydown', (e) => {
     if (!(e.ctrlKey || e.metaKey) || e.altKey || e.shiftKey) return;
     if (e.key.toLowerCase() === 'k') {
       e.preventDefault();
-      form.classList.add('open');
       input.focus();
       input.select();
     }
