@@ -682,7 +682,7 @@ def create_app():
             flash(f"Marked \"{product.name}\" as awaiting delivery for {_fmt_price(paid)}!", "success")
             return redirect(url_for("product_detail", product_id=product.id))
         flash(f"Marked \"{product.name}\" as purchased for {_fmt_price(paid)}!", "success")
-        return redirect(url_for("purchases"))
+        return redirect(url_for("shopping_list"))
 
     @app.route("/products/<int:product_id>/unpurchase", methods=["POST"])
     def product_unpurchase(product_id):
