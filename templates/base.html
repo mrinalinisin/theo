@@ -68,6 +68,7 @@
           value="{{ request.args.get('q', '') }}"
           autocomplete="off"
           aria-label="Search">
+        <button type="submit" class="nav-search-submit" aria-label="Submit search" tabindex="-1">&#x1f50d;</button>
       </form>
       {% endif %}
     </nav>
@@ -114,6 +115,7 @@
         value="{{ request.args.get('q', '') }}"
         autocomplete="off"
         aria-label="Search">
+      <button type="submit" class="mobile-search-submit" aria-label="Submit search" tabindex="-1">&#x1f50d;</button>
     </form>
     {% endif %}
   </div>

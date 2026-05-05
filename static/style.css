@@ -226,11 +226,16 @@ body {
 }
 
 /* ── Search input in top nav (shopping_list, purchases) ──────────────────── */
-.nav-search { margin-left: 8px; display: flex; align-items: center; }
+.nav-search {
+  margin-left: 8px;
+  display: flex;
+  align-items: center;
+  position: relative;
+}
 .nav-search-input {
   width: 180px;
   height: 32px;
-  padding: 0 12px;
+  padding: 0 36px 0 12px;
   border: 1px solid var(--border);
   border-radius: 16px;
   background: var(--bg);
@@ -243,13 +248,38 @@ body {
   background: white;
   border-color: var(--accent);
 }
+.nav-search-submit {
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-faint);
+  opacity: 0.7;
+  transition: opacity 0.15s ease, background 0.15s ease;
+}
+.nav-search-submit:hover { opacity: 1; background: rgba(0, 0, 0, 0.05); }
 
 /* Mobile menu search */
-.mobile-search { padding: 8px 16px; }
+.mobile-search {
+  padding: 8px 16px;
+  position: relative;
+}
 .mobile-search-input {
   width: 100%;
   height: 36px;
-  padding: 0 12px;
+  padding: 0 40px 0 12px;
   border: 1px solid var(--border);
   border-radius: 18px;
   background: var(--surface);
@@ -260,6 +290,27 @@ body {
   border-color: var(--accent);
   background: white;
 }
+.mobile-search-submit {
+  position: absolute;
+  right: 22px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-faint);
+  opacity: 0.7;
+}
+.mobile-search-submit:hover { opacity: 1; background: rgba(0, 0, 0, 0.05); }
 
 /* ── App body (sidebar + main wrapper) ─────────────────────────────────────── */
 .app-body { display: flex; flex-direction: column; flex: 1; min-height: 0; }
