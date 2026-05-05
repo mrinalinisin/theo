@@ -4,14 +4,7 @@
 {% block header_filters %}
 <div class="header-filters">
   <form id="sortForm" method="GET" action="{{ url_for('shopping_list') }}">
-    <input
-      type="search"
-      name="q"
-      id="searchInput"
-      class="form-input header-search"
-      placeholder="Search by name…"
-      value="{{ search_q or '' }}"
-      autocomplete="off">
+    {% if search_q %}<input type="hidden" name="q" value="{{ search_q }}">{% endif %}
     <select name="tag" id="tagSelect" class="form-input" title="Filter by tag">
       <option value="">All Tags</option>
       {% for tag in tags %}

@@ -54,6 +54,22 @@
           </a>
         </div>
       </div>
+      {% if request.endpoint in ('shopping_list', 'purchases') %}
+      <form class="nav-search" method="GET" action="{{ url_for(request.endpoint) }}" role="search">
+        {% for k, v in request.args.items() %}{% if k != 'q' %}
+        <input type="hidden" name="{{ k }}" value="{{ v }}">
+        {% endif %}{% endfor %}
+        <input
+          type="search"
+          name="q"
+          id="searchInput"
+          class="nav-search-input"
+          placeholder="Search…"
+          value="{{ request.args.get('q', '') }}"
+          autocomplete="off"
+          aria-label="Search">
+      </form>
+      {% endif %}
     </nav>
     <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Menu">&#x2630;</button>
   </header>
@@ -84,6 +100,22 @@
     <a href="{{ url_for('stats') }}" class="mobile-submenu {{ 'active' if request.path == '/stats' }}">
       <span class="icon">&#x1f4c8;</span> Stats
     </a>
+    {% if request.endpoint in ('shopping_list', 'purchases') %}
+    <form class="mobile-search" method="GET" action="{{ url_for(request.endpoint) }}" role="search">
+      {% for k, v in request.args.items() %}{% if k != 'q' %}
+      <input type="hidden" name="{{ k }}" value="{{ v }}">
+      {% endif %}{% endfor %}
+      <input
+        type="search"
+        name="q"
+        id="searchInputMobile"
+        class="mobile-search-input"
+        placeholder="Search…"
+        value="{{ request.args.get('q', '') }}"
+        autocomplete="off"
+        aria-label="Search">
+    </form>
+    {% endif %}
   </div>
 
   <div class="app-body">

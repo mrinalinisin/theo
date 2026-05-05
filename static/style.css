@@ -224,10 +224,41 @@ body {
   font-size: 13px;
   min-width: 0;
 }
-.header-filters form { flex-wrap: wrap; }
-.header-filters .header-search {
-  flex: 1 1 180px;
-  min-width: 140px;
+
+/* ── Search input in top nav (shopping_list, purchases) ──────────────────── */
+.nav-search { margin-left: 8px; display: flex; align-items: center; }
+.nav-search-input {
+  width: 180px;
+  height: 32px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--bg);
+  font-size: 13px;
+  outline: none;
+  transition: width 0.2s ease, border-color 0.15s ease, background 0.15s ease;
+}
+.nav-search-input:focus {
+  width: 240px;
+  background: white;
+  border-color: var(--accent);
+}
+
+/* Mobile menu search */
+.mobile-search { padding: 8px 16px; }
+.mobile-search-input {
+  width: 100%;
+  height: 36px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: var(--surface);
+  font-size: 14px;
+  outline: none;
+}
+.mobile-search-input:focus {
+  border-color: var(--accent);
+  background: white;
 }
 
 /* ── App body (sidebar + main wrapper) ─────────────────────────────────────── */
