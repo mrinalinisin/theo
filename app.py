@@ -286,7 +286,7 @@ def create_app():
 
     @app.route("/products/new/save", methods=["POST"])
     def add_item_save():
-        from scraper import sanitize_url
+        from urls import sanitize_url
         url = sanitize_url(request.form.get("url", ""))
         name = request.form.get("name", "Unknown Product")
         store = request.form.get("store", "")
@@ -393,7 +393,7 @@ def create_app():
         if request.method == "OPTIONS":
             return "", 204
 
-        from scraper import sanitize_url
+        from urls import sanitize_url
         from image_store import save_images_for_product, save_image, find_duplicate_by_image
 
         data = request.get_json(silent=True)
@@ -505,7 +505,7 @@ def create_app():
 
     @app.route("/products/<int:product_id>/edit", methods=["POST"])
     def product_edit(product_id):
-        from scraper import sanitize_url
+        from urls import sanitize_url
         product = Product.query.get_or_404(product_id)
         product.name = request.form.get("name", product.name)
         product.notes = request.form.get("notes", product.notes)
@@ -1362,7 +1362,7 @@ def _run_lightweight_migrations():
     # Backfill Product.url through sanitize_url so legacy rows with query
     # params / whitespace match the canonical form used by duplicate detection.
     # Idempotent: rows that are already canonical produce no UPDATE.
-    from scraper import sanitize_url
+    from urls import sanitize_url
     rows = db.session.execute(text("SELECT id, url FROM product")).fetchall()
     changed = 0
     for row_id, raw_url in rows:
