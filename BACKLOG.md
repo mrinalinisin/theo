@@ -5,11 +5,17 @@ Ideas and feature requests captured for later. Roughly in capture order — not 
 ## Ranking & sorting
 
 - [ ] Move Up or Down in product listing. The more up I move it, the more it shows up at the top — sorted by how many Up votes it has.
+- [ ] Add a randomizer button in the header to shuffle the listing order.
 
 ## Filtering & views
 
 - [ ] Ability to exclude tags in a view.
 - [ ] Add filter by domain.
+- [ ] Add a list view for `/purchases` sorted by date of delivery.
+
+## UI & layout
+
+- [ ] Move Search into the header area on `/products` and `/purchases`.
 
 ## Capture & scraping flow
 
