@@ -111,52 +111,6 @@
     {% endfor %}
   </div>
 
-  <!-- ═══ Summary grid ═══ -->
-  <h3 class="compare-summary-heading">Summary</h3>
-  <div class="compare-summary" style="--cols: {{ products|length }};">
-
-    <div class="compare-row-label">Status</div>
-    {% for p in products %}
-    <div class="compare-row-cell">
-      {% if p.status == 'watching' %}<span class="status-pill status-watching">Watching</span>
-      {% elif p.status == 'awaiting_delivery' %}<span class="status-pill status-awaiting">Awaiting delivery</span>
-      {% elif p.status == 'purchased' %}<span class="status-pill status-purchased">Purchased{% if p.purchase %} &middot; {{ p.fmt_price(p.purchase.paid_amount) }}{% endif %}</span>
-      {% else %}{{ p.status }}{% endif %}
-    </div>
-    {% endfor %}
-
-    <div class="compare-row-label">Sizes</div>
-    {% for p in products %}
-    <div class="compare-row-cell">
-      {% if p.variants and p.variants.get('sizes') %}{{ p.variants.sizes|join(', ') }}{% else %}&mdash;{% endif %}
-    </div>
-    {% endfor %}
-
-    <div class="compare-row-label">Colours</div>
-    {% for p in products %}
-    <div class="compare-row-cell">
-      {% if p.variants and p.variants.get('colours') %}{{ p.variants.colours|join(', ') }}{% else %}&mdash;{% endif %}
-    </div>
-    {% endfor %}
-
-    <div class="compare-row-label">Quantity</div>
-    {% for p in products %}
-    <div class="compare-row-cell">{{ p.quantity }}</div>
-    {% endfor %}
-
-    <div class="compare-row-label">Added</div>
-    {% for p in products %}
-    <div class="compare-row-cell">{{ p.created_at|time_ago }}</div>
-    {% endfor %}
-
-    <div class="compare-row-label">Notes</div>
-    {% for p in products %}
-    <div class="compare-row-cell">
-      {% if p.notes %}{{ p.notes }}{% else %}&mdash;{% endif %}
-    </div>
-    {% endfor %}
-  </div>
-
 {% else %}
   <div class="empty-state">
     <div class="empty-icon">&#x2696;&#xfe0f;</div>

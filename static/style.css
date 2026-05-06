@@ -1376,63 +1376,15 @@ textarea.form-input { resize: vertical; min-height: 80px; }
   margin-top: 12px;
 }
 
-/* Summary grid — labels in a left rail, one cell per product on each row */
-.compare-summary-heading {
-  font-size: 12px;
-  text-transform: uppercase;
-  letter-spacing: 1.2px;
-  color: var(--text-faint);
-  text-align: center;
-  margin: 8px 0 16px;
-  padding-top: 16px;
-  border-top: 1px solid var(--border);
-}
-.compare-summary {
-  display: grid;
-  grid-template-columns: 140px repeat(var(--cols, 2), 1fr);
-  gap: 0;
-}
-.compare-summary > * {
-  padding: 12px 16px;
-  border-bottom: 1px solid var(--border-light);
-  font-size: 14px;
-}
-.compare-row-label {
-  font-weight: 600;
-  color: var(--text-faint);
-}
-.compare-row-cell {
-  word-break: break-word;
-}
-
-/* Status pills — colour-coded badges in the Status row */
-.status-pill {
-  display: inline-block;
-  padding: 2px 10px;
-  border-radius: 12px;
-  font-size: 12px;
-  font-weight: 600;
-}
-.status-watching { background: #e8f0fa; color: #2a4a7a; }
-.status-awaiting { background: #fff4d6; color: #7a5a1a; }
-.status-purchased { background: #e0f5e8; color: #2a6a3a; }
-
 /* Mobile: keep the side-by-side grid intact (alignment is the whole point
    of a compare view) but allow horizontal scroll. Each column gets a sane
    min-width so columns don't crush below readability. */
 @media (max-width: 768px) {
-  .compare-grid,
-  .compare-summary {
+  .compare-grid {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
-  }
-  .compare-grid {
     grid-template-columns: repeat(var(--cols, 2), minmax(260px, 1fr));
   }
-  .compare-summary {
-    grid-template-columns: 120px repeat(var(--cols, 2), minmax(220px, 1fr));
-  }
-  .compare-summary > * { padding: 10px 12px; font-size: 13px; }
   .compare-name { font-size: 15px; }
   .compare-price { font-size: 19px; }
 }
