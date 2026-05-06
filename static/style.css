@@ -584,8 +584,21 @@ textarea.form-input { resize: vertical; min-height: 80px; }
   font-size: 11px;
   color: var(--text-faint);
   display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+}
+.hero-card-actions {
+  display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 6px;
+}
+.hero-card-tag-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
 }
 .hero-card-footer-icon {
   font-size: 12px;
@@ -593,7 +606,7 @@ textarea.form-input { resize: vertical; min-height: 80px; }
   flex: 0 0 auto;
 }
 .hero-card-footer-tags {
-  flex: 0 1 auto;
+  flex: 1 1 auto;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
