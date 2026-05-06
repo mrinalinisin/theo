@@ -60,7 +60,7 @@
         <span class="icon">&#x1f4e6;</span> Purchases
       </a>
       <a href="{{ url_for('purchases_calendar') }}" class="{{ 'active' if request.endpoint == 'purchases_calendar' }}">
-        <span class="icon">&#x1f4c5;</span> Calendar
+        <span class="icon">&#x1f4c5;</span> Arriving today
       </a>
       <a href="{{ url_for('tags') }}" class="{{ 'active' if request.endpoint in ('tags', 'tag_create', 'tag_edit') }}">
         <span class="icon">&#x1f3f7;&#xfe0f;</span> Tags
@@ -100,7 +100,7 @@
       <span class="icon">&#x1f4e6;</span> Purchases
     </a>
     <a href="{{ url_for('purchases_calendar') }}" class="{{ 'active' if request.endpoint == 'purchases_calendar' }}">
-      <span class="icon">&#x1f4c5;</span> Calendar
+      <span class="icon">&#x1f4c5;</span> Arriving today
     </a>
     <a href="{{ url_for('tags') }}" class="{{ 'active' if request.endpoint in ('tags', 'tag_create', 'tag_edit') }}">
       <span class="icon">&#x1f3f7;&#xfe0f;</span> Tags
