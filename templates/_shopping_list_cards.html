@@ -32,7 +32,7 @@
         data-url="{{ p.url }}"
         title="Open product page"
         onclick="openProductUrl(event, this)">
-        Open &#x2197;
+        &#x2197; Open
       </button>
       {% endif %}
       {% if p.purchase and p.purchase.order_details_url %}
@@ -41,7 +41,7 @@
         data-url="{{ p.purchase.order_details_url }}"
         title="Order details"
         onclick="openProductUrl(event, this)">
-        Order &#x2197;
+        &#x2197; Order
       </button>
       {% endif %}
       {% if p.purchase and p.purchase.tracking_url %}
@@ -50,7 +50,7 @@
         data-url="{{ p.purchase.tracking_url }}"
         title="Tracking"
         onclick="openProductUrl(event, this)">
-        Track &#x2197;
+        &#x2197; Track
       </button>
       {% endif %}
       {% if p.status == 'watching' %}
