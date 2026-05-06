@@ -4,7 +4,9 @@
 {% block content %}
 <div class="page-header">
   <div class="page-header-top">
-    <div class="page-title">Compare</div>
+    <div class="page-title">
+      Compare{% if products %} {{ products|length }} product{{ 's' if products|length != 1 }}{% endif %}
+    </div>
     {% if products %}
     <div class="header-actions">
       <form method="POST" action="{{ url_for('compare_clear') }}"
@@ -18,35 +20,143 @@
 
 <div class="page-body">
 {% if products %}
-  <div class="callout callout-info mb-16">
-    {{ products|length }} product{{ 's' if products|length != 1 }} in your compare list. Side-by-side view coming soon — for now, here are the items you've selected (max {{ max_items }}).
-  </div>
-  <ul class="compare-list">
+
+  <!-- ═══ Hero row: one column per product ═══ -->
+  <div class="compare-grid" style="--cols: {{ products|length }};">
     {% for p in products %}
-    <li class="compare-list-item">
-      <div class="compare-list-thumb">
-        {% if p.image_url %}
-        <img src="{{ image_src(p.image_url) }}" alt="{{ p.name }}">
+      {% set p_idx = loop.index0 %}
+      {# Build the carousel image list: include image_url first if not already in images #}
+      {% set imgs = p.images or [] %}
+      {% if p.image_url and p.image_url not in imgs %}
+        {% set imgs = [p.image_url] + imgs %}
+      {% endif %}
+    <div class="compare-col" data-product-idx="{{ p_idx }}">
+      <!-- Image carousel -->
+      <div class="compare-image" data-current="0">
+        {% if imgs %}
+          {% for img in imgs %}
+          <img src="{{ image_src(img) }}" alt="{{ p.name }}"
+               data-img-idx="{{ loop.index0 }}"
+               class="compare-image-frame {{ 'active' if loop.first }}">
+          {% endfor %}
         {% else %}
-        <span class="hero-card-image-placeholder">&#x1f6cd;&#xfe0f;</span>
+          <span class="compare-image-placeholder">&#x1f6cd;&#xfe0f;</span>
         {% endif %}
       </div>
-      <div class="compare-list-meta">
-        <a href="{{ url_for('product_detail', product_id=p.id) }}" class="compare-list-name">{{ p.name }}</a>
-        <div class="text-xs text-faint">
-          {% if p.store %}{{ p.store }} · {% endif %}{{ p.fmt_price(p.current_price) }}
-        </div>
+      {% if imgs|length > 1 %}
+      <div class="compare-dots" role="tablist" aria-label="Product images">
+        {% for img in imgs %}
+        <button type="button"
+                class="compare-dot {{ 'active' if loop.first }}"
+                data-product-idx="{{ p_idx }}"
+                data-img-idx="{{ loop.index0 }}"
+                aria-label="Show image {{ loop.index }}"
+                onclick="selectCompareImage(this)"></button>
+        {% endfor %}
       </div>
-      <button type="button"
-        class="btn btn-sm compare-toggle-btn in-compare"
-        data-product-id="{{ p.id }}"
-        title="Remove from comparison"
-        onclick="toggleCompareList(event, this)">
-        &#x2696;&#xfe0f; Remove
-      </button>
-    </li>
+      {% endif %}
+
+      <!-- Identity -->
+      <h2 class="compare-name">{{ p.name }}</h2>
+      {% if p.store %}<div class="compare-store">{{ p.store }}</div>{% endif %}
+      {% if p.tags %}
+      <div class="compare-tags">
+        {% for tag in p.tags %}
+        <a href="{{ url_for('shopping_list', tag=tag.id) }}"
+           class="compare-tag-chip"
+           style="--chip-colour: {{ tag.colour }};"
+           title="See all {{ tag.name }} items">
+          <span class="tag-dot" style="background: {{ tag.colour }};"></span>{{ tag.name }}
+        </a>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      <!-- Price -->
+      <div class="compare-price">{{ p.fmt_price(p.current_price) }}</div>
+      {% set change = p.price_change_pct %}
+      {% if p.original_price and p.original_price != p.current_price %}
+      <div class="compare-orig-price">
+        was <s>{{ p.fmt_price(p.original_price) }}</s>
+        {% if change %}
+          {% if change < 0 %}
+          <span class="price-drop">&darr; {{ "%.0f"|format(change|abs) }}%</span>
+          {% elif change > 0 %}
+          <span class="price-up">&uarr; +{{ "%.0f"|format(change) }}%</span>
+          {% endif %}
+        {% endif %}
+      </div>
+      {% endif %}
+
+      <!-- CTAs -->
+      <div class="compare-cta-stack">
+        {% if p.url %}
+        <a href="{{ p.url }}" target="_blank" rel="noopener"
+           class="btn btn-secondary btn-block">
+          Open {{ p.store or 'product page' }} &#x2197;
+        </a>
+        {% endif %}
+        <a href="{{ url_for('product_detail', product_id=p.id) }}"
+           class="btn btn-secondary btn-block">
+          Open in Theo
+        </a>
+        <button type="button"
+                class="btn btn-ghost btn-block"
+                data-product-id="{{ p.id }}"
+                onclick="removeFromCompare(event, this)">
+          &times; Remove from compare
+        </button>
+      </div>
+    </div>
     {% endfor %}
-  </ul>
+  </div>
+
+  <!-- ═══ Summary grid ═══ -->
+  <h3 class="compare-summary-heading">Summary</h3>
+  <div class="compare-summary" style="--cols: {{ products|length }};">
+
+    <div class="compare-row-label">Status</div>
+    {% for p in products %}
+    <div class="compare-row-cell">
+      {% if p.status == 'watching' %}<span class="status-pill status-watching">Watching</span>
+      {% elif p.status == 'awaiting_delivery' %}<span class="status-pill status-awaiting">Awaiting delivery</span>
+      {% elif p.status == 'purchased' %}<span class="status-pill status-purchased">Purchased{% if p.purchase %} &middot; {{ p.fmt_price(p.purchase.paid_amount) }}{% endif %}</span>
+      {% else %}{{ p.status }}{% endif %}
+    </div>
+    {% endfor %}
+
+    <div class="compare-row-label">Sizes</div>
+    {% for p in products %}
+    <div class="compare-row-cell">
+      {% if p.variants and p.variants.get('sizes') %}{{ p.variants.sizes|join(', ') }}{% else %}&mdash;{% endif %}
+    </div>
+    {% endfor %}
+
+    <div class="compare-row-label">Colours</div>
+    {% for p in products %}
+    <div class="compare-row-cell">
+      {% if p.variants and p.variants.get('colours') %}{{ p.variants.colours|join(', ') }}{% else %}&mdash;{% endif %}
+    </div>
+    {% endfor %}
+
+    <div class="compare-row-label">Quantity</div>
+    {% for p in products %}
+    <div class="compare-row-cell">{{ p.quantity }}</div>
+    {% endfor %}
+
+    <div class="compare-row-label">Added</div>
+    {% for p in products %}
+    <div class="compare-row-cell">{{ p.created_at|time_ago }}</div>
+    {% endfor %}
+
+    <div class="compare-row-label">Notes</div>
+    {% for p in products %}
+    <div class="compare-row-cell">
+      {% if p.notes %}{{ p.notes }}{% else %}&mdash;{% endif %}
+    </div>
+    {% endfor %}
+  </div>
+
 {% else %}
   <div class="empty-state">
     <div class="empty-icon">&#x2696;&#xfe0f;</div>
@@ -60,16 +170,27 @@
 
 {% block scripts %}
 <script>
-function toggleCompareList(event, btn) {
+// ── Carousel: dot-click swaps the active image within a column ──
+function selectCompareImage(dot) {
+  var productIdx = dot.dataset.productIdx;
+  var imgIdx = dot.dataset.imgIdx;
+  var col = document.querySelector('.compare-col[data-product-idx="' + productIdx + '"]');
+  if (!col) return;
+  col.querySelectorAll('.compare-image-frame').forEach(function(img) {
+    img.classList.toggle('active', img.dataset.imgIdx === imgIdx);
+  });
+  col.querySelectorAll('.compare-dot').forEach(function(d) {
+    d.classList.toggle('active', d.dataset.imgIdx === imgIdx);
+  });
+}
+
+// ── Remove from compare → reload to re-render with one fewer column ──
+function removeFromCompare(event, btn) {
   event.preventDefault();
   var productId = btn.dataset.productId;
   fetch('/compare/remove/' + productId, { method: 'POST' })
     .then(function(r) { return r.json(); })
-    .then(function() {
-      // Easiest path: reload so the list rerenders with one fewer item
-      // and the header badge/visibility update server-side.
-      window.location.reload();
-    });
+    .then(function() { window.location.reload(); });
 }
 </script>
 {% endblock %}
