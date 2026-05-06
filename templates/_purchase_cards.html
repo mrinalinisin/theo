@@ -33,6 +33,24 @@
       Open &#x2197;
     </button>
     {% endif %}
+    {% if purchase.order_details_url %}
+    <button type="button"
+      class="product-link-btn"
+      data-url="{{ purchase.order_details_url }}"
+      title="Order details"
+      onclick="openProductUrl(event, this)">
+      Order &#x2197;
+    </button>
+    {% endif %}
+    {% if purchase.tracking_url %}
+    <button type="button"
+      class="product-link-btn"
+      data-url="{{ purchase.tracking_url }}"
+      title="Tracking"
+      onclick="openProductUrl(event, this)">
+      Track &#x2197;
+    </button>
+    {% endif %}
   </div>
 </a>
 {% endfor %}

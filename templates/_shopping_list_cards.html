@@ -39,6 +39,24 @@
       Open &#x2197;
     </button>
     {% endif %}
+    {% if p.purchase and p.purchase.order_details_url %}
+    <button type="button"
+      class="product-link-btn"
+      data-url="{{ p.purchase.order_details_url }}"
+      title="Order details"
+      onclick="openProductUrl(event, this)">
+      Order &#x2197;
+    </button>
+    {% endif %}
+    {% if p.purchase and p.purchase.tracking_url %}
+    <button type="button"
+      class="product-link-btn"
+      data-url="{{ p.purchase.tracking_url }}"
+      title="Tracking"
+      onclick="openProductUrl(event, this)">
+      Track &#x2197;
+    </button>
+    {% endif %}
     {% if p.status == 'watching' %}
     <button type="button"
       class="btn btn-sm cart-toggle-btn {% if p.id in cart_product_ids %}in-cart{% endif %}"
