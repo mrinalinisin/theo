@@ -12,6 +12,7 @@ Ideas and feature requests captured for later. Roughly in capture order — not 
 - [ ] Ability to exclude tags in a view.
 - [ ] Add filter by domain.
 - [ ] Add a list view for `/purchases` sorted by date of delivery.
+- [ ] Add a calendar view for Purchases.
 
 ## UI & layout
 
