@@ -56,16 +56,12 @@
         <span class="icon">&#x2696;&#xfe0f;</span> Compare
         <span class="cart-badge" id="compare-badge">{{ compare_count }}</span>
       </a>
-      <div class="nav-dropdown">
-        <a href="{{ url_for('purchases') }}" class="{{ 'active' if request.endpoint in ('purchases', 'purchases_calendar') }}">
-          <span class="icon">&#x1f4e6;</span> Purchases
-        </a>
-        <div class="nav-dropdown-menu">
-          <a href="{{ url_for('purchases_calendar') }}" class="{{ 'active' if request.endpoint == 'purchases_calendar' }}">
-            <span class="icon">&#x1f4c5;</span> By Month
-          </a>
-        </div>
-      </div>
+      <a href="{{ url_for('purchases') }}" class="{{ 'active' if request.endpoint == 'purchases' }}">
+        <span class="icon">&#x1f4e6;</span> Purchases
+      </a>
+      <a href="{{ url_for('purchases_calendar') }}" class="{{ 'active' if request.endpoint == 'purchases_calendar' }}">
+        <span class="icon">&#x1f4c5;</span> Calendar
+      </a>
       <a href="{{ url_for('tags') }}" class="{{ 'active' if request.endpoint in ('tags', 'tag_create', 'tag_edit') }}">
         <span class="icon">&#x1f3f7;&#xfe0f;</span> Tags
       </a>
@@ -103,8 +99,8 @@
     <a href="{{ url_for('purchases') }}" class="{{ 'active' if request.endpoint == 'purchases' }}">
       <span class="icon">&#x1f4e6;</span> Purchases
     </a>
-    <a href="{{ url_for('purchases_calendar') }}" class="mobile-submenu {{ 'active' if request.endpoint == 'purchases_calendar' }}">
-      <span class="icon">&#x1f4c5;</span> By Month
+    <a href="{{ url_for('purchases_calendar') }}" class="{{ 'active' if request.endpoint == 'purchases_calendar' }}">
+      <span class="icon">&#x1f4c5;</span> Calendar
     </a>
     <a href="{{ url_for('tags') }}" class="{{ 'active' if request.endpoint in ('tags', 'tag_create', 'tag_edit') }}">
       <span class="icon">&#x1f3f7;&#xfe0f;</span> Tags
