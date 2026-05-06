@@ -12,7 +12,7 @@ Ideas and feature requests captured for later. Roughly in capture order — not 
 - [ ] Ability to exclude tags in a view.
 - [ ] Add filter by domain.
 - [ ] Add a list view for `/purchases` sorted by date of delivery.
-- [ ] Add a calendar view for Purchases.
+- [ ] Add a calendar view of **delivery dates** (separate from the existing `/purchases/calendar`, which is keyed on purchase date). Shows what's arriving when, what's late, what just arrived. Both items above need a new schema field — `Purchase.expected_delivery_at` and/or `delivered_at` — so plan them together.
 
 ## UI & layout
 
