@@ -1095,6 +1095,17 @@ def _run_lightweight_migrations():
         db.session.execute(text("ALTER TABLE purchase ADD COLUMN tracking_url TEXT DEFAULT ''"))
         db.session.commit()
 
+    # Purchase.expected_delivery_at / delivered_at added 2026-05 — feed the
+    # "Arriving today" calendar. Both nullable; existing rows backfill to NULL
+    # which means they don't appear on the calendar (only matters for items
+    # currently in awaiting_delivery — purchased rows never appear regardless).
+    if not column_exists("purchase", "expected_delivery_at"):
+        db.session.execute(text("ALTER TABLE purchase ADD COLUMN expected_delivery_at DATETIME"))
+        db.session.commit()
+    if not column_exists("purchase", "delivered_at"):
+        db.session.execute(text("ALTER TABLE purchase ADD COLUMN delivered_at DATETIME"))
+        db.session.commit()
+
     # Product.updated_at added 2026-04 — backfill with created_at so existing
     # rows sort sensibly on "last modified" until they're edited.
     if not column_exists("product", "updated_at"):

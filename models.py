@@ -108,6 +108,13 @@ class Purchase(db.Model):
     # for backfill compatibility with pre-existing purchase rows.
     order_details_url = db.Column(db.Text, default="")
     tracking_url = db.Column(db.Text, default="")
+    # Delivery tracking. expected_delivery_at is what the user said it'd
+    # arrive by (paired with tracking_url in the form). delivered_at is set
+    # when the user clicks ✓ Arrived on the calendar — at which point status
+    # auto-flips from awaiting_delivery to purchased so the row drops off
+    # the calendar.
+    expected_delivery_at = db.Column(db.DateTime, nullable=True)
+    delivered_at = db.Column(db.DateTime, nullable=True)
 
 
 class Settings(db.Model):
