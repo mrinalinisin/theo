@@ -49,6 +49,13 @@
         <span class="cart-label">{% if cart_count %}Checkout{% else %}Cart{% endif %}</span>
         <span class="cart-badge" id="cart-badge" {% if not cart_count %}style="display:none"{% endif %}>{{ cart_count }}</span>
       </a>
+      <a href="{{ url_for('compare') }}" id="nav-compare-link"
+         class="nav-compare-link {{ 'active' if request.endpoint == 'compare' }}"
+         title="Compare"
+         {% if not compare_count %}style="display:none"{% endif %}>
+        <span class="icon">&#x2696;&#xfe0f;</span> Compare
+        <span class="cart-badge" id="compare-badge">{{ compare_count }}</span>
+      </a>
       <div class="nav-dropdown">
         <a href="{{ url_for('purchases') }}" class="{{ 'active' if request.endpoint in ('purchases', 'purchases_calendar') }}">
           <span class="icon">&#x1f4e6;</span> Purchases
@@ -86,6 +93,12 @@
       <span class="icon cart-icon">{% if cart_count %}&#x1f4b0;{% else %}&#x1f6d2;{% endif %}</span>
       <span class="cart-label">{% if cart_count %}Checkout{% else %}Cart{% endif %}</span>
       <span class="cart-badge" id="cart-badge-mobile" {% if not cart_count %}style="display:none"{% endif %}>{{ cart_count }}</span>
+    </a>
+    <a href="{{ url_for('compare') }}" id="nav-compare-link-mobile"
+       class="nav-compare-link {{ 'active' if request.endpoint == 'compare' }}"
+       {% if not compare_count %}style="display:none"{% endif %}>
+      <span class="icon">&#x2696;&#xfe0f;</span> Compare
+      <span class="cart-badge" id="compare-badge-mobile">{{ compare_count }}</span>
     </a>
     <a href="{{ url_for('purchases') }}" class="{{ 'active' if request.endpoint == 'purchases' }}">
       <span class="icon">&#x1f4e6;</span> Purchases

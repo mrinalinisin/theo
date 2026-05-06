@@ -297,5 +297,44 @@ function toggleCart(event, btn) {
       });
     });
 }
+
+// ── Compare toggle on product cards ──
+function toggleCompare(event, btn) {
+  event.preventDefault();
+  event.stopPropagation();
+  var productId = btn.dataset.productId;
+  var inCompare = btn.classList.contains('in-compare');
+  var url = inCompare ? '/compare/remove/' + productId : '/compare/add/' + productId;
+  btn.style.opacity = '0.5';
+  fetch(url, { method: 'POST' })
+    .then(function(r) {
+      return r.json().then(function(data) { return { ok: r.ok, data: data }; });
+    })
+    .then(function(res) {
+      btn.style.opacity = '1';
+      var data = res.data;
+      if (!res.ok && data.error) {
+        // Cap-of-4 hit (or other error). Surface to the user.
+        alert(data.error);
+        return;
+      }
+      if (data.in_compare) {
+        btn.classList.add('in-compare');
+        btn.innerHTML = '⚖️ ✓';
+        btn.title = 'Remove from comparison';
+      } else {
+        btn.classList.remove('in-compare');
+        btn.innerHTML = '⚖️';
+        btn.title = 'Add to comparison';
+      }
+      // Update header badge(s) and visibility.
+      document.querySelectorAll('#nav-compare-link, #nav-compare-link-mobile').forEach(function(link) {
+        link.style.display = data.compare_count > 0 ? '' : 'none';
+      });
+      document.querySelectorAll('#compare-badge, #compare-badge-mobile').forEach(function(badge) {
+        badge.textContent = data.compare_count;
+      });
+    });
+}
 </script>
 {% endblock %}

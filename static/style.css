@@ -1217,6 +1217,46 @@ textarea.form-input { resize: vertical; min-height: 80px; }
   opacity: 0.85;
 }
 
+/* ── Compare toggle button on product cards ──────────────────────────────── */
+.compare-toggle-btn {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 4px 8px;
+}
+.compare-toggle-btn:hover { background: rgba(0,0,0,0.04); }
+.compare-toggle-btn.in-compare {
+  background: var(--accent-light);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* ── Compare basket list (placeholder view) ──────────────────────────────── */
+.compare-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px; }
+.compare-list-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 12px;
+  background: var(--surface);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+}
+.compare-list-thumb {
+  width: 56px; height: 56px; flex-shrink: 0;
+  border-radius: var(--radius-sm); overflow: hidden;
+  background: var(--bg);
+  display: flex; align-items: center; justify-content: center;
+}
+.compare-list-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.compare-list-meta { flex: 1; min-width: 0; }
+.compare-list-name {
+  display: block;
+  font-weight: 500;
+  color: var(--text);
+  text-decoration: none;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.compare-list-name:hover { color: var(--accent); }
+
 /* ── Purchases calendar ──────────────────────────────────────────────────── */
 .cal-toolbar {
   display: flex;

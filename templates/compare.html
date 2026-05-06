@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}Compare — Theo{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-header-top">
+    <div class="page-title">Compare</div>
+    {% if products %}
+    <div class="header-actions">
+      <form method="POST" action="{{ url_for('compare_clear') }}"
+        onsubmit="return confirm('Clear all items from compare?')">
+        <button type="submit" class="btn btn-secondary btn-sm">&times; Clear all</button>
+      </form>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<div class="page-body">
+{% if products %}
+  <div class="callout callout-info mb-16">
+    {{ products|length }} product{{ 's' if products|length != 1 }} in your compare list. Side-by-side view coming soon — for now, here are the items you've selected (max {{ max_items }}).
+  </div>
+  <ul class="compare-list">
+    {% for p in products %}
+    <li class="compare-list-item">
+      <div class="compare-list-thumb">
+        {% if p.image_url %}
+        <img src="{{ image_src(p.image_url) }}" alt="{{ p.name }}">
+        {% else %}
+        <span class="hero-card-image-placeholder">&#x1f6cd;&#xfe0f;</span>
+        {% endif %}
+      </div>
+      <div class="compare-list-meta">
+        <a href="{{ url_for('product_detail', product_id=p.id) }}" class="compare-list-name">{{ p.name }}</a>
+        <div class="text-xs text-faint">
+          {% if p.store %}{{ p.store }} · {% endif %}{{ p.fmt_price(p.current_price) }}
+        </div>
+      </div>
+      <button type="button"
+        class="btn btn-sm compare-toggle-btn in-compare"
+        data-product-id="{{ p.id }}"
+        title="Remove from comparison"
+        onclick="toggleCompareList(event, this)">
+        &#x2696;&#xfe0f; Remove
+      </button>
+    </li>
+    {% endfor %}
+  </ul>
+{% else %}
+  <div class="empty-state">
+    <div class="empty-icon">&#x2696;&#xfe0f;</div>
+    <div class="empty-title">No products to compare</div>
+    <div class="empty-desc">Tap the &#x2696;&#xfe0f; icon on any product to add it here. Holds up to {{ max_items }} at a time.</div>
+    <a href="{{ url_for('shopping_list') }}" class="btn btn-primary mt-16">Browse products</a>
+  </div>
+{% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function toggleCompareList(event, btn) {
+  event.preventDefault();
+  var productId = btn.dataset.productId;
+  fetch('/compare/remove/' + productId, { method: 'POST' })
+    .then(function(r) { return r.json(); })
+    .then(function() {
+      // Easiest path: reload so the list rerenders with one fewer item
+      // and the header badge/visibility update server-side.
+      window.location.reload();
+    });
+}
+</script>
+{% endblock %}

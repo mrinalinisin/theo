@@ -83,6 +83,11 @@ def create_app():
         cart = session.get("cart", [])
         return dict(cart_count=len(cart), cart_product_ids=set(cart))
 
+    @app.context_processor
+    def inject_compare():
+        compare = session.get("compare", [])
+        return dict(compare_count=len(compare), compare_product_ids=set(compare))
+
     # ── Routes ────────────────────────────────────────────────────────────────
 
     @app.route("/")
@@ -645,6 +650,71 @@ def create_app():
         session["cart"] = []
         flash(f"Checked out {count} item{'s' if count != 1 else ''} successfully!", "success")
         return redirect(url_for("purchases"))
+
+    # ── Compare ───────────────────────────────────────────────────────────────
+    # The compare basket mirrors the cart pattern: a session-stored list of
+    # product IDs the user wants to view side-by-side. Hard-capped at 4 so
+    # the comparison view stays readable.
+
+    COMPARE_MAX = 4
+
+    @app.route("/compare/add/<int:product_id>", methods=["POST"])
+    def compare_add(product_id):
+        compare = session.get("compare", [])
+        if product_id in compare:
+            return jsonify(ok=True, compare_count=len(compare), in_compare=True)
+        if len(compare) >= COMPARE_MAX:
+            return jsonify(
+                ok=False,
+                error=f"Compare holds {COMPARE_MAX} items max.",
+                compare_count=len(compare),
+                in_compare=False,
+            ), 409
+        compare.append(product_id)
+        session["compare"] = compare
+        return jsonify(ok=True, compare_count=len(compare), in_compare=True)
+
+    @app.route("/compare/remove/<int:product_id>", methods=["POST"])
+    def compare_remove(product_id):
+        compare = session.get("compare", [])
+        compare = [pid for pid in compare if pid != product_id]
+        session["compare"] = compare
+        return jsonify(ok=True, compare_count=len(compare), in_compare=False)
+
+    @app.route("/compare/clear", methods=["POST"])
+    def compare_clear():
+        session["compare"] = []
+        flash("Compare list cleared.", "info")
+        return redirect(url_for("compare"))
+
+    @app.route("/compare")
+    def compare():
+        # URL-supplied ?ids= wins over the session basket. This lets a user
+        # share or revisit a specific comparison without disturbing whatever
+        # they're currently building.
+        ids_param = request.args.get("ids", "").strip()
+        if ids_param:
+            try:
+                ids = [int(x) for x in ids_param.split(",") if x.strip()]
+            except ValueError:
+                ids = []
+        else:
+            ids = list(session.get("compare", []))
+
+        # Truncate at the hard cap; preserve URL order.
+        ids = ids[:COMPARE_MAX]
+
+        # Fetch products and re-order to match the requested ID order. Skip
+        # missing IDs silently — they may have been deleted since the compare
+        # list was saved.
+        if ids:
+            rows = Product.query.filter(Product.id.in_(ids)).all()
+            by_id = {p.id: p for p in rows}
+            products = [by_id[i] for i in ids if i in by_id]
+        else:
+            products = []
+
+        return render_template("compare.html", products=products, max_items=COMPARE_MAX)
 
     # ── Purchases ─────────────────────────────────────────────────────────────
 
