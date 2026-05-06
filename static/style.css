@@ -592,6 +592,7 @@ textarea.form-input { resize: vertical; min-height: 80px; }
   display: flex;
   flex-wrap: wrap;
   align-items: center;
+  justify-content: flex-end;
   gap: 6px;
 }
 .hero-card-tag-row {
