@@ -64,9 +64,8 @@
       <button type="button"
         class="btn btn-sm compare-toggle-btn {% if p.id in compare_product_ids %}in-compare{% endif %}"
         data-product-id="{{ p.id }}"
-        title="{% if p.id in compare_product_ids %}Remove from comparison{% else %}Add to comparison{% endif %}"
         onclick="toggleCompare(event, this)">
-        {% if p.id in compare_product_ids %}&#x2696;&#xfe0f; &#x2713;{% else %}&#x2696;&#xfe0f;{% endif %}
+        {% if p.id in compare_product_ids %}In Compare &#x2713;{% else %}+ Compare{% endif %}
       </button>
     </div>
     {% if not active_tag_obj %}
