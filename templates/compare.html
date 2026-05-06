@@ -88,6 +88,17 @@
       </div>
       {% endif %}
 
+      <!-- Status -->
+      <div class="compare-status-row">
+        {% if p.status == 'watching' %}
+        <span class="compare-status status-watching">Watching</span>
+        {% elif p.status == 'awaiting_delivery' %}
+        <span class="compare-status status-awaiting-delivery">Awaiting delivery</span>
+        {% elif p.status == 'purchased' %}
+        <span class="compare-status status-purchased">Purchased{% if p.purchase %} &middot; {{ p.fmt_price(p.purchase.paid_amount) }}{% endif %}</span>
+        {% endif %}
+      </div>
+
       <!-- CTAs -->
       <div class="compare-cta-stack">
         {% if p.url %}

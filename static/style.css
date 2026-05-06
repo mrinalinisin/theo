@@ -1368,12 +1368,24 @@ textarea.form-input { resize: vertical; min-height: 80px; }
 .compare-orig-price .price-drop { color: #2a6a3a; font-weight: 600; }
 .compare-orig-price .price-up { color: #8a3a2a; font-weight: 600; }
 
+/* Status pill — sits just above the CTA stack */
+.compare-status-row {
+  margin-top: 12px;
+}
+.compare-status {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
 /* CTA stack */
 .compare-cta-stack {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  margin-top: 12px;
+  margin-top: 8px;
 }
 
 /* Mobile: keep the side-by-side grid intact (alignment is the whole point
