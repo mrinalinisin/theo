@@ -1046,8 +1046,10 @@ textarea.form-input { resize: vertical; min-height: 80px; }
   border: 2px solid #fff;
 }
 
-/* ── Cart badge ── */
-.nav-cart-link {
+/* ── Cart / Compare badge — both nav links anchor an absolutely-positioned
+   .cart-badge in their top-right corner, so they need a positioning context. */
+.nav-cart-link,
+.nav-compare-link {
   position: relative;
 }
 .cart-badge {
