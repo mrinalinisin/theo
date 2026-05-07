@@ -1,6 +1,14 @@
 # Backlog
 
-Ideas and feature requests captured for later. Roughly in capture order — not priority order.
+Ideas and feature requests captured for later. The first section is what's most on my mind right now; the rest are loosely in capture order.
+
+## Analytics & reporting
+
+- [ ] Re-haul analytics for meaningful inventory graphs. Add weekly and monthly stats — e.g. "You ordered the following items this week."
+- [ ] Add a "This Week" view for purchases — what arrived and what's due.
+- [ ] Week / Month / Quarterly / Annual report — "You made X purchases this month in these categories."
+- [ ] WhatsApp feed of income.
+- [ ] Auto-generate a **monthly report webpage** at the end of each month summarising items bought, amount spent, and including pictures of the items. Triggering options to consider since APScheduler was removed: runit cron entry, manual "Generate report" button, or render on-demand when the month-end page is first visited.
 
 ## Ranking & sorting
 
@@ -33,14 +41,6 @@ Ideas and feature requests captured for later. Roughly in capture order — not 
 - [ ] A running-list article reviewing only totepacks / convertibles.
 - [ ] A running list of best "Over The Door" products — what can you have over the door / railing / window?
 - [ ] Publish a collection of objects to GitHub as static HTML.
-
-## Analytics & reporting
-
-- [ ] Re-haul analytics for meaningful inventory graphs. Add weekly and monthly stats — e.g. "You ordered the following items this week."
-- [ ] Add a "This Week" view for purchases — what arrived and what's due.
-- [ ] Week / Month / Quarterly / Annual report — "You made X purchases this month in these categories."
-- [ ] WhatsApp feed of income.
-- [ ] Auto-generate a **monthly report webpage** at the end of each month summarising items bought, amount spent, and including pictures of the items. Triggering options to consider since APScheduler was removed: runit cron entry, manual "Generate report" button, or render on-demand when the month-end page is first visited.
 
 ## Deployment & ops
 
