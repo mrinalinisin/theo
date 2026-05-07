@@ -1078,13 +1078,14 @@ def create_app():
         )
 
         # 1. Tracking link present, no delivery date at all (neither expected
-        #    nor delivered_at). Actionable: enter when it's expected to arrive.
+        #    nor delivered_at). Sorted oldest-first so the longest-neglected
+        #    items surface at the top — they're the most actionable.
         no_date = (
             base_q
             .filter(_present(Purchase.tracking_url))
             .filter(Purchase.expected_delivery_at.is_(None))
             .filter(Purchase.delivered_at.is_(None))
-            .order_by(Purchase.purchased_at.desc())
+            .order_by(Purchase.purchased_at.asc())
             .all()
         )
 
