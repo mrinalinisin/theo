@@ -37,6 +37,7 @@ Ideas and feature requests captured for later. Roughly in capture order — not 
 - [ ] A running list reviewing much-less-appreciated household appliances.
 - [ ] A running-list article reviewing only totepacks / convertibles.
 - [ ] A running list of best "Over The Door" products — what can you have over the door / railing / window?
+- [ ] Publish a collection of objects to GitHub as static HTML.
 
 ## Analytics & reporting
 
@@ -45,10 +46,6 @@ Ideas and feature requests captured for later. Roughly in capture order — not 
 - [ ] Week / Month / Quarterly / Annual report — "You made X purchases this month in these categories."
 - [ ] WhatsApp feed of income.
 - [ ] Auto-generate a **monthly report webpage** at the end of each month summarising items bought, amount spent, and including pictures of the items. Triggering options to consider since APScheduler was removed: runit cron entry, manual "Generate report" button, or render on-demand when the month-end page is first visited.
-
-## Sharing & publishing
-
-- [ ] Publish a collection of objects to GitHub as static HTML.
 
 ## Deployment & ops
 
