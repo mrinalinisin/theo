@@ -868,77 +868,58 @@ def create_app():
 
     @app.route("/purchases/calendar")
     def purchases_calendar():
-        today = datetime.utcnow().date()
-        try:
-            year = int(request.args.get("y", today.year))
-            month = int(request.args.get("m", today.month))
-            if not (1 <= month <= 12):
-                raise ValueError
-        except (TypeError, ValueError):
-            year, month = today.year, today.month
+        """Arriving Today — chronological list of items in flight.
 
-        tag_id = request.args.get("tag", "")
+        Shows all awaiting_delivery purchases that haven't yet been
+        marked as delivered. Each row is bucketed under
+        `display_date = max(expected_delivery_at, today)` so items past
+        their expected date silently roll forward to "today" rather
+        than appearing in a separate Overdue section. Items without
+        an expected_delivery_at fall to the "Date not set" footer
+        where the user can fill in a date inline.
+        """
+        today = date.today()
 
-        first_of_month = date(year, month, 1)
-        next_month_first = (
-            date(year + 1, 1, 1) if month == 12 else date(year, month + 1, 1)
+        rows = (
+            Purchase.query
+            .join(Product, Purchase.product_id == Product.id)
+            .filter(
+                Product.status == "awaiting_delivery",
+                Purchase.delivered_at.is_(None),
+            )
+            .all()
         )
 
-        month_query = Purchase.query.join(
-            Product, Purchase.product_id == Product.id
-        ).filter(
-            Purchase.purchased_at >= first_of_month,
-            Purchase.purchased_at < next_month_first,
-        )
-        year_start = date(year, 1, 1)
-        year_end = date(year + 1, 1, 1)
-        year_query = Purchase.query.join(
-            Product, Purchase.product_id == Product.id
-        ).filter(
-            Purchase.purchased_at >= year_start,
-            Purchase.purchased_at < year_end,
-        )
-        if tag_id:
-            try:
-                tag_int = int(tag_id)
-                month_query = month_query.filter(Product.tags.any(Tag.id == tag_int))
-                year_query = year_query.filter(Product.tags.any(Tag.id == tag_int))
-            except (TypeError, ValueError):
-                tag_id = ""
-
+        # Split: items with an expected date go into the chronological
+        # buckets; items without go to the "Date not set" footer.
         by_day = {}
-        for p in month_query.all():
-            by_day.setdefault(p.purchased_at.date(), []).append(p)
+        undated = []
+        for p in rows:
+            if p.expected_delivery_at:
+                edate = p.expected_delivery_at.date()
+                display_date = edate if edate >= today else today
+                by_day.setdefault(display_date, []).append(p)
+            else:
+                undated.append(p)
 
-        yearly_totals = {}
-        for p in year_query.all():
-            yearly_totals[p.purchased_at.month] = (
-                yearly_totals.get(p.purchased_at.month, 0) + p.paid_amount
+        # Within a day, prefer the longest-overdue items first (they've
+        # been waiting the most). Falls back to purchase date for ties.
+        for day_list in by_day.values():
+            day_list.sort(
+                key=lambda p: (p.expected_delivery_at, p.purchased_at)
             )
 
-        # Sunday-first weeks to match Apple Calendar's default.
-        cal = stdlib_calendar.Calendar(firstweekday=6)
-        weeks = cal.monthdatescalendar(year, month)
+        # Newest unfulfilled-purchase undated rows first — feels right
+        # for the "fill these in" CTA section.
+        undated.sort(key=lambda p: p.purchased_at, reverse=True)
 
-        prev_y, prev_m = (year - 1, 12) if month == 1 else (year, month - 1)
-        next_y, next_m = (year + 1, 1) if month == 12 else (year, month + 1)
-
+        days = sorted(by_day.keys())
         return render_template(
             "purchases_calendar.html",
-            year=year,
-            month=month,
-            month_name=stdlib_calendar.month_name[month],
-            month_abbrs=[stdlib_calendar.month_abbr[m] for m in range(1, 13)],
-            weeks=weeks,
+            days=days,
             by_day=by_day,
+            undated=undated,
             today=today,
-            prev_y=prev_y,
-            prev_m=prev_m,
-            next_y=next_y,
-            next_m=next_m,
-            yearly_totals=yearly_totals,
-            tags=Tag.query.order_by(Tag.name).all(),
-            active_tag=tag_id,
         )
 
     # ── Tags ──────────────────────────────────────────────────────────────────
