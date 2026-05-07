@@ -18,11 +18,6 @@ Ideas and feature requests captured for later. Roughly in capture order — not 
 - [ ] Multi-select cards on `/products` and mark the selection as Purchased in one action. **Replaces the Cart → Checkout flow** (remove `/cart` routes + Cart nav link as part of this work).
 - [ ] Inline delivery-date editor on `/purchases` cards — set / update an item's expected or actual delivery date without leaving the listing. Mirror the inline pattern already used in the "Date not set" footer of `/purchases/calendar`.
 
-## Relations & boards
-
-- [ ] Why did I buy this piece? Remix boards in the app, so I can mix and match pieces from outfits to bags to shoes.
-- [ ] Backlinks between products: "connected to", with meaningful relations like "variant of" or "also see".
-
 ## Domain models
 
 - [ ] Re-think how to accommodate consumables (Swiggy, grocery online orders) and services (spa). Define Anytype-style models — e.g. a "Consumables" model with default attributes like `created_at`.
