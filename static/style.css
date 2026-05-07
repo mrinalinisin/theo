@@ -523,8 +523,8 @@ textarea.form-input { resize: vertical; min-height: 80px; }
 }
 .hero-card-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
-  gap: 14px;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 10px;
 }
 .hero-card {
   position: relative;
@@ -608,15 +608,15 @@ body.has-selection .card-select-checkbox { display: flex; }
   object-fit: cover;
 }
 .hero-card-image-placeholder {
-  font-size: 44px;
+  font-size: 36px;
   opacity: 0.55;
 }
 .hero-card-body {
-  padding: 12px 13px 10px;
+  padding: 8px 10px 6px;
 }
 .hero-card-title {
-  font-size: 15px;
-  font-weight: 700;
+  font-size: 13px;
+  font-weight: 600;
   line-height: 1.25;
   color: var(--text);
 }
@@ -626,16 +626,16 @@ body.has-selection .card-select-checkbox { display: flex; }
   margin-top: 2px;
 }
 .hero-card-description {
-  font-size: 12px;
+  font-size: 11px;
   color: var(--text);
-  line-height: 1.4;
-  margin-top: 7px;
+  line-height: 1.35;
+  margin-top: 4px;
 }
 
 /* Delivery info row in purchase cards (date, "Delivered ...", or inline picker) */
 .hero-card-delivery {
-  margin-top: 8px;
-  font-size: 12px;
+  margin-top: 5px;
+  font-size: 11px;
   color: var(--text-muted);
   display: flex;
   align-items: center;
@@ -651,14 +651,14 @@ body.has-selection .card-select-checkbox { display: flex; }
 .card-date-form .form-input-sm { flex: 1 1 auto; min-width: 0; }
 
 .hero-card-footer {
-  padding: 8px 13px;
+  padding: 6px 10px;
   border-top: 1px solid var(--border-light);
   font-size: 11px;
   color: var(--text-faint);
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  gap: 6px;
+  gap: 5px;
 }
 .hero-card-actions {
   display: flex;
