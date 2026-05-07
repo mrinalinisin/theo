@@ -341,6 +341,22 @@ navCartLinks.forEach(function(link) {
   });
 });
 
+// ── Shift+Click on a card → toggle selection (power-user shortcut) ──
+// Delegated from document in CAPTURE phase so inner buttons that call
+// stopPropagation() (Open, Compare, etc.) can't swallow the event before
+// we see it. Only fires when the user is holding Shift, and only on
+// cards that have a selection checkbox (i.e. watching status).
+document.addEventListener('click', function(event) {
+  if (!event.shiftKey) return;
+  const card = event.target.closest('.hero-card');
+  if (!card) return;
+  const checkbox = card.querySelector('.card-select-checkbox');
+  if (!checkbox) return;  // Card isn't selectable — non-watching status.
+  event.preventDefault();
+  event.stopPropagation();
+  toggleCardSelect(event, checkbox);
+}, true);
+
 // ── Compare toggle on product cards ──
 function toggleCompare(event, btn) {
   event.preventDefault();
