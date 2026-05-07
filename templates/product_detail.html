@@ -40,11 +40,6 @@
         onsubmit="return confirm('Move this back to Watching? The order details and paid amount on record will be discarded.')">
         <button type="submit" class="btn btn-secondary btn-sm">Unmark as Awaiting Delivery</button>
       </form>
-      {% elif product.status == 'purchased' %}
-      <form method="POST" action="{{ url_for('product_unpurchase', product_id=product.id) }}"
-        onsubmit="return confirm('Move this back to Watching? The purchase record (paid amount, tracking, notes) will be discarded.')">
-        <button type="submit" class="btn btn-secondary btn-sm">Unmark as Purchased</button>
-      </form>
       {% endif %}
     </div>
   </div>
