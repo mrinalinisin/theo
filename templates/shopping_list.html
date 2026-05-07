@@ -278,6 +278,9 @@ const navCartLinks = document.querySelectorAll('.nav-cart-link');
 
 function refreshSelectionUi() {
   const n = selectedIds.size;
+  // Body-level toggle drives whether every selectable card's checkbox
+  // is visible — see .card-select-checkbox CSS for the cascade.
+  document.body.classList.toggle('has-selection', n > 0);
   document.querySelectorAll('.cart-badge').forEach(function(badge) {
     badge.textContent = n;
     badge.style.display = n > 0 ? '' : 'none';

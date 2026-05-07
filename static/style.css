@@ -548,7 +548,11 @@ textarea.form-input { resize: vertical; min-height: 80px; }
 }
 
 /* ── Per-card multi-select checkbox (top-right of watching cards) ─────────── */
+/* Hidden by default; appears on every selectable card once any card is
+   selected (body.has-selection toggled by the JS Set). Lets users discover
+   "click to extend selection" without permanent UI noise on idle browse. */
 .card-select-checkbox {
+  display: none;
   position: absolute;
   top: 8px;
   right: 8px;
@@ -562,12 +566,12 @@ textarea.form-input { resize: vertical; min-height: 80px; }
   -webkit-backdrop-filter: blur(4px);
   padding: 0;
   cursor: pointer;
-  display: flex;
   align-items: center;
   justify-content: center;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
   transition: background 0.15s ease, border-color 0.15s ease, transform 0.12s ease;
 }
+body.has-selection .card-select-checkbox { display: flex; }
 .card-select-checkbox:hover { transform: scale(1.08); }
 .card-select-checkbox .card-select-tick {
   font-size: 14px;
