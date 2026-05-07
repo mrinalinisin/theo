@@ -2,6 +2,17 @@
 
 Ideas and feature requests captured for later. The first section is what's most on my mind right now; the rest are loosely in capture order.
 
+## Content & UI
+
+- [ ] Multi-select cards on `/products` and mark the selection as Purchased in one action. **Replaces the Cart → Checkout flow** (remove `/cart` routes + Cart nav link as part of this work).
+- [ ] Inline delivery-date editor on `/purchases` cards — set / update an item's expected or actual delivery date without leaving the listing. Mirror the inline pattern already used in the "Date not set" footer of `/purchases/calendar`.
+- [ ] Add reviews on items, with ability to paste-zone photos and link to product videos.
+- [ ] Listings should have a link to video instructions.
+- [ ] A running list reviewing much-less-appreciated household appliances.
+- [ ] A running-list article reviewing only totepacks / convertibles.
+- [ ] A running list of best "Over The Door" products — what can you have over the door / railing / window?
+- [ ] Publish a collection of objects to GitHub as static HTML.
+
 ## Analytics & reporting
 
 - [ ] Re-haul analytics for meaningful inventory graphs. Add weekly and monthly stats — e.g. "You ordered the following items this week."
@@ -20,17 +31,6 @@ Ideas and feature requests captured for later. The first section is what's most 
 - [ ] Ability to exclude tags in a view.
 - [ ] Add filter by domain.
 - [ ] Add a list view for `/purchases` sorted by date of delivery.
-
-## Content & UI
-
-- [ ] Multi-select cards on `/products` and mark the selection as Purchased in one action. **Replaces the Cart → Checkout flow** (remove `/cart` routes + Cart nav link as part of this work).
-- [ ] Inline delivery-date editor on `/purchases` cards — set / update an item's expected or actual delivery date without leaving the listing. Mirror the inline pattern already used in the "Date not set" footer of `/purchases/calendar`.
-- [ ] Add reviews on items, with ability to paste-zone photos and link to product videos.
-- [ ] Listings should have a link to video instructions.
-- [ ] A running list reviewing much-less-appreciated household appliances.
-- [ ] A running-list article reviewing only totepacks / convertibles.
-- [ ] A running list of best "Over The Door" products — what can you have over the door / railing / window?
-- [ ] Publish a collection of objects to GitHub as static HTML.
 
 ## Domain models
 
