@@ -416,6 +416,18 @@ def create_app():
             product.purchase.order_details_url = order_details_url
             product.purchase.tracking_url = tracking_url
 
+            # Expected delivery date — optional. Empty string clears it.
+            edate_raw = (request.form.get("expected_delivery_at") or "").strip()
+            if edate_raw:
+                try:
+                    product.purchase.expected_delivery_at = datetime.strptime(
+                        edate_raw, "%Y-%m-%d"
+                    ).replace(tzinfo=timezone.utc)
+                except ValueError:
+                    pass  # Keep the existing value on parse failure
+            else:
+                product.purchase.expected_delivery_at = None
+
         product.updated_at = datetime.now(timezone.utc)
         db.session.commit()
         flash("Product updated.", "success")
@@ -468,6 +480,18 @@ def create_app():
         order_details_url = (request.form.get("order_details_url") or "").strip()
         tracking_url = (request.form.get("tracking_url") or "").strip()
 
+        # Optional expected delivery date — paired with tracking_url in the form.
+        # YYYY-MM-DD from <input type="date">; stored as midnight UTC for that day.
+        expected_delivery_at = None
+        edate_raw = (request.form.get("expected_delivery_at") or "").strip()
+        if edate_raw:
+            try:
+                expected_delivery_at = datetime.strptime(edate_raw, "%Y-%m-%d").replace(
+                    tzinfo=timezone.utc
+                )
+            except ValueError:
+                expected_delivery_at = None
+
         # A purchased item must have either an order details link or a tracking
         # link (or both) so we always have a way back to the receipt/shipment.
         if not order_details_url and not tracking_url:
@@ -487,6 +511,7 @@ def create_app():
             purchase.notes = notes
             purchase.order_details_url = order_details_url
             purchase.tracking_url = tracking_url
+            purchase.expected_delivery_at = expected_delivery_at
         else:
             purchase = Purchase(
                 product_id=product.id,
@@ -495,6 +520,7 @@ def create_app():
                 notes=notes,
                 order_details_url=order_details_url,
                 tracking_url=tracking_url,
+                expected_delivery_at=expected_delivery_at,
             )
             db.session.add(purchase)
         target_status = request.form.get("target_status", "purchased")
@@ -508,6 +534,29 @@ def create_app():
             return redirect(url_for("product_detail", product_id=product.id))
         flash(f"Marked \"{product.name}\" as purchased for {_fmt_price(paid)}!", "success")
         return redirect(url_for("shopping_list"))
+
+    @app.route("/products/<int:product_id>/arrived", methods=["POST"])
+    def product_arrived(product_id):
+        """Mark an awaiting-delivery item as arrived.
+
+        Sets delivered_at = now() and auto-flips status to 'purchased'
+        so the row drops off the Arriving Today calendar. The
+        expected_delivery_at value is preserved as the *original*
+        signal — useful later for "how often is my stuff late?" stats.
+        """
+        product = Product.query.get_or_404(product_id)
+        if not product.purchase:
+            flash(f"\"{product.name}\" has no purchase record yet.", "error")
+            return redirect(url_for("purchases_calendar"))
+        product.purchase.delivered_at = datetime.now(timezone.utc)
+        if product.status == "awaiting_delivery":
+            product.status = "purchased"
+        db.session.commit()
+        flash(f"Marked \"{product.name}\" as arrived.", "success")
+        # Honour an optional ?next= so we can redirect back to wherever the
+        # user clicked from (calendar, product detail, etc.).
+        next_url = request.form.get("next") or url_for("purchases_calendar")
+        return redirect(next_url)
 
     @app.route("/products/<int:product_id>/unpurchase", methods=["POST"])
     def product_unpurchase(product_id):
