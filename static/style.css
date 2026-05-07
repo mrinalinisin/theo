@@ -572,6 +572,12 @@ textarea.form-input { resize: vertical; min-height: 80px; }
   transition: background 0.15s ease, border-color 0.15s ease, transform 0.12s ease;
 }
 body.has-selection .card-select-checkbox { display: flex; }
+
+/* On non-desktop screens (touch devices have no Shift key + no hover for
+   discovery), always show the checkbox so multi-select stays reachable. */
+@media (max-width: 768px) {
+  .card-select-checkbox { display: flex; }
+}
 .card-select-checkbox:hover { transform: scale(1.08); }
 .card-select-checkbox .card-select-tick {
   font-size: 14px;
