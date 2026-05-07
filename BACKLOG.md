@@ -18,13 +18,6 @@ Ideas and feature requests captured for later. Roughly in capture order — not 
 - [ ] Multi-select cards on `/products` and mark the selection as Purchased in one action. **Replaces the Cart → Checkout flow** (remove `/cart` routes + Cart nav link as part of this work).
 - [ ] Inline delivery-date editor on `/purchases` cards — set / update an item's expected or actual delivery date without leaving the listing. Mirror the inline pattern already used in the "Date not set" footer of `/purchases/calendar`.
 
-## Capture & scraping flow
-
-- [ ] Combine scraping activity into the "Add New Product" UI itself. If pictures appear they can be live inserted; if they don't, the user can copy-paste them in. Adding an item shouldn't take a page refresh — if unable to fetch, show "unable to fetch" and let the user manually add details.
-- [ ] Re-think duplicates implementation.
-- [ ] Clean up: variant and size fields should be required where appropriate.
-- [ ] Gooey — design a Safari extension to scrape a listing and create data in the locally running app.
-
 ## Relations & boards
 
 - [ ] Why did I buy this piece? Remix boards in the app, so I can mix and match pieces from outfits to bags to shoes.
