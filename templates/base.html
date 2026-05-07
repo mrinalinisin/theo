@@ -66,7 +66,7 @@
         <span class="icon">&#x1f3f7;&#xfe0f;</span> Tags
       </a>
       <div class="nav-dropdown">
-        <a href="{{ url_for('settings') }}" class="{{ 'active' if request.endpoint in ('settings', 'settings_save') or request.path == '/stats' }}">
+        <a href="{{ url_for('settings') }}" class="{{ 'active' if request.endpoint == 'settings' or request.path == '/stats' }}">
           <span class="icon">&#x2699;&#xfe0f;</span> Settings
         </a>
         <div class="nav-dropdown-menu">
@@ -105,7 +105,7 @@
     <a href="{{ url_for('tags') }}" class="{{ 'active' if request.endpoint in ('tags', 'tag_create', 'tag_edit') }}">
       <span class="icon">&#x1f3f7;&#xfe0f;</span> Tags
     </a>
-    <a href="{{ url_for('settings') }}" class="{{ 'active' if request.endpoint in ('settings', 'settings_save') }}">
+    <a href="{{ url_for('settings') }}" class="{{ 'active' if request.endpoint == 'settings' }}">
       <span class="icon">&#x2699;&#xfe0f;</span> Settings
     </a>
     <a href="{{ url_for('stats') }}" class="mobile-submenu {{ 'active' if request.path == '/stats' }}">

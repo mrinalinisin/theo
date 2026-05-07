@@ -9,31 +9,10 @@
 </div>
 
 <div class="page-body" style="max-width: 640px;">
-  <form method="POST" action="{{ url_for('settings_save') }}">
-
-    <!-- Income & Budget -->
-    <details class="accordion mb-20" open>
-      <summary>Income &amp; Budget</summary>
-      <div class="accordion-body">
-        <div class="form-row mb-16">
-          <div class="form-group" style="margin-bottom:0;">
-            <label class="form-label">Monthly Income</label>
-            <input type="text" name="monthly_income" class="form-input"
-              value="{{ settings.monthly_income|int if settings.monthly_income else '' }}"
-              placeholder="e.g. 65000">
-          </div>
-          <div class="form-group" style="margin-bottom:0;">
-            <label class="form-label">Shopping Budget</label>
-            <input type="text" name="shopping_budget" class="form-input"
-              value="{{ settings.shopping_budget|int if settings.shopping_budget else '' }}"
-              placeholder="e.g. 13500">
-          </div>
-        </div>
-        <div class="form-hint">Budget resets on the 1st of each month.</div>
-      </div>
-    </details>
-
-    <button type="submit" class="btn btn-primary btn-block">Save Settings</button>
-  </form>
+  <div class="empty-state">
+    <div class="empty-icon">&#x2699;&#xfe0f;</div>
+    <div class="empty-title">No settings yet</div>
+    <div class="empty-desc">There's nothing to configure right now. Stats are linked from the nav above.</div>
+  </div>
 </div>
 {% endblock %}

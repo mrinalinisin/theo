@@ -982,18 +982,10 @@ def create_app():
 
     @app.route("/settings")
     def settings():
-        s = Settings.get()
-        products = Product.query.filter_by(status="watching").order_by(Product.name).all()
-        return render_template("settings.html", settings=s, products=products)
-
-    @app.route("/settings", methods=["POST"])
-    def settings_save():
-        s = Settings.get()
-        s.monthly_income = _parse_price(request.form.get("monthly_income", "0"))
-        s.shopping_budget = _parse_price(request.form.get("shopping_budget", "0"))
-        db.session.commit()
-        flash("Settings saved.", "success")
-        return redirect(url_for("settings"))
+        # No user-configurable settings right now — the page renders an
+        # empty state. Kept as a route so the nav link + Stats submenu
+        # have a home; future settings can land here.
+        return render_template("settings.html")
 
     # ── Template helpers ──────────────────────────────────────────────────────
 
@@ -1029,32 +1021,6 @@ def create_app():
     @app.template_filter("tojson_safe")
     def tojson_safe_filter(value):
         return json.dumps(value) if value else "[]"
-
-    @app.context_processor
-    def inject_globals():
-        settings = Settings.get()
-        # Budget usage for sidebar
-        now = datetime.utcnow()
-        month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-        month_purchases = Purchase.query.filter(Purchase.purchased_at >= month_start).all()
-        month_spent = sum(p.paid_amount for p in month_purchases)
-        budget = settings.shopping_budget or 0
-        budget_pct = (month_spent / budget * 100) if budget > 0 else 0
-        budget_remaining = budget - month_spent
-
-        active_statuses = ("watching", "awaiting_delivery")
-        watching_count = Product.query.filter(
-            Product.status.in_(active_statuses)
-        ).count()
-
-        return {
-            "g_settings": settings,
-            "g_month_spent": month_spent,
-            "g_budget_pct": min(budget_pct, 100),
-            "g_budget_remaining": budget_remaining,
-            "g_month_name": now.strftime("%B %Y"),
-            "g_watching_count": watching_count,
-        }
 
     # ── Stats ────────────────────────────────────────────────────────────────
 

@@ -118,11 +118,15 @@ class Purchase(db.Model):
 
 
 class Settings(db.Model):
-    """Singleton settings row."""
+    """Singleton settings row.
+
+    Currently has no user-facing fields — the row exists to keep the
+    Settings page wired up (future settings will land here). The
+    monthly_income / shopping_budget columns added earlier are now
+    orphaned in the SQLite schema but no longer referenced from code.
+    """
 
     id = db.Column(db.Integer, primary_key=True)
-    monthly_income = db.Column(db.Float, default=0)
-    shopping_budget = db.Column(db.Float, default=0)
 
     @classmethod
     def get(cls):
