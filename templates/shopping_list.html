@@ -87,15 +87,6 @@
   {% endif %}
 </div>
 
-<!-- ═══ Selection bar — appears when ≥1 watching card is checked ═══ -->
-<form id="selection-bar" class="selection-bar"
-      method="POST" action="{{ url_for('cart_select_and_checkout') }}">
-  <span class="selection-bar-count"><span id="selection-bar-n">0</span> selected</span>
-  <button type="button" class="btn btn-ghost btn-sm" onclick="clearCardSelection()">Clear</button>
-  <button type="submit" class="btn btn-primary btn-sm">Checkout &rarr;</button>
-  <!-- Selected IDs injected as hidden inputs at submit time -->
-</form>
-
 <!-- ═══ Purchase Modal ═══ -->
 <div class="modal-overlay" id="modal-purchase">
   <div class="modal">
@@ -275,18 +266,28 @@ document.getElementById('modal-purchase').addEventListener('click', e => {
 })();
 
 // ── Card selection (replaces per-card "+ Cart" button) ──
-// Selection state lives client-side as a Set of product IDs. Toggling
-// a card's checkbox flips visual state; the floating bar at the bottom
-// shows the count and posts the selection to /cart/select-and-checkout
-// which puts those IDs in the session cart and forwards to /cart/checkout.
+// Selection state lives client-side as a Set of product IDs. The Cart
+// nav link doubles as the selection indicator + Checkout trigger:
+//   - Badge shows the selection count
+//   - Icon/label flip to the existing Checkout state
+//   - Click intercepted to submit the selection to
+//     /cart/select-and-checkout (only when >0 selected; otherwise
+//     the link behaves normally and goes to /cart).
 const selectedIds = new Set();
-const selectionBar = document.getElementById('selection-bar');
-const selectionN = document.getElementById('selection-bar-n');
+const navCartLinks = document.querySelectorAll('.nav-cart-link');
 
-function refreshSelectionBar() {
+function refreshSelectionUi() {
   const n = selectedIds.size;
-  if (selectionN) selectionN.textContent = n;
-  if (selectionBar) selectionBar.classList.toggle('visible', n > 0);
+  document.querySelectorAll('.cart-badge').forEach(function(badge) {
+    badge.textContent = n;
+    badge.style.display = n > 0 ? '' : 'none';
+  });
+  document.querySelectorAll('.cart-icon').forEach(function(icon) {
+    icon.textContent = n > 0 ? '💰' : '🛒';
+  });
+  document.querySelectorAll('.cart-label').forEach(function(label) {
+    label.textContent = n > 0 ? 'Checkout' : 'Cart';
+  });
 }
 
 function toggleCardSelect(event, btn) {
@@ -304,7 +305,7 @@ function toggleCardSelect(event, btn) {
     btn.classList.add('checked');
     if (card) card.classList.add('selected');
   }
-  refreshSelectionBar();
+  refreshSelectionUi();
 }
 
 function clearCardSelection() {
@@ -315,22 +316,30 @@ function clearCardSelection() {
     if (card) card.classList.remove('selected');
   });
   selectedIds.clear();
-  refreshSelectionBar();
+  refreshSelectionUi();
 }
 
-// On submit, inject the selected IDs as hidden inputs so the form posts them.
-if (selectionBar) {
-  selectionBar.addEventListener('submit', function() {
-    selectionBar.querySelectorAll('input[name="ids"]').forEach(function(n) { n.remove(); });
+// Intercept clicks on the Cart nav link(s). When a selection exists,
+// submit it to /cart/select-and-checkout via a one-shot hidden form
+// rather than navigating to /cart.
+navCartLinks.forEach(function(link) {
+  link.addEventListener('click', function(event) {
+    if (selectedIds.size === 0) return;  // Behave as a normal link.
+    event.preventDefault();
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '/cart/select-and-checkout';
     selectedIds.forEach(function(id) {
       const inp = document.createElement('input');
       inp.type = 'hidden';
       inp.name = 'ids';
       inp.value = id;
-      selectionBar.appendChild(inp);
+      form.appendChild(inp);
     });
+    document.body.appendChild(form);
+    form.submit();
   });
-}
+});
 
 // ── Compare toggle on product cards ──
 function toggleCompare(event, btn) {

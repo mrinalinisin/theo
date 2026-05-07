@@ -583,35 +583,6 @@ textarea.form-input { resize: vertical; min-height: 80px; }
 }
 .card-select-checkbox.checked .card-select-tick { opacity: 1; }
 
-/* ── Selection bar (sticky bottom, appears when ≥1 selected) ──────────────── */
-.selection-bar {
-  position: fixed;
-  left: 50%;
-  bottom: 24px;
-  transform: translateX(-50%) translateY(120%);
-  z-index: 100;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 10px 14px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.16);
-  opacity: 0;
-  pointer-events: none;
-  transition: transform 0.22s ease, opacity 0.18s ease;
-}
-.selection-bar.visible {
-  transform: translateX(-50%) translateY(0);
-  opacity: 1;
-  pointer-events: auto;
-}
-.selection-bar-count {
-  font-size: 14px;
-  font-weight: 600;
-  padding-right: 4px;
-}
 .hero-card-image {
   aspect-ratio: 1 / 1;
   background: #6a8080; /* muted teal tone, matches the reference */
