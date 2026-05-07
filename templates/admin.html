@@ -14,32 +14,35 @@
     something — click through to the product detail to fix.
   </div>
 
-  {% macro purchase_row(p) %}
+  {% macro purchase_card(p) %}
     {% set product = p.product %}
-    <li class="admin-row">
-      <a href="{{ url_for('product_detail', product_id=product.id) }}" class="admin-thumb">
+    <div class="admin-card">
+      <a href="{{ url_for('product_detail', product_id=product.id) }}" class="admin-card-thumb">
         {% if product.image_url %}
         <img src="{{ image_src(product.image_url) }}" alt="{{ product.name }}">
         {% else %}
         <span>&#x1f6cd;&#xfe0f;</span>
         {% endif %}
       </a>
-      <div class="admin-meta">
-        <a href="{{ url_for('product_detail', product_id=product.id) }}" class="admin-name">{{ product.name }}</a>
-        <div class="text-xs text-faint">
-          {% if product.store %}{{ product.store }} &middot; {% endif %}
-          {{ product.fmt_price(p.paid_amount) }}
-          &middot; bought {{ p.purchased_at|time_ago }}
-        </div>
-      </div>
-      <div class="admin-status">
-        {% if product.status == 'awaiting_delivery' %}
-          <span class="status-pill status-awaiting-delivery">Awaiting</span>
+      <a href="{{ url_for('product_detail', product_id=product.id) }}" class="admin-card-name" title="{{ product.name }}">{{ product.name }}</a>
+      <div class="admin-card-actions">
+        {% if p.order_details_url %}
+        <a href="{{ p.order_details_url }}" target="_blank" rel="noopener" class="admin-card-icon" title="Order details">&#x1f9fe;</a>
+        {% endif %}
+        {% if p.tracking_url %}
+        <a href="{{ p.tracking_url }}" target="_blank" rel="noopener" class="admin-card-icon" title="Tracking">&#x1f4e6;</a>
+        {% endif %}
+        {% if p.expected_delivery_at %}
+        <span class="admin-card-date" title="Expected delivery">&#x1f4c5; {{ p.expected_delivery_at.strftime('%b %d') }}</span>
         {% else %}
-          <span class="status-pill status-purchased">Purchased</span>
+        <form method="POST" action="{{ url_for('product_edit', product_id=product.id) }}" class="admin-card-date-form" title="Set expected delivery date">
+          <input type="hidden" name="order_details_url" value="{{ p.order_details_url or '' }}">
+          <input type="hidden" name="tracking_url" value="{{ p.tracking_url or '' }}">
+          <input type="date" name="expected_delivery_at" required onchange="this.form.submit()">
+        </form>
         {% endif %}
       </div>
-    </li>
+    </div>
   {% endmacro %}
 
   {% macro section(title, items, empty_text) %}
@@ -48,9 +51,9 @@
       <span class="admin-section-count">({{ items|length }})</span>
     </h3>
     {% if items %}
-    <ul class="admin-list">
-      {% for p in items %}{{ purchase_row(p) }}{% endfor %}
-    </ul>
+    <div class="admin-grid">
+      {% for p in items %}{{ purchase_card(p) }}{% endfor %}
+    </div>
     {% else %}
     <div class="admin-empty">{{ empty_text }}</div>
     {% endif %}

@@ -1320,26 +1320,27 @@ body.has-selection .card-select-checkbox { display: flex; }
 }
 .admin-section-heading:first-of-type { margin-top: 0; }
 .admin-section-count { font-weight: 400; opacity: 0.7; }
-.admin-list {
-  list-style: none;
-  padding: 0;
-  margin: 0 0 16px;
+/* Compact card grid — one row per item shrunk into a 140-ish-wide card. */
+.admin-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 10px;
+  margin: 0 0 24px;
+}
+.admin-card {
   display: flex;
   flex-direction: column;
   gap: 6px;
-}
-.admin-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 8px 12px;
+  padding: 8px;
   background: var(--surface);
   border: 1px solid var(--border-light);
   border-radius: var(--radius-sm);
+  min-width: 0;
 }
-.admin-thumb {
-  flex: 0 0 auto;
-  width: 44px; height: 44px;
+.admin-card-thumb {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1 / 1;
   border-radius: var(--radius-sm);
   overflow: hidden;
   background: var(--bg);
@@ -1348,20 +1349,56 @@ body.has-selection .card-select-checkbox { display: flex; }
   justify-content: center;
   text-decoration: none;
 }
-.admin-thumb img { width: 100%; height: 100%; object-fit: cover; }
-.admin-thumb span { font-size: 20px; opacity: 0.6; }
-.admin-meta { flex: 1; min-width: 0; }
-.admin-name {
-  display: block;
+.admin-card-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.admin-card-thumb span { font-size: 28px; opacity: 0.6; }
+.admin-card-name {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  font-size: 12px;
   font-weight: 500;
+  line-height: 1.3;
   color: var(--text);
   text-decoration: none;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  word-break: break-word;
+}
+.admin-card-name:hover { color: var(--accent); }
+.admin-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: auto;
+  padding-top: 4px;
+  border-top: 1px solid var(--border-light);
+}
+.admin-card-icon {
+  font-size: 16px;
+  text-decoration: none;
+  line-height: 1;
+  padding: 2px;
+  border-radius: 4px;
+  opacity: 0.75;
+  transition: opacity 0.12s ease, background 0.12s ease;
+}
+.admin-card-icon:hover { opacity: 1; background: var(--bg); }
+.admin-card-date {
+  font-size: 11px;
+  color: var(--text-muted);
   white-space: nowrap;
 }
-.admin-name:hover { color: var(--accent); }
-.admin-status { flex-shrink: 0; }
+.admin-card-date-form { display: inline-flex; }
+.admin-card-date-form input[type="date"] {
+  font-size: 11px;
+  padding: 2px 4px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg);
+  cursor: pointer;
+  width: 100%;
+  min-width: 0;
+}
 .admin-empty {
   padding: 12px 14px;
   background: var(--surface);
