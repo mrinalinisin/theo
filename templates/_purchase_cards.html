@@ -69,6 +69,13 @@
         &#x2197; Track
       </button>
       {% endif %}
+      {# Calendar-only affordance — opt-in via show_arrived_button. #}
+      {% if show_arrived_button and product %}
+      <form method="POST" action="{{ url_for('product_arrived', product_id=product.id) }}"
+            onclick="event.stopPropagation()" style="display:inline;">
+        <button type="submit" class="btn btn-sm btn-primary">&#x2713; Arrived</button>
+      </form>
+      {% endif %}
     </div>
     {% set tag_text = product.tags|map(attribute='name')|join(', ') if product and product.tags else 'No tags' %}
     <div class="hero-card-tag-row">

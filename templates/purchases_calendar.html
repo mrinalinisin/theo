@@ -18,6 +18,7 @@
   </div>
 {% else %}
 
+  {# Day groupings — items rolled forward to today, plus future scheduled days. #}
   {% for d in days %}
     {% set is_today = (d == today) %}
     <h3 class="arriving-day-heading {% if is_today %}arriving-today{% endif %}">
@@ -27,82 +28,24 @@
         {{ d.strftime('%a, %b %d') }}
       {% endif %}
     </h3>
-    <ul class="arriving-list">
-      {% for p in by_day[d] %}
-      {% set product = p.product %}
-      <li class="arriving-row">
-        <a href="{{ url_for('product_detail', product_id=product.id) }}" class="arriving-thumb">
-          {% if product.image_url %}
-          <img src="{{ image_src(product.image_url) }}" alt="{{ product.name }}">
-          {% else %}
-          <span>&#x1f6cd;&#xfe0f;</span>
-          {% endif %}
-        </a>
-        <div class="arriving-meta">
-          <a href="{{ url_for('product_detail', product_id=product.id) }}" class="arriving-name">{{ product.name }}</a>
-          <div class="text-xs text-faint">
-            {% if product.store %}{{ product.store }} &middot; {% endif %}
-            {{ product.fmt_price(p.paid_amount) }}
-            {% if p.expected_delivery_at and p.expected_delivery_at.date() < today %}
-              &middot; <span class="arriving-late">was due {{ p.expected_delivery_at.strftime('%b %d') }}</span>
-            {% endif %}
-          </div>
-        </div>
-        <div class="arriving-actions">
-          {% if p.tracking_url %}
-          <a href="{{ p.tracking_url }}" target="_blank" rel="noopener" class="btn btn-sm btn-secondary">&#x2197; Track</a>
-          {% endif %}
-          <form method="POST" action="{{ url_for('product_arrived', product_id=product.id) }}" style="display:inline;">
-            <input type="hidden" name="next" value="{{ url_for('purchases_calendar') }}">
-            <button type="submit" class="btn btn-sm btn-primary">&#x2713; Arrived</button>
-          </form>
-        </div>
-      </li>
-      {% endfor %}
-    </ul>
+    <div class="hero-card-grid">
+      {% set purchases = by_day[d] %}
+      {% set show_arrived_button = true %}
+      {% include "_purchase_cards.html" %}
+    </div>
   {% endfor %}
 
+  {# Undated footer — items that need a date set inline before they can be
+     bucketed in a day group above. The partial already renders the inline
+     date picker as the third option in its delivery row. #}
   {% if undated %}
   <h3 class="arriving-day-heading arriving-undated">Date not set ({{ undated|length }})</h3>
   <div class="text-xs text-faint mb-12">Pick a date so these show up in the chronological list above.</div>
-  <ul class="arriving-list">
-    {% for p in undated %}
-    {% set product = p.product %}
-    <li class="arriving-row">
-      <a href="{{ url_for('product_detail', product_id=product.id) }}" class="arriving-thumb">
-        {% if product.image_url %}
-        <img src="{{ image_src(product.image_url) }}" alt="{{ product.name }}">
-        {% else %}
-        <span>&#x1f6cd;&#xfe0f;</span>
-        {% endif %}
-      </a>
-      <div class="arriving-meta">
-        <a href="{{ url_for('product_detail', product_id=product.id) }}" class="arriving-name">{{ product.name }}</a>
-        <div class="text-xs text-faint">
-          {% if product.store %}{{ product.store }} &middot; {% endif %}
-          {{ product.fmt_price(p.paid_amount) }}
-          &middot; ordered {{ p.purchased_at|time_ago }}
-        </div>
-      </div>
-      <div class="arriving-actions">
-        <form method="POST" action="{{ url_for('product_edit', product_id=product.id) }}" class="arriving-date-form">
-          {# Re-pass current order/tracking so the route's "at least one link" guard doesn't reject. #}
-          <input type="hidden" name="order_details_url" value="{{ p.order_details_url or '' }}">
-          <input type="hidden" name="tracking_url" value="{{ p.tracking_url or '' }}">
-          <input type="date" name="expected_delivery_at" class="form-input form-input-sm" required>
-          <button type="submit" class="btn btn-sm btn-primary">Save</button>
-        </form>
-        {% if p.tracking_url %}
-        <a href="{{ p.tracking_url }}" target="_blank" rel="noopener" class="btn btn-sm btn-secondary">&#x2197; Track</a>
-        {% endif %}
-        <form method="POST" action="{{ url_for('product_arrived', product_id=product.id) }}" style="display:inline;">
-          <input type="hidden" name="next" value="{{ url_for('purchases_calendar') }}">
-          <button type="submit" class="btn btn-sm btn-secondary">&#x2713; Arrived</button>
-        </form>
-      </div>
-    </li>
-    {% endfor %}
-  </ul>
+  <div class="hero-card-grid">
+    {% set purchases = undated %}
+    {% set show_arrived_button = true %}
+    {% include "_purchase_cards.html" %}
+  </div>
   {% endif %}
 
 {% endif %}

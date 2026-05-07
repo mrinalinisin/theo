@@ -1597,70 +1597,9 @@ body.has-selection .card-select-checkbox { display: flex; }
 .arriving-undated {
   color: var(--text-muted);
 }
-.arriving-list {
-  list-style: none;
-  padding: 0;
-  margin: 0 0 8px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-.arriving-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 10px 12px;
-  background: var(--surface);
-  border: 1px solid var(--border-light);
-  border-radius: var(--radius-sm);
-}
-.arriving-thumb {
-  flex: 0 0 auto;
-  width: 56px; height: 56px;
-  border-radius: var(--radius-sm);
-  overflow: hidden;
-  background: var(--bg);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  text-decoration: none;
-}
-.arriving-thumb img { width: 100%; height: 100%; object-fit: cover; }
-.arriving-thumb span { font-size: 24px; opacity: 0.6; }
-.arriving-meta {
-  flex: 1;
-  min-width: 0;
-}
-.arriving-name {
-  display: block;
-  font-weight: 500;
-  color: var(--text);
-  text-decoration: none;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.arriving-name:hover { color: var(--accent); }
-.arriving-late { color: var(--danger); font-weight: 500; }
-.arriving-actions {
-  display: flex;
-  flex-shrink: 0;
-  align-items: center;
-  gap: 6px;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-}
-.arriving-date-form {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-}
+/* Used by the inline date form in _purchase_cards.html (the partial that
+   now powers /purchases/calendar). Kept after the row-layout cleanup. */
 .form-input-sm {
   padding: 4px 8px;
   font-size: 13px;
-}
-
-@media (max-width: 768px) {
-  .arriving-row { flex-wrap: wrap; }
-  .arriving-actions { width: 100%; justify-content: flex-start; }
 }
