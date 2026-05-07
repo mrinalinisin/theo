@@ -87,6 +87,15 @@
   {% endif %}
 </div>
 
+<!-- ═══ Selection bar — appears when ≥1 watching card is checked ═══ -->
+<form id="selection-bar" class="selection-bar"
+      method="POST" action="{{ url_for('cart_select_and_checkout') }}">
+  <span class="selection-bar-count"><span id="selection-bar-n">0</span> selected</span>
+  <button type="button" class="btn btn-ghost btn-sm" onclick="clearCardSelection()">Clear</button>
+  <button type="submit" class="btn btn-primary btn-sm">Checkout &rarr;</button>
+  <!-- Selected IDs injected as hidden inputs at submit time -->
+</form>
+
 <!-- ═══ Purchase Modal ═══ -->
 <div class="modal-overlay" id="modal-purchase">
   <div class="modal">
@@ -265,37 +274,62 @@ document.getElementById('modal-purchase').addEventListener('click', e => {
   btn.addEventListener('click', loadMore);
 })();
 
-// ── Cart toggle on product cards ──
-function toggleCart(event, btn) {
+// ── Card selection (replaces per-card "+ Cart" button) ──
+// Selection state lives client-side as a Set of product IDs. Toggling
+// a card's checkbox flips visual state; the floating bar at the bottom
+// shows the count and posts the selection to /cart/select-and-checkout
+// which puts those IDs in the session cart and forwards to /cart/checkout.
+const selectedIds = new Set();
+const selectionBar = document.getElementById('selection-bar');
+const selectionN = document.getElementById('selection-bar-n');
+
+function refreshSelectionBar() {
+  const n = selectedIds.size;
+  if (selectionN) selectionN.textContent = n;
+  if (selectionBar) selectionBar.classList.toggle('visible', n > 0);
+}
+
+function toggleCardSelect(event, btn) {
+  // Stop the parent <a class="hero-card"> from navigating.
   event.preventDefault();
   event.stopPropagation();
-  var productId = btn.dataset.productId;
-  var inCart = btn.classList.contains('in-cart');
-  var url = inCart ? '/cart/remove/' + productId : '/cart/add/' + productId;
-  btn.style.opacity = '0.5';
-  fetch(url, { method: 'POST' })
-    .then(function(r) { return r.json(); })
-    .then(function(data) {
-      btn.style.opacity = '1';
-      if (data.in_cart) {
-        btn.classList.add('in-cart');
-        btn.innerHTML = 'In Cart &#x2713;';
-      } else {
-        btn.classList.remove('in-cart');
-        btn.innerHTML = '+ Cart';
-      }
-      // Update header badge(s), icon, and label.
-      document.querySelectorAll('.cart-badge').forEach(function(badge) {
-        badge.textContent = data.cart_count;
-        badge.style.display = data.cart_count > 0 ? '' : 'none';
-      });
-      document.querySelectorAll('.cart-icon').forEach(function(icon) {
-        icon.textContent = data.cart_count > 0 ? '\uD83D\uDCB0' : '\uD83D\uDED2';
-      });
-      document.querySelectorAll('.cart-label').forEach(function(label) {
-        label.textContent = data.cart_count > 0 ? 'Checkout' : 'Cart';
-      });
+  const productId = parseInt(btn.dataset.productId, 10);
+  const card = btn.closest('.hero-card');
+  if (selectedIds.has(productId)) {
+    selectedIds.delete(productId);
+    btn.classList.remove('checked');
+    if (card) card.classList.remove('selected');
+  } else {
+    selectedIds.add(productId);
+    btn.classList.add('checked');
+    if (card) card.classList.add('selected');
+  }
+  refreshSelectionBar();
+}
+
+function clearCardSelection() {
+  selectedIds.forEach(function(id) {
+    const btn = document.querySelector('.card-select-checkbox[data-product-id="' + id + '"]');
+    if (btn) btn.classList.remove('checked');
+    const card = document.querySelector('.hero-card[data-product-id="' + id + '"]');
+    if (card) card.classList.remove('selected');
+  });
+  selectedIds.clear();
+  refreshSelectionBar();
+}
+
+// On submit, inject the selected IDs as hidden inputs so the form posts them.
+if (selectionBar) {
+  selectionBar.addEventListener('submit', function() {
+    selectionBar.querySelectorAll('input[name="ids"]').forEach(function(n) { n.remove(); });
+    selectedIds.forEach(function(id) {
+      const inp = document.createElement('input');
+      inp.type = 'hidden';
+      inp.name = 'ids';
+      inp.value = id;
+      selectionBar.appendChild(inp);
     });
+  });
 }
 
 // ── Compare toggle on product cards ──

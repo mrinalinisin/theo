@@ -1,5 +1,14 @@
 {% for p in products %}
-<a href="{{ url_for('product_detail', product_id=p.id) }}" class="hero-card">
+<a href="{{ url_for('product_detail', product_id=p.id) }}" class="hero-card" data-product-id="{{ p.id }}">
+  {% if p.status == 'watching' %}
+  <button type="button"
+    class="card-select-checkbox"
+    data-product-id="{{ p.id }}"
+    aria-label="Select {{ p.name }} for checkout"
+    onclick="toggleCardSelect(event, this)">
+    <span class="card-select-tick">&#x2713;</span>
+  </button>
+  {% endif %}
   <div class="hero-card-image">
     {% if p.image_url %}
     <img src="{{ image_src(p.image_url) }}" alt="{{ p.name }}">
@@ -51,14 +60,6 @@
         title="Tracking"
         onclick="openProductUrl(event, this)">
         &#x2197; Track
-      </button>
-      {% endif %}
-      {% if p.status == 'watching' %}
-      <button type="button"
-        class="btn btn-sm cart-toggle-btn {% if p.id in cart_product_ids %}in-cart{% endif %}"
-        data-product-id="{{ p.id }}"
-        onclick="toggleCart(event, this)">
-        {% if p.id in cart_product_ids %}In Cart &#x2713;{% else %}+ Cart{% endif %}
       </button>
       {% endif %}
       <button type="button"

@@ -601,6 +601,38 @@ def create_app():
         flash("Cart cleared.", "info")
         return redirect(url_for("cart"))
 
+    @app.route("/cart/select-and-checkout", methods=["POST"])
+    def cart_select_and_checkout():
+        """Multi-select shortcut from the Browse page.
+
+        Replaces the session cart with the IDs from the form (sent as
+        repeated `ids` fields by the selection bar's hidden inputs)
+        and redirects to /cart/checkout. Restricted to currently-
+        watching products — silently drops anything else so the user
+        can't accidentally bulk-purchase already-purchased items.
+        """
+        raw_ids = request.form.getlist("ids")
+        try:
+            ids = [int(x) for x in raw_ids if x]
+        except (TypeError, ValueError):
+            ids = []
+
+        if ids:
+            valid_ids = [
+                pid for (pid,) in db.session.query(Product.id)
+                .filter(Product.id.in_(ids), Product.status == "watching")
+                .all()
+            ]
+        else:
+            valid_ids = []
+
+        if not valid_ids:
+            flash("Nothing selected to check out.", "warning")
+            return redirect(url_for("shopping_list"))
+
+        session["cart"] = valid_ids
+        return redirect(url_for("cart_checkout"))
+
     @app.route("/cart")
     def cart():
         cart_ids = session.get("cart", [])
