@@ -4,8 +4,7 @@ Ideas and feature requests captured for later. The first section is what's most 
 
 ## Content & UI
 
-- [ ] Multi-select cards on `/products` and mark the selection as Purchased in one action. **Replaces the Cart → Checkout flow** (remove `/cart` routes + Cart nav link as part of this work).
-- [ ] Inline delivery-date editor on `/purchases` cards — set / update an item's expected or actual delivery date without leaving the listing. Mirror the inline pattern already used in the "Date not set" footer of `/purchases/calendar`.
+- [ ] **PAUSED — Simplify listing states to: Added · Purchased · Shipped · Received.** Design + migration mapping already worked out in conversation. Open question: how to map the 170 current `purchased` rows with `delivered_at = NULL` (Option 1 = all to Received, Option 2 = all to Purchased intermediate, Option 3 = time-based split). Once decided, the rest is mechanical: `Product.status` migration UPDATEs (`watching` → Added; `awaiting_delivery` split by tracking-link presence into Purchased/Shipped; current `purchased` → Received), auto-flip Purchased → Shipped on tracking-link save in `product_edit`, rename status-pill labels across all templates, update route filters in `cart_select_and_checkout`, `purchases_calendar`, `admin`, `shopping_list`, `purchases`.
 - [ ] Add reviews on items, with ability to paste-zone photos and link to product videos.
 - [ ] Listings should have a link to video instructions.
 - [ ] A running list reviewing much-less-appreciated household appliances.
@@ -21,13 +20,10 @@ Ideas and feature requests captured for later. The first section is what's most 
 - [ ] WhatsApp feed of income.
 - [ ] Auto-generate a **monthly report webpage** at the end of each month summarising items bought, amount spent, and including pictures of the items. Triggering options to consider since APScheduler was removed: runit cron entry, manual "Generate report" button, or render on-demand when the month-end page is first visited.
 
-## Ranking & sorting
+## Ranking, sorting, filtering
 
 - [ ] Move Up or Down in product listing. The more up I move it, the more it shows up at the top — sorted by how many Up votes it has.
 - [ ] Add a randomizer button in the header to shuffle the listing order.
-
-## Filtering & views
-
 - [ ] Ability to exclude tags in a view.
 - [ ] Add filter by domain.
 - [ ] Add a list view for `/purchases` sorted by date of delivery.

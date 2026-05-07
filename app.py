@@ -1089,11 +1089,15 @@ def create_app():
             .all()
         )
 
-        # 2. Order link but no tracking link.
+        # 2. Order link but no tracking link AND no expected delivery date.
+        # Tighter than just "no tracking" — it also excludes items where the
+        # user manually entered an expected date despite no carrier link.
+        # These are the genuinely opaque "I bought it, that's all I know" rows.
         order_only = (
             base_q
             .filter(_present(Purchase.order_details_url))
             .filter(_absent(Purchase.tracking_url))
+            .filter(Purchase.expected_delivery_at.is_(None))
             .order_by(Purchase.purchased_at.desc())
             .all()
         )
