@@ -120,13 +120,17 @@ class Purchase(db.Model):
 class Settings(db.Model):
     """Singleton settings row.
 
-    Currently has no user-facing fields — the row exists to keep the
-    Settings page wired up (future settings will land here). The
-    monthly_income / shopping_budget columns added earlier are now
-    orphaned in the SQLite schema but no longer referenced from code.
+    Currently has no user-facing fields. monthly_income / shopping_budget
+    columns added earlier are now orphaned in the SQLite schema but no
+    longer referenced from code.
     """
 
     id = db.Column(db.Integer, primary_key=True)
+    # One-shot marker for the listing-states refactor (Added/Purchased/
+    # Shipped/Received). The migration block in create_app reads this and
+    # sets it True after running the UPDATEs once. Subsequent app starts
+    # see True and skip the work.
+    state_refactor_done = db.Column(db.Boolean, default=False, nullable=False)
 
     @classmethod
     def get(cls):

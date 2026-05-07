@@ -13,8 +13,8 @@
   <div class="empty-state">
     <div class="empty-icon">&#x1f4e6;</div>
     <div class="empty-title">Nothing in flight</div>
-    <div class="empty-desc">Items show up here when you mark them as awaiting delivery.</div>
-    <a href="{{ url_for('shopping_list', status='awaiting_delivery') }}" class="btn btn-primary mt-16">View awaiting items</a>
+    <div class="empty-desc">Items show up here once you mark them as Purchased or Shipped — they drop off when marked Received.</div>
+    <a href="{{ url_for('shopping_list', status='shipped') }}" class="btn btn-primary mt-16">View shipped items</a>
   </div>
 {% else %}
 

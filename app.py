@@ -117,9 +117,9 @@ def create_app():
         status_filter, tag_filter, search_q)."""
         tag_filter = request.args.get("tag")
         search_q = (request.args.get("q") or "").strip()
-        status_filter = request.args.get("status", "watching")
-        if status_filter not in ("watching", "awaiting_delivery", "purchased", "all"):
-            status_filter = "watching"
+        status_filter = request.args.get("status", "added")
+        if status_filter not in ("added", "purchased", "shipped", "received", "all"):
+            status_filter = "added"
 
         SORT_COLUMNS = {
             "created": Product.created_at,
@@ -281,7 +281,7 @@ def create_app():
             notes=notes,
             quantity=1,
             currency_id=currency_id,
-            status="watching",
+            status="added",
         )
         for tag in tags:
             product.tags.append(tag)
@@ -398,11 +398,10 @@ def create_app():
             if tag:
                 product.tags.append(tag)
 
-        # Order details / tracking link edits — only meaningful for purchased
-        # or awaiting_delivery products (the edit modal only renders those
-        # inputs when a Purchase row exists). We re-enforce the "at least one
-        # link" invariant so a user can't blank both fields.
-        if product.status in ("purchased", "awaiting_delivery") and product.purchase and (
+        # Order/tracking/date edits apply to any product with a Purchase row
+        # (purchased, shipped, received). We re-enforce the "at least one link"
+        # invariant so a user can't blank both fields.
+        if product.status in ("purchased", "shipped", "received") and product.purchase and (
             "order_details_url" in request.form or "tracking_url" in request.form
         ):
             order_details_url = (request.form.get("order_details_url") or "").strip()
@@ -413,6 +412,7 @@ def create_app():
                     "error",
                 )
                 return redirect(url_for("product_detail", product_id=product_id))
+            had_tracking = bool(product.purchase.tracking_url)
             product.purchase.order_details_url = order_details_url
             product.purchase.tracking_url = tracking_url
 
@@ -427,6 +427,24 @@ def create_app():
                     pass  # Keep the existing value on parse failure
             else:
                 product.purchase.expected_delivery_at = None
+
+            # Auto-flip Purchased → Shipped when tracking is first added.
+            # Reverse direction (Shipped → Purchased on tracking removal)
+            # is intentionally NOT done; we never demote.
+            if (not had_tracking) and tracking_url and product.status == "purchased":
+                product.status = "shipped"
+
+            # Auto-stamp delivered_at when expected date is in the past — and
+            # promote the item to Received. Mirrors the rule baked into the
+            # one-shot mark_overdue_as_received script, now part of the live
+            # save flow so new past-dated entries self-correct.
+            exp = product.purchase.expected_delivery_at
+            if exp and not product.purchase.delivered_at:
+                exp_date = exp.date() if hasattr(exp, "date") else exp
+                if exp_date < datetime.now(timezone.utc).date():
+                    product.purchase.delivered_at = exp
+                    if product.status in ("purchased", "shipped"):
+                        product.status = "received"
 
         product.updated_at = datetime.now(timezone.utc)
         db.session.commit()
@@ -523,36 +541,51 @@ def create_app():
                 expected_delivery_at=expected_delivery_at,
             )
             db.session.add(purchase)
+        # New target_status set: 'purchased' (intermediate, just bought) or
+        # 'received' (already in hand). Tracking-link presence implicitly
+        # promotes the 'purchased' case to 'shipped' via the auto-flip in
+        # product_edit, so we don't need a separate Shipped target here.
         target_status = request.form.get("target_status", "purchased")
-        if target_status not in ("purchased", "awaiting_delivery"):
+        if target_status not in ("purchased", "received"):
             target_status = "purchased"
+        # If user explicitly marked Received, also stamp delivered_at now (if
+        # not already set during purchase form submission).
+        if target_status == "received" and not purchase.delivered_at:
+            purchase.delivered_at = datetime.now(timezone.utc)
+        # Or, when user marked Purchased but tracking is provided, the item is
+        # already known to be in motion → Shipped. Mirrors product_edit's
+        # auto-flip; keeps state consistent regardless of entry path.
+        if target_status == "purchased" and tracking_url:
+            target_status = "shipped"
         product.status = target_status
         db.session.commit()
 
-        if target_status == "awaiting_delivery":
-            flash(f"Marked \"{product.name}\" as awaiting delivery for {_fmt_price(paid)}!", "success")
+        if target_status == "received":
+            flash(f"Marked \"{product.name}\" as received for {_fmt_price(paid)}.", "success")
             return redirect(url_for("product_detail", product_id=product.id))
-        flash(f"Marked \"{product.name}\" as purchased for {_fmt_price(paid)}!", "success")
+        if target_status == "shipped":
+            flash(f"Marked \"{product.name}\" as shipped for {_fmt_price(paid)}.", "success")
+            return redirect(url_for("product_detail", product_id=product.id))
+        flash(f"Marked \"{product.name}\" as purchased for {_fmt_price(paid)}.", "success")
         return redirect(url_for("shopping_list"))
 
     @app.route("/products/<int:product_id>/arrived", methods=["POST"])
     def product_arrived(product_id):
-        """Mark an awaiting-delivery item as arrived.
+        """Mark a purchased / shipped item as received.
 
-        Sets delivered_at = now() and auto-flips status to 'purchased'
-        so the row drops off the Arriving Today calendar. The
-        expected_delivery_at value is preserved as the *original*
-        signal — useful later for "how often is my stuff late?" stats.
+        Sets delivered_at = now() and flips status to 'received' so the row
+        drops off the Arriving Today calendar. expected_delivery_at is
+        preserved as the *original* signal for late-arrival analytics.
         """
         product = Product.query.get_or_404(product_id)
         if not product.purchase:
             flash(f"\"{product.name}\" has no purchase record yet.", "error")
             return redirect(url_for("purchases_calendar"))
         product.purchase.delivered_at = datetime.now(timezone.utc)
-        if product.status == "awaiting_delivery":
-            product.status = "purchased"
+        if product.status in ("purchased", "shipped"):
+            product.status = "received"
         db.session.commit()
-        flash(f"Marked \"{product.name}\" as arrived.", "success")
+        flash(f"Marked \"{product.name}\" as received.", "success")
         # Honour an optional ?next= so we can redirect back to wherever the
         # user clicked from (calendar, product detail, etc.).
         next_url = request.form.get("next") or url_for("purchases_calendar")
@@ -563,9 +596,9 @@ def create_app():
         product = Product.query.get_or_404(product_id)
         if product.purchase:
             db.session.delete(product.purchase)
-        product.status = "watching"
+        product.status = "added"
         db.session.commit()
-        flash(f"Moved \"{product.name}\" back to Watching.", "success")
+        flash(f"Moved \"{product.name}\" back to Added.", "success")
         return redirect(url_for("shopping_list"))
 
     @app.route("/products/<int:product_id>/delete", methods=["POST"])
@@ -620,7 +653,7 @@ def create_app():
         if ids:
             valid_ids = [
                 pid for (pid,) in db.session.query(Product.id)
-                .filter(Product.id.in_(ids), Product.status == "watching")
+                .filter(Product.id.in_(ids), Product.status == "added")
                 .all()
             ]
         else:
@@ -640,7 +673,7 @@ def create_app():
         if cart_ids:
             items = Product.query.filter(
                 Product.id.in_(cart_ids),
-                Product.status == "watching",
+                Product.status == "added",
             ).all()
             # Prune stale IDs (deleted or already-purchased products).
             valid_ids = [p.id for p in items]
@@ -669,7 +702,7 @@ def create_app():
         if cart_ids:
             items = Product.query.filter(
                 Product.id.in_(cart_ids),
-                Product.status == "watching",
+                Product.status == "added",
             ).all()
 
         if not items:
@@ -724,7 +757,10 @@ def create_app():
                     tracking_url=tracking,
                 )
                 db.session.add(purchase)
-            p.status = "purchased"
+            # Tracking-link presence promotes to Shipped; otherwise the item
+            # is just-bought / Purchased (intermediate). Same rule as
+            # product_purchase and product_edit's auto-flip.
+            p.status = "shipped" if tracking else "purchased"
             count += 1
 
         db.session.commit()
@@ -902,8 +938,8 @@ def create_app():
     def purchases_calendar():
         """Arriving Today — chronological list of items in flight.
 
-        Shows all awaiting_delivery purchases that haven't yet been
-        marked as delivered. Each row is bucketed under
+        Shows Purchased + Shipped items that haven't yet been marked
+        delivered. Each row is bucketed under
         `display_date = max(expected_delivery_at, today)` so items past
         their expected date silently roll forward to "today" rather
         than appearing in a separate Overdue section. Items without
@@ -916,7 +952,10 @@ def create_app():
             Purchase.query
             .join(Product, Purchase.product_id == Product.id)
             .filter(
-                Product.status == "awaiting_delivery",
+                # Both Purchased (just bought, no tracking) and Shipped
+                # (in transit) belong on the Arriving Today page — anything
+                # not yet Received with a known or unknown date.
+                Product.status.in_(("purchased", "shipped")),
                 Purchase.delivered_at.is_(None),
             )
             .all()
@@ -1074,7 +1113,8 @@ def create_app():
         base_q = (
             Purchase.query
             .join(Product, Purchase.product_id == Product.id)
-            .filter(Product.status.in_(("awaiting_delivery", "purchased")))
+            # Universe is items with a Purchase row — i.e. anything not Added.
+            .filter(Product.status.in_(("purchased", "shipped", "received")))
         )
 
         # 1. Tracking link present, no delivery date at all (neither expected
@@ -1209,6 +1249,95 @@ def _run_lightweight_migrations():
     if not column_exists("purchase", "delivered_at"):
         db.session.execute(text("ALTER TABLE purchase ADD COLUMN delivered_at DATETIME"))
         db.session.commit()
+
+    # Settings.state_refactor_done added 2026-05 — gates the one-shot
+    # listing-states migration below (watching/awaiting_delivery/purchased
+    # → added/purchased/shipped/received).
+    if not column_exists("settings", "state_refactor_done"):
+        db.session.execute(text(
+            "ALTER TABLE settings ADD COLUMN state_refactor_done BOOLEAN NOT NULL DEFAULT 0"
+        ))
+        db.session.commit()
+
+    # ── Listing states refactor (one-shot) ──
+    # Maps the old three-state model (watching/awaiting_delivery/purchased)
+    # to the new four-state model (added/purchased/shipped/received).
+    # Order matters: rename the OLD 'purchased' rows before any new 'purchased'
+    # rows are produced, so we don't double-process. Sentinel approach.
+    settings_row = Settings.get()
+    if not settings_row.state_refactor_done:
+        from datetime import date as _date
+        today_iso = _date.today().isoformat()
+
+        # Step 1: park current 'purchased' rows under a sentinel so subsequent
+        # UPDATEs producing new 'purchased' values don't re-touch them.
+        db.session.execute(text(
+            "UPDATE product SET status='__migrating_old_purchased__' WHERE status='purchased'"
+        ))
+
+        # Step 2a: items that already have evidence of arrival → received.
+        db.session.execute(text("""
+            UPDATE product SET status='received'
+            WHERE status='__migrating_old_purchased__'
+            AND id IN (
+                SELECT product_id FROM purchase WHERE delivered_at IS NOT NULL
+            )
+        """))
+        # Step 2b: items with a past expected date but no delivered_at — stamp
+        # delivered_at = expected_delivery_at and call them received. Mirrors
+        # mark_overdue_as_received.py's logic so the script becomes redundant.
+        db.session.execute(text(f"""
+            UPDATE purchase SET delivered_at = expected_delivery_at
+            WHERE delivered_at IS NULL
+            AND expected_delivery_at IS NOT NULL
+            AND expected_delivery_at < '{today_iso}'
+            AND product_id IN (
+                SELECT id FROM product WHERE status='__migrating_old_purchased__'
+            )
+        """))
+        db.session.execute(text("""
+            UPDATE product SET status='received'
+            WHERE status='__migrating_old_purchased__'
+            AND id IN (
+                SELECT product_id FROM purchase WHERE delivered_at IS NOT NULL
+            )
+        """))
+        # Step 2c: remaining 'old purchased' rows have no arrival evidence.
+        # Split by tracking_url presence: tracking → shipped, else stay
+        # 'purchased' (intermediate).
+        db.session.execute(text("""
+            UPDATE product SET status='shipped'
+            WHERE status='__migrating_old_purchased__'
+            AND id IN (
+                SELECT product_id FROM purchase
+                WHERE tracking_url IS NOT NULL AND tracking_url != ''
+            )
+        """))
+        db.session.execute(text(
+            "UPDATE product SET status='purchased' WHERE status='__migrating_old_purchased__'"
+        ))
+
+        # Step 3: split awaiting_delivery → shipped (has tracking) or
+        # purchased (no tracking).
+        db.session.execute(text("""
+            UPDATE product SET status='shipped'
+            WHERE status='awaiting_delivery'
+            AND id IN (
+                SELECT product_id FROM purchase
+                WHERE tracking_url IS NOT NULL AND tracking_url != ''
+            )
+        """))
+        db.session.execute(text(
+            "UPDATE product SET status='purchased' WHERE status='awaiting_delivery'"
+        ))
+
+        # Step 4: rename watching → added.
+        db.session.execute(text("UPDATE product SET status='added' WHERE status='watching'"))
+
+        # Done — set the marker so this block becomes a no-op on subsequent boots.
+        settings_row.state_refactor_done = True
+        db.session.commit()
+        print("[Theo] Listing-states refactor migration applied.")
 
     # Product.updated_at added 2026-04 — backfill with created_at so existing
     # rows sort sensibly on "last modified" until they're edited.

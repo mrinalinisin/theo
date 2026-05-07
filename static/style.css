@@ -410,11 +410,12 @@ body {
   display: inline-flex; align-items: center; gap: 5px;
   padding: 2px 8px; border-radius: 20px; font-size: 11.5px; font-weight: 500;
 }
-.status-watching { color: #1a6a9a; background: #e0f0fa; }
-.status-awaiting-delivery { color: #8a6a1a; background: #faf0d0; }
-.status-purchased { color: #2a6a3a; background: #e0f5e8; }
-.status-price-drop { color: #2a6a3a; background: #d0f0d8; }
-.status-price-up { color: #8a3a2a; background: #fae0da; }
+.status-added       { color: #6a6a6a; background: #ececec; }
+.status-purchased   { color: #1a6a9a; background: #e0f0fa; }
+.status-shipped     { color: #8a6a1a; background: #faf0d0; }
+.status-received    { color: #2a6a3a; background: #e0f5e8; }
+.status-price-drop  { color: #2a6a3a; background: #d0f0d8; }
+.status-price-up    { color: #8a3a2a; background: #fae0da; }
 
 /* ── Form elements ─────────────────────────────────────────────────────────── */
 .form-group { margin-bottom: 18px; }

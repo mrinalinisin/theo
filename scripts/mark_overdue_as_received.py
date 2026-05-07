@@ -38,7 +38,7 @@ def main(apply_changes: bool):
     rows = (
         Purchase.query
         .join(Product, Purchase.product_id == Product.id)
-        .filter(Product.status.in_(("awaiting_delivery", "purchased")))
+        .filter(Product.status.in_(("purchased", "shipped", "received")))
         .filter(Purchase.delivered_at.is_(None))
         .filter(Purchase.expected_delivery_at.isnot(None))
         .filter(Purchase.expected_delivery_at < today)
@@ -50,7 +50,7 @@ def main(apply_changes: bool):
         print("Nothing to migrate. No items with an overdue expected date and a missing delivered_at.")
         return
 
-    n_status_flip = sum(1 for p in rows if p.product and p.product.status == "awaiting_delivery")
+    n_status_flip = sum(1 for p in rows if p.product and p.product.status in ("purchased", "shipped"))
     n_stamp_only = len(rows) - n_status_flip
     print(f"\n{len(rows)} item{'s' if len(rows) != 1 else ''} qualify:")
     print(f"  - {n_stamp_only} purchased items will get delivered_at stamped only")
@@ -58,7 +58,7 @@ def main(apply_changes: bool):
     for p in rows:
         edate = p.expected_delivery_at.date() if p.expected_delivery_at else None
         name = p.product.name if p.product else "(missing product)"
-        action = "flip + stamp" if (p.product and p.product.status == "awaiting_delivery") else "stamp only"
+        action = "flip + stamp" if (p.product and p.product.status in ("purchased", "shipped")) else "stamp only"
         print(f"  [{p.id:5}] expected {edate}  →  {action}, delivered_at = {edate}")
         print(f"           {name[:80]}")
 
@@ -71,8 +71,8 @@ def main(apply_changes: bool):
         # Stamp delivered_at to the expected date — best estimate; the user can
         # always edit per-item later if a more accurate date is known.
         p.delivered_at = p.expected_delivery_at
-        if p.product and p.product.status == "awaiting_delivery":
-            p.product.status = "purchased"
+        if p.product and p.product.status in ("purchased", "shipped"):
+            p.product.status = "received"
     db.session.commit()
     print(f"Done. Updated {len(rows)} purchase{'s' if len(rows) != 1 else ''}.")
 

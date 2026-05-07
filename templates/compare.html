@@ -90,12 +90,14 @@
 
       <!-- Status -->
       <div class="compare-status-row">
-        {% if p.status == 'watching' %}
-        <span class="compare-status status-watching">Watching</span>
-        {% elif p.status == 'awaiting_delivery' %}
-        <span class="compare-status status-awaiting-delivery">Awaiting delivery</span>
+        {% if p.status == 'added' %}
+        <span class="compare-status status-added">Added</span>
         {% elif p.status == 'purchased' %}
         <span class="compare-status status-purchased">Purchased{% if p.purchase %} &middot; {{ p.fmt_price(p.purchase.paid_amount) }}{% endif %}</span>
+        {% elif p.status == 'shipped' %}
+        <span class="compare-status status-shipped">Shipped{% if p.purchase %} &middot; {{ p.fmt_price(p.purchase.paid_amount) }}{% endif %}</span>
+        {% elif p.status == 'received' %}
+        <span class="compare-status status-received">Received{% if p.purchase %} &middot; {{ p.fmt_price(p.purchase.paid_amount) }}{% endif %}</span>
         {% endif %}
       </div>
 

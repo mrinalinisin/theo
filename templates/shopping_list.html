@@ -12,9 +12,10 @@
       {% endfor %}
     </select>
     <select name="status" id="statusSelect" class="form-input" title="Status filter">
-      <option value="watching" {% if status_filter == 'watching' %}selected{% endif %}>Watching</option>
-      <option value="awaiting_delivery" {% if status_filter == 'awaiting_delivery' %}selected{% endif %}>Awaiting Delivery</option>
+      <option value="added" {% if status_filter == 'added' %}selected{% endif %}>Added</option>
       <option value="purchased" {% if status_filter == 'purchased' %}selected{% endif %}>Purchased</option>
+      <option value="shipped" {% if status_filter == 'shipped' %}selected{% endif %}>Shipped</option>
+      <option value="received" {% if status_filter == 'received' %}selected{% endif %}>Received</option>
       <option value="all" {% if status_filter == 'all' %}selected{% endif %}>All</option>
     </select>
     <select name="sort" id="sortSelect" class="form-input">

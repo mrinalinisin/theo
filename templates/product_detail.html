@@ -22,23 +22,22 @@
         <button type="submit" class="btn btn-secondary btn-sm">Delete</button>
       </form>
       <button class="btn btn-secondary btn-sm" onclick="document.getElementById('modal-edit').classList.add('open')">Edit</button>
-      {% if product.status == 'watching' %}
-      <button class="btn btn-secondary btn-sm"
-        onclick='openPurchaseModal("awaiting_delivery")'>
-        Mark as Awaiting Delivery
-      </button>
+      {% if product.status == 'added' %}
       <button class="btn btn-secondary btn-sm"
         onclick='openPurchaseModal("purchased")'>
         Mark as Purchased
       </button>
-      {% elif product.status == 'awaiting_delivery' %}
       <button class="btn btn-secondary btn-sm"
-        onclick='openPurchaseModal("purchased")'>
-        Mark as Purchased
+        onclick='openPurchaseModal("received")'>
+        Mark as Received
       </button>
+      {% elif product.status in ('purchased', 'shipped') %}
+      <form method="POST" action="{{ url_for('product_arrived', product_id=product.id) }}">
+        <button type="submit" class="btn btn-secondary btn-sm">&#x2713; Mark as Received</button>
+      </form>
       <form method="POST" action="{{ url_for('product_unpurchase', product_id=product.id) }}"
-        onsubmit="return confirm('Move this back to Watching? The order details and paid amount on record will be discarded.')">
-        <button type="submit" class="btn btn-secondary btn-sm">Unmark as Awaiting Delivery</button>
+        onsubmit="return confirm('Move this back to Added? The order details and paid amount on record will be discarded.')">
+        <button type="submit" class="btn btn-secondary btn-sm">Unmark</button>
       </form>
       {% endif %}
     </div>
@@ -110,30 +109,21 @@
             {% endif %}
           </div>
 
-          {% if product.status == 'awaiting_delivery' and product.purchase %}
-          <div class="callout callout-warning mb-16">
-            &#x1f4e6; Awaiting delivery &mdash; ordered on {{ product.purchase.purchased_at|fmt_date }}
-            for {{ product.fmt_price(product.purchase.paid_amount) }}
-            {% if product.purchase.notes %} &mdash; {{ product.purchase.notes }}{% endif %}
-            {% if product.purchase.order_details_url or product.purchase.tracking_url %}
-            <div style="margin-top:6px;display:flex;gap:12px;flex-wrap:wrap;">
-              {% if product.purchase.order_details_url %}
-              <a href="{{ product.purchase.order_details_url }}" target="_blank" rel="noopener" class="text-sm">
-                &#128196; Order details
-              </a>
-              {% endif %}
-              {% if product.purchase.tracking_url %}
-              <a href="{{ product.purchase.tracking_url }}" target="_blank" rel="noopener" class="text-sm">
-                &#128230; Track shipment
-              </a>
-              {% endif %}
-            </div>
+          {% if product.status in ('purchased', 'shipped', 'received') and product.purchase %}
+            {% if product.status == 'purchased' %}
+            {% set callout_kind = 'callout-info' %}
+            {% set callout_label = '🧾 Purchased' %}
+            {% elif product.status == 'shipped' %}
+            {% set callout_kind = 'callout-warning' %}
+            {% set callout_label = '📦 Shipped' %}
+            {% else %}
+            {% set callout_kind = 'callout-success' %}
+            {% set callout_label = '✅ Received' %}
             {% endif %}
-          </div>
-          {% elif product.status == 'purchased' and product.purchase %}
-          <div class="callout callout-success mb-16">
-            &#x2705; Purchased on {{ product.purchase.purchased_at|fmt_date }}
+          <div class="callout {{ callout_kind }} mb-16">
+            {{ callout_label }} &mdash; ordered on {{ product.purchase.purchased_at|fmt_date }}
             for {{ product.fmt_price(product.purchase.paid_amount) }}
+            {% if product.purchase.delivered_at %} &middot; delivered {{ product.purchase.delivered_at|fmt_date }}{% endif %}
             {% if product.purchase.notes %} &mdash; {{ product.purchase.notes }}{% endif %}
             {% if product.purchase.order_details_url or product.purchase.tracking_url %}
             <div style="margin-top:6px;display:flex;gap:12px;flex-wrap:wrap;">
@@ -282,7 +272,7 @@
           <label class="form-label">Notes</label>
           <textarea name="notes" class="form-input">{{ product.notes }}</textarea>
         </div>
-        {% if product.status in ('purchased', 'awaiting_delivery') and product.purchase %}
+        {% if product.status in ('purchased', 'shipped', 'received') and product.purchase %}
         <div class="form-group">
           <label class="form-label">Order details URL <span class="text-xs text-faint">(order confirmation / receipt page)</span></label>
           <input type="url" name="order_details_url" class="form-input"
@@ -647,7 +637,7 @@ function openPurchaseModal(targetStatus) {
   const today = new Date().toISOString().split('T')[0];
   document.querySelector('#modal-purchase input[name="purchased_at"]').value = today;
   document.getElementById('purchaseTargetStatus').value = targetStatus || 'purchased';
-  const title = targetStatus === 'awaiting_delivery' ? 'Mark as Awaiting Delivery' : 'Mark as Purchased';
+  const title = targetStatus === 'received' ? 'Mark as Received' : 'Mark as Purchased';
   document.getElementById('purchaseModalTitle').textContent = title;
   document.getElementById('modal-purchase').classList.add('open');
 }

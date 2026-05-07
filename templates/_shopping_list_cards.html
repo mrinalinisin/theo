@@ -1,6 +1,6 @@
 {% for p in products %}
 <a href="{{ url_for('product_detail', product_id=p.id) }}" class="hero-card" data-product-id="{{ p.id }}">
-  {% if p.status == 'watching' %}
+  {% if p.status == 'added' %}
   <button type="button"
     class="card-select-checkbox"
     data-product-id="{{ p.id }}"
