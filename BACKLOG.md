@@ -17,6 +17,8 @@ Ideas and feature requests captured for later. Roughly in capture order — not 
 ## UI & layout
 
 - [x] Move Search into the header area on `/products` and `/purchases`.
+- [ ] Multi-select cards on `/products` and mark the selection as Purchased in one action. **Replaces the Cart → Checkout flow** (remove `/cart` routes + Cart nav link as part of this work).
+- [ ] Inline delivery-date editor on `/purchases` cards — set / update an item's expected or actual delivery date without leaving the listing. Mirror the inline pattern already used in the "Date not set" footer of `/purchases/calendar`.
 
 ## Capture & scraping flow
 
@@ -51,6 +53,7 @@ Ideas and feature requests captured for later. Roughly in capture order — not 
 - [ ] Add a "This Week" view for purchases — what arrived and what's due.
 - [ ] Week / Month / Quarterly / Annual report — "You made X purchases this month in these categories."
 - [ ] WhatsApp feed of income.
+- [ ] Auto-generate a **monthly report webpage** at the end of each month summarising items bought, amount spent, and including pictures of the items. Triggering options to consider since APScheduler was removed: runit cron entry, manual "Generate report" button, or render on-demand when the month-end page is first visited.
 
 ## Sharing & publishing
 
