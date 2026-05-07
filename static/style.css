@@ -630,6 +630,25 @@ body.has-selection .card-select-checkbox { display: flex; }
   line-height: 1.4;
   margin-top: 7px;
 }
+
+/* Delivery info row in purchase cards (date, "Delivered ...", or inline picker) */
+.hero-card-delivery {
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.hero-card-delivery.delivered { color: #2a6a3a; font-weight: 500; }
+.card-date-form {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+}
+.card-date-form .form-input-sm { flex: 1 1 auto; min-width: 0; }
+
 .hero-card-footer {
   padding: 8px 13px;
   border-top: 1px solid var(--border-light);

@@ -19,6 +19,26 @@
       <span class="price-drop">(Saved {{ product.fmt_price(product.original_price - purchase.paid_amount) }})</span>
       {% endif %}
     </div>
+    {# Delivery row: actual > expected > inline picker. Stop propagation
+       on the picker wrapper so clicks/typing don't follow the parent <a>. #}
+    {% if purchase.delivered_at %}
+    <div class="hero-card-delivery delivered">
+      &#x1f4e6; Delivered {{ purchase.delivered_at.strftime('%b %d') }}
+    </div>
+    {% elif purchase.expected_delivery_at %}
+    <div class="hero-card-delivery">
+      &#x1f4c5; Expected {{ purchase.expected_delivery_at.strftime('%b %d') }}
+    </div>
+    {% elif product %}
+    <div class="hero-card-delivery" onclick="event.stopPropagation()">
+      <form method="POST" action="{{ url_for('product_edit', product_id=product.id) }}" class="card-date-form">
+        <input type="hidden" name="order_details_url" value="{{ purchase.order_details_url or '' }}">
+        <input type="hidden" name="tracking_url" value="{{ purchase.tracking_url or '' }}">
+        <input type="date" name="expected_delivery_at" class="form-input form-input-sm" required>
+        <button type="submit" class="btn btn-sm btn-primary">Save</button>
+      </form>
+    </div>
+    {% endif %}
   </div>
   <div class="hero-card-footer">
     <div class="hero-card-actions">
