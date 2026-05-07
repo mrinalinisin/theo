@@ -23,3 +23,42 @@ Theo doesn't scrape — that responsibility belongs to the **Roger** Safari exte
 5. Returns `{"ok": true, "product_id": ..., "duplicate_name": ...}` so Roger can show feedback.
 
 Price tracking, if needed, is delegated to external tools (e.g. OpenClaw) — they can read product URLs from Theo's DB or API and watch them independently.
+
+## How is the Theo process managed?
+
+Theo runs as a **runit-supervised service**, not directly via `python3 app.py`. The service definition lives at `/opt/homebrew/var/service/theo/run`:
+
+```sh
+#!/bin/sh
+set -e
+cd /Users/sindhus/Desktop/ss_life/Theo
+. venv/bin/activate
+exec 2>&1
+exec env PORT=5111 python3 app.py
+```
+
+Lifecycle commands (use these — never run `python3 app.py` directly, that would collide on port 5111):
+
+```sh
+sv start theo      # start (idempotent — does nothing if already running)
+sv stop theo       # stop
+sv restart theo    # restart, e.g. after a code change
+sv status theo     # show pid + uptime
+```
+
+Logs are written to `/opt/homebrew/var/log/theo/current` (rotated by `svlogd`). Crashes auto-restart — runit re-spawns the process within a second of a non-zero exit.
+
+## How do I reach Theo from another device?
+
+Theo binds to `0.0.0.0:5111` (set via the `PORT` env var in the run script), so it's reachable on every interface — loopback, LAN, and the Tailscale tunnel.
+
+**On your Tailnet** (private mesh — only your devices):
+
+| URL | Notes |
+|---|---|
+| `http://<tailnet-ip>:5111` | e.g. `http://100.121.204.124:5111` — works from any Tailnet device. The IP is visible in `tailscale status`. |
+| `http://<host>.<tailnet>.ts.net:5111` | MagicDNS hostname, e.g. `http://sindhus-macbook-air.tail89571f.ts.net:5111`. Same destination, friendlier to remember. |
+
+**Optional — HTTPS via Tailscale Serve.** If `tailscale serve --bg http://127.0.0.1:5111` is running, Theo is also reachable at `https://<host>.<tailnet>.ts.net/` (port 443, no port number, auto-managed TLS cert). The Serve config lives inside `tailscaled` state, persists across reboots, and is reversible with `tailscale serve reset`. Note: Tailscale Serve must be enabled per-tailnet via the admin console (a one-time UI step) before the command works.
+
+HTTPS access matters specifically for the iOS PWA install — Apple's "Add to Home Screen" requires a secure origin.
