@@ -56,7 +56,6 @@ Ideas and feature requests captured for later. Roughly in capture order — not 
 ## Sharing & publishing
 
 - [ ] Publish a collection of objects to GitHub as static HTML.
-- [ ] Explore Python apps-within-apps to build a "Mrinalini's Closet" option — let Mirrors students check out items to buy, with a simple payments integration.
 
 ## Deployment & ops
 
