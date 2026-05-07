@@ -1304,6 +1304,74 @@ body.has-selection .card-select-checkbox { display: flex; }
   opacity: 0.85;
 }
 
+/* ── Admin (data-quality dashboard) ──────────────────────────────────────── */
+.admin-section-heading {
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-faint);
+  margin: 24px 0 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border-light);
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+.admin-section-heading:first-of-type { margin-top: 0; }
+.admin-section-count { font-weight: 400; opacity: 0.7; }
+.admin-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.admin-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  background: var(--surface);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+}
+.admin-thumb {
+  flex: 0 0 auto;
+  width: 44px; height: 44px;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+}
+.admin-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.admin-thumb span { font-size: 20px; opacity: 0.6; }
+.admin-meta { flex: 1; min-width: 0; }
+.admin-name {
+  display: block;
+  font-weight: 500;
+  color: var(--text);
+  text-decoration: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.admin-name:hover { color: var(--accent); }
+.admin-status { flex-shrink: 0; }
+.admin-empty {
+  padding: 12px 14px;
+  background: var(--surface);
+  border: 1px dashed var(--border-light);
+  border-radius: var(--radius-sm);
+  color: var(--text-faint);
+  font-size: 13px;
+  margin-bottom: 16px;
+}
+
 /* ── Compare toggle button on product cards ──────────────────────────────── */
 .compare-toggle-btn {
   background: transparent;

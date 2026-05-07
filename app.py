@@ -27,7 +27,7 @@ import re
 import time
 
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, send_from_directory, session
-from sqlalchemy import func
+from sqlalchemy import func, or_, and_
 from config import Config
 from models import db, Product, Tag, Purchase, Settings, Currency, product_tags
 
@@ -1053,6 +1053,77 @@ def create_app():
     @app.template_filter("tojson_safe")
     def tojson_safe_filter(value):
         return json.dumps(value) if value else "[]"
+
+    # ── Admin (data quality dashboard) ────────────────────────────────────────
+
+    @app.route("/admin")
+    def admin():
+        """Four lists surfacing items with missing or partial metadata.
+
+        Each list answers a single yes/no question — "what's broken /
+        incomplete?" — so the user can see at a glance where to clean up.
+        Universe is items with a Purchase row (awaiting_delivery + purchased);
+        watching items have no order/tracking fields yet.
+        """
+        # Helpers — link columns default to "" not NULL, so check both.
+        def _absent(col):
+            return or_(col.is_(None), col == "")
+        def _present(col):
+            return and_(col.isnot(None), col != "")
+
+        base_q = (
+            Purchase.query
+            .join(Product, Purchase.product_id == Product.id)
+            .filter(Product.status.in_(("awaiting_delivery", "purchased")))
+        )
+
+        # 1. Tracking link present, no delivery date at all (neither expected
+        #    nor delivered_at). Actionable: enter when it's expected to arrive.
+        no_date = (
+            base_q
+            .filter(_present(Purchase.tracking_url))
+            .filter(Purchase.expected_delivery_at.is_(None))
+            .filter(Purchase.delivered_at.is_(None))
+            .order_by(Purchase.purchased_at.desc())
+            .all()
+        )
+
+        # 2. Order link but no tracking link.
+        order_only = (
+            base_q
+            .filter(_present(Purchase.order_details_url))
+            .filter(_absent(Purchase.tracking_url))
+            .order_by(Purchase.purchased_at.desc())
+            .all()
+        )
+
+        # 3. Tracking link but no order link.
+        tracking_only = (
+            base_q
+            .filter(_present(Purchase.tracking_url))
+            .filter(_absent(Purchase.order_details_url))
+            .order_by(Purchase.purchased_at.desc())
+            .all()
+        )
+
+        # 4. Neither link — no order, no tracking. The route-level guard on
+        #    purchase creation requires at least one, so any item here is
+        #    legacy / pre-guard data.
+        no_links = (
+            base_q
+            .filter(_absent(Purchase.order_details_url))
+            .filter(_absent(Purchase.tracking_url))
+            .order_by(Purchase.purchased_at.desc())
+            .all()
+        )
+
+        return render_template(
+            "admin.html",
+            no_date=no_date,
+            order_only=order_only,
+            tracking_only=tracking_only,
+            no_links=no_links,
+        )
 
     # ── Stats ────────────────────────────────────────────────────────────────
 

@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}Admin — Theo{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-header-top">
+    <div class="page-title">Admin</div>
+  </div>
+</div>
+
+<div class="page-body">
+  <div class="text-sm text-faint mb-16">
+    Data-quality lists. Each section surfaces items that are missing
+    something — click through to the product detail to fix.
+  </div>
+
+  {% macro purchase_row(p) %}
+    {% set product = p.product %}
+    <li class="admin-row">
+      <a href="{{ url_for('product_detail', product_id=product.id) }}" class="admin-thumb">
+        {% if product.image_url %}
+        <img src="{{ image_src(product.image_url) }}" alt="{{ product.name }}">
+        {% else %}
+        <span>&#x1f6cd;&#xfe0f;</span>
+        {% endif %}
+      </a>
+      <div class="admin-meta">
+        <a href="{{ url_for('product_detail', product_id=product.id) }}" class="admin-name">{{ product.name }}</a>
+        <div class="text-xs text-faint">
+          {% if product.store %}{{ product.store }} &middot; {% endif %}
+          {{ product.fmt_price(p.paid_amount) }}
+          &middot; bought {{ p.purchased_at|time_ago }}
+        </div>
+      </div>
+      <div class="admin-status">
+        {% if product.status == 'awaiting_delivery' %}
+          <span class="status-pill status-awaiting-delivery">Awaiting</span>
+        {% else %}
+          <span class="status-pill status-purchased">Purchased</span>
+        {% endif %}
+      </div>
+    </li>
+  {% endmacro %}
+
+  {% macro section(title, items, empty_text) %}
+    <h3 class="admin-section-heading">
+      {{ title }}
+      <span class="admin-section-count">({{ items|length }})</span>
+    </h3>
+    {% if items %}
+    <ul class="admin-list">
+      {% for p in items %}{{ purchase_row(p) }}{% endfor %}
+    </ul>
+    {% else %}
+    <div class="admin-empty">{{ empty_text }}</div>
+    {% endif %}
+  {% endmacro %}
+
+  {{ section(
+    'Tracking link, no delivery date',
+    no_date,
+    'No items missing dates — every tracked item has either an expected or actual delivery date.'
+  ) }}
+
+  {{ section(
+    'Order link only (no tracking)',
+    order_only,
+    'No items in this state.'
+  ) }}
+
+  {{ section(
+    'Tracking link only (no order link)',
+    tracking_only,
+    'No items in this state.'
+  ) }}
+
+  {{ section(
+    'No order link AND no tracking link',
+    no_links,
+    'Clean — every purchase has at least one link on file.'
+  ) }}
+</div>
+{% endblock %}

@@ -66,12 +66,15 @@
         <span class="icon">&#x1f3f7;&#xfe0f;</span> Tags
       </a>
       <div class="nav-dropdown">
-        <a href="{{ url_for('settings') }}" class="{{ 'active' if request.endpoint == 'settings' or request.path == '/stats' }}">
+        <a href="{{ url_for('settings') }}" class="{{ 'active' if request.endpoint in ('settings', 'admin') or request.path == '/stats' }}">
           <span class="icon">&#x2699;&#xfe0f;</span> Settings
         </a>
         <div class="nav-dropdown-menu">
           <a href="{{ url_for('stats') }}" class="{{ 'active' if request.path == '/stats' }}">
             <span class="icon">&#x1f4c8;</span> Stats
+          </a>
+          <a href="{{ url_for('admin') }}" class="{{ 'active' if request.endpoint == 'admin' }}">
+            <span class="icon">&#x1f6e0;&#xfe0f;</span> Admin
           </a>
         </div>
       </div>
@@ -110,6 +113,9 @@
     </a>
     <a href="{{ url_for('stats') }}" class="mobile-submenu {{ 'active' if request.path == '/stats' }}">
       <span class="icon">&#x1f4c8;</span> Stats
+    </a>
+    <a href="{{ url_for('admin') }}" class="mobile-submenu {{ 'active' if request.endpoint == 'admin' }}">
+      <span class="icon">&#x1f6e0;&#xfe0f;</span> Admin
     </a>
     {% if request.endpoint in ('shopping_list', 'purchases') %}
     <form class="mobile-search" method="GET" action="{{ url_for(request.endpoint) }}" role="search">
