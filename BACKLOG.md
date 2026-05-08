@@ -2,7 +2,6 @@
 
 Ideas and feature requests captured for later. The first section is what's most on my mind right now; the rest are loosely in capture order.
 
-- [ ] Constrain the delivery-date picker to only allow dates **after** the order/purchase date — `min` attribute on the `<input type="date">`, applied wherever the picker shows up (purchases card, admin card, future detail-page picker).
 - [ ] Add ability to **clone a listing** — duplicate an existing product (URL, name, images, tags, notes) into a new Added row. Useful for ordering a second of something or recording variants of the same item.
 - [ ] Add reviews on items, with ability to paste-zone photos and link to product videos.
 - [ ] Listings should have a link to video instructions.

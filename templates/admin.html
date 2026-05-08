@@ -38,7 +38,9 @@
         <form method="POST" action="{{ url_for('product_edit', product_id=product.id) }}" class="admin-card-date-form" title="Set expected delivery date">
           <input type="hidden" name="order_details_url" value="{{ p.order_details_url or '' }}">
           <input type="hidden" name="tracking_url" value="{{ p.tracking_url or '' }}">
-          <input type="date" name="expected_delivery_at" required onchange="this.form.submit()">
+          <input type="date" name="expected_delivery_at"
+                 min="{{ p.purchased_at|min_delivery_date }}"
+                 required onchange="this.form.submit()">
         </form>
         {% endif %}
       </div>

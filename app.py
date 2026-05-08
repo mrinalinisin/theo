@@ -1104,6 +1104,17 @@ def create_app():
         delta = (today - target).days
         return delta if delta > 0 else None
 
+    @app.template_filter("min_delivery_date")
+    def min_delivery_date_filter(dt):
+        """YYYY-MM-DD for the day *after* dt — used as the `min` attribute on
+        delivery-date pickers so users can't pick a date on or before the
+        order/purchase date. Returns "" for None so the attr is harmless.
+        """
+        if not dt:
+            return ""
+        target = dt.date() if hasattr(dt, "date") else dt
+        return (target + timedelta(days=1)).isoformat()
+
     @app.template_filter("tojson_safe")
     def tojson_safe_filter(value):
         return json.dumps(value) if value else "[]"

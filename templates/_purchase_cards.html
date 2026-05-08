@@ -38,7 +38,9 @@
       <form method="POST" action="{{ url_for('product_edit', product_id=product.id) }}" class="card-date-form">
         <input type="hidden" name="order_details_url" value="{{ purchase.order_details_url or '' }}">
         <input type="hidden" name="tracking_url" value="{{ purchase.tracking_url or '' }}">
-        <input type="date" name="expected_delivery_at" class="form-input form-input-sm" required onchange="this.form.submit()">
+        <input type="date" name="expected_delivery_at" class="form-input form-input-sm"
+               min="{{ purchase.purchased_at|min_delivery_date }}"
+               required onchange="this.form.submit()">
       </form>
     </div>
     {% endif %}
