@@ -399,6 +399,17 @@
 
 {% block scripts %}
 <script>
+// ── Escape-key dismisses any open modal ──
+// Single document-level listener handles every .modal-overlay on the page
+// (Edit modal + Purchase modal). Cheaper than per-modal handlers and works
+// for modals that may not exist yet at script-load time.
+document.addEventListener('keydown', function(e) {
+  if (e.key !== 'Escape') return;
+  document.querySelectorAll('.modal-overlay.open').forEach(function(m) {
+    m.classList.remove('open');
+  });
+});
+
 // ── Photo gallery: two strips (display outside, editable inside modal) stay in sync ──
 (function() {
   const outerStrip = document.getElementById('productPhotoStrip');
