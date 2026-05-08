@@ -642,6 +642,12 @@ body.has-selection .card-select-checkbox { display: flex; }
   gap: 6px;
 }
 .hero-card-delivery.delivered { color: #2a6a3a; font-weight: 500; }
+.hero-card-delivery-late {
+  color: var(--danger);
+  font-weight: 500;
+  margin-left: 4px;
+  font-size: 11px;
+}
 .card-date-form {
   display: inline-flex;
   align-items: center;

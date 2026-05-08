@@ -1089,6 +1089,21 @@ def create_app():
             return ""
         return dt.strftime("%b %d, %Y")
 
+    @app.template_filter("days_late")
+    def days_late_filter(dt):
+        """Days dt is in the past (positive int) or None if not late.
+
+        Used to render the "(N days late)" badge on overdue purchase
+        cards. Returns None for None input, future dates, and today —
+        so templates can write `{% if exp|days_late %}` cleanly.
+        """
+        if not dt:
+            return None
+        today = datetime.now(timezone.utc).date()
+        target = dt.date() if hasattr(dt, "date") else dt
+        delta = (today - target).days
+        return delta if delta > 0 else None
+
     @app.template_filter("tojson_safe")
     def tojson_safe_filter(value):
         return json.dumps(value) if value else "[]"

@@ -28,6 +28,10 @@
     {% elif purchase.expected_delivery_at %}
     <div class="hero-card-delivery">
       &#x1f4c5; Expected {{ purchase.expected_delivery_at.strftime('%b %d') }}
+      {% set late = purchase.expected_delivery_at|days_late %}
+      {% if late %}
+      <span class="hero-card-delivery-late">({{ late }} day{{ 's' if late != 1 }} late)</span>
+      {% endif %}
     </div>
     {% elif product %}
     <div class="hero-card-delivery" onclick="event.stopPropagation()">
