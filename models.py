@@ -54,6 +54,11 @@ class Product(db.Model):
     # only reflects user-initiated edits.
     updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
+    # Review (only meaningful once item has been bought / received).
+    review_text = db.Column(db.Text, default="")
+    review_video_url = db.Column(db.Text, default="")
+    review_photos = db.Column(db.JSON, default=list)  # list of filenames in instance/images/
+
     tags = db.relationship("Tag", secondary=product_tags, back_populates="products")
     currency = db.relationship("Currency", foreign_keys=[currency_id])
     purchase = db.relationship(

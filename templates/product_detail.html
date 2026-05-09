@@ -212,6 +212,55 @@
   </div>
 </div>
 
+{# ═══ Review section — only on items that have been purchased / shipped / received ═══ #}
+{% if product.status in ('purchased', 'shipped', 'received') %}
+<div class="page-body" style="margin-top:24px;">
+  <div class="card">
+    <div class="card-header">Review</div>
+    <div class="card-body">
+      <form method="POST" action="{{ url_for('product_review', product_id=product.id) }}">
+        <div class="form-group">
+          <label class="form-label">Your review</label>
+          <textarea name="review_text" class="form-input" rows="5"
+            placeholder="What did you think of this?">{{ product.review_text or '' }}</textarea>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Photos <span class="text-xs text-faint">(paste or drop images)</span></label>
+          <input type="hidden" name="review_photos" id="reviewPhotosField"
+                 value="{{ (product.review_photos or [])|tojson_safe }}">
+          <div class="photo-strip" id="reviewPhotoStrip">
+            {% for img in product.review_photos or [] %}
+            <div class="photo-thumb" data-src="{{ img }}">
+              <img src="{{ image_src(img) }}" alt="Review photo {{ loop.index }}">
+              <span class="remove-btn" title="Remove">&times;</span>
+            </div>
+            {% endfor %}
+          </div>
+          <div id="reviewPasteZone" class="paste-zone" tabindex="0" style="margin-top:10px;">
+            <div class="paste-zone-content">
+              <div class="paste-zone-icon">&#128247;</div>
+              <div class="paste-zone-text">
+                Press <kbd>Ctrl+V</kbd> / <kbd>&#8984;V</kbd> to paste an image
+              </div>
+              <div class="paste-zone-hint">or drag &amp; drop here, or click to upload</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Video link <span class="text-xs text-faint">(YouTube / Vimeo / file URL)</span></label>
+          <input type="url" name="review_video_url" class="form-input"
+            value="{{ product.review_video_url or '' }}" placeholder="https://...">
+        </div>
+
+        <button type="submit" class="btn btn-primary">Save review</button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endif %}
+
 <!-- ═══ Edit Modal ═══ -->
 <div class="modal-overlay" id="modal-edit">
   <div class="modal">
@@ -738,6 +787,76 @@ document.querySelectorAll('.modal-overlay').forEach(o => {
       header.appendChild(span);
     });
   }
+})();
+
+// ── Review form: paste-zone for review photos ──
+// Smaller, self-contained version of the edit-modal paste-zone. Pasted /
+// dropped images become data URIs in the strip; the hidden #reviewPhotosField
+// stays in sync as a JSON list. The route turns data URIs into saved files
+// via image_store.save_new_images_for_product.
+(function() {
+  const strip = document.getElementById('reviewPhotoStrip');
+  const zone = document.getElementById('reviewPasteZone');
+  const field = document.getElementById('reviewPhotosField');
+  if (!strip || !zone || !field) return;
+
+  function syncField() {
+    const items = [...strip.querySelectorAll('.photo-thumb')].map(t => t.dataset.src);
+    field.value = JSON.stringify(items);
+  }
+
+  function appendThumb(dataUrl) {
+    const el = document.createElement('div');
+    el.className = 'photo-thumb';
+    el.dataset.src = dataUrl;
+    el.innerHTML = '<img src="' + dataUrl + '" alt=""><span class="remove-btn" title="Remove">&times;</span>';
+    strip.appendChild(el);
+    syncField();
+  }
+
+  function readFile(file) {
+    if (!file || !file.type.startsWith('image/')) return;
+    const reader = new FileReader();
+    reader.onload = e => appendThumb(e.target.result);
+    reader.readAsDataURL(file);
+  }
+
+  // Paste from clipboard (anywhere on the page, only when the zone is in view)
+  document.addEventListener('paste', e => {
+    if (!zone.matches(':focus-within') && document.activeElement !== zone) return;
+    for (const item of (e.clipboardData?.items || [])) {
+      if (item.type.startsWith('image/')) {
+        readFile(item.getAsFile());
+        e.preventDefault();
+      }
+    }
+  });
+
+  // Drag & drop
+  zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag-over'); });
+  zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+  zone.addEventListener('drop', e => {
+    e.preventDefault();
+    zone.classList.remove('drag-over');
+    [...e.dataTransfer.files].forEach(readFile);
+  });
+
+  // Click → file picker
+  zone.addEventListener('click', () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.multiple = true;
+    input.onchange = () => [...input.files].forEach(readFile);
+    input.click();
+  });
+
+  // Remove button on thumbnails
+  strip.addEventListener('click', e => {
+    if (!e.target.classList.contains('remove-btn')) return;
+    e.target.closest('.photo-thumb').remove();
+    syncField();
+  });
 })();
 
 // ── Compare toggle on product detail header ──

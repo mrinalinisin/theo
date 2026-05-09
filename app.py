@@ -634,6 +634,41 @@ def create_app():
         flash(f"Removed \"{product.name}\".", "success")
         return redirect(url_for("shopping_list"))
 
+    @app.route("/products/<int:product_id>/review", methods=["POST"])
+    def product_review(product_id):
+        """Save / update the review for a purchased item.
+
+        Reads review_text, review_video_url, and a JSON list of pasted
+        photos (existing filenames + base64 data URIs). New images get
+        saved via image_store with timestamped filenames so they don't
+        collide with the product's main photos.
+        """
+        product = Product.query.get_or_404(product_id)
+        if product.status not in ("purchased", "shipped", "received"):
+            flash("Reviews are only available on items you've bought.", "error")
+            return redirect(url_for("product_detail", product_id=product.id))
+
+        product.review_text = request.form.get("review_text", "").strip()
+        product.review_video_url = (request.form.get("review_video_url") or "").strip()
+
+        # Photos: JSON list of strings — mix of existing filenames and new
+        # data URIs. save_new_images_for_product handles both cleanly.
+        photos_raw = request.form.get("review_photos") or "[]"
+        try:
+            incoming = json.loads(photos_raw)
+        except (json.JSONDecodeError, TypeError):
+            incoming = []
+        if isinstance(incoming, list):
+            from image_store import save_new_images_for_product
+            product.review_photos = save_new_images_for_product(
+                incoming, product.id, app
+            )
+
+        product.updated_at = datetime.now(timezone.utc)
+        db.session.commit()
+        flash("Review saved.", "success")
+        return redirect(url_for("product_detail", product_id=product.id))
+
     @app.route("/products/<int:product_id>/clone", methods=["GET", "POST"])
     def product_clone(product_id):
         """Two-step clone: GET renders a form pre-filled from the source;
@@ -1257,6 +1292,18 @@ def _run_lightweight_migrations():
         db.session.commit()
     if not column_exists("purchase", "delivered_at"):
         db.session.execute(text("ALTER TABLE purchase ADD COLUMN delivered_at DATETIME"))
+        db.session.commit()
+
+    # Review fields on Product added 2026-05 — text, photos, video link.
+    if not column_exists("product", "review_text"):
+        db.session.execute(text("ALTER TABLE product ADD COLUMN review_text TEXT DEFAULT ''"))
+        db.session.commit()
+    if not column_exists("product", "review_video_url"):
+        db.session.execute(text("ALTER TABLE product ADD COLUMN review_video_url TEXT DEFAULT ''"))
+        db.session.commit()
+    if not column_exists("product", "review_photos"):
+        # SQLite stores JSON as TEXT; SQLAlchemy reads/writes it transparently.
+        db.session.execute(text("ALTER TABLE product ADD COLUMN review_photos TEXT DEFAULT '[]'"))
         db.session.commit()
 
     # Settings.state_refactor_done added 2026-05 — gates the one-shot
