@@ -9,7 +9,7 @@
       Connect a GitHub account to publish selected listings as static HTML.
       Default target:
       {% if settings.github_username %}
-      <a href="https://github.com/{{ settings.github_username }}/{{ settings.github_username }}.github.io"
+      <a href="https://{{ settings.github_username }}.github.io/"
          target="_blank" rel="noopener">
         <code>{{ settings.github_username }}.github.io</code> &#x2197;
       </a>
