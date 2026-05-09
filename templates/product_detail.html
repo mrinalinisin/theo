@@ -207,51 +207,97 @@
 
 {# ═══ Review section — only on items that have been purchased / shipped / received ═══ #}
 {% if product.status in ('purchased', 'shipped', 'received') %}
+{% set has_review = (product.review_text and product.review_text|trim) or product.review_photos or product.review_video_url %}
 <div class="page-body" style="margin-top:24px;">
   <div class="card">
     <div class="card-header">Review</div>
     <div class="card-body">
-      <form method="POST" action="{{ url_for('product_review', product_id=product.id) }}">
-        <div class="form-group">
-          <label class="form-label">Your review</label>
-          <textarea name="review_text" class="form-input" rows="5"
-            placeholder="What did you think of this?">{{ product.review_text or '' }}</textarea>
-        </div>
 
-        <div class="form-group">
-          <label class="form-label">Photos <span class="text-xs text-faint">(paste or drop images)</span></label>
-          <input type="hidden" name="review_photos" id="reviewPhotosField"
-                 value="{{ (product.review_photos or [])|tojson_safe }}">
-          <div class="photo-strip" id="reviewPhotoStrip">
-            {% for img in product.review_photos or [] %}
-            <div class="photo-thumb" data-src="{{ img }}">
-              <img src="{{ image_src(img) }}" alt="Review photo {{ loop.index }}">
-              <span class="remove-btn" title="Remove">&times;</span>
-            </div>
-            {% endfor %}
+      {# ── Read mode (only when a review exists) ────────────────────────── #}
+      <div id="review-display" {% if not has_review %}style="display:none"{% endif %}>
+        {% if product.review_text and product.review_text|trim %}
+        <div class="review-text-display">{{ product.review_text }}</div>
+        {% endif %}
+        {% if product.review_photos %}
+        <div class="review-photos-display">
+          {% for img in product.review_photos %}
+          <div class="review-photo-display">
+            <img src="{{ image_src(img) }}" alt="Review photo {{ loop.index }}">
           </div>
-          <div id="reviewPasteZone" class="paste-zone" tabindex="0" style="margin-top:10px;">
-            <div class="paste-zone-content">
-              <div class="paste-zone-icon">&#128247;</div>
-              <div class="paste-zone-text">
-                Press <kbd>Ctrl+V</kbd> / <kbd>&#8984;V</kbd> to paste an image
+          {% endfor %}
+        </div>
+        {% endif %}
+        {% if product.review_video_url %}
+        <a href="{{ product.review_video_url }}" target="_blank" rel="noopener" class="review-video-display">
+          &#x25b6; Watch video
+        </a>
+        {% endif %}
+        <div style="margin-top:14px;">
+          <button type="button" class="btn btn-secondary btn-sm" onclick="showReviewEdit()">Edit review</button>
+        </div>
+      </div>
+
+      {# ── Edit mode (the form) ─────────────────────────────────────────── #}
+      <div id="review-edit" {% if has_review %}style="display:none"{% endif %}>
+        <form method="POST" action="{{ url_for('product_review', product_id=product.id) }}">
+          <div class="form-group">
+            <label class="form-label">Your review</label>
+            <textarea name="review_text" class="form-input" rows="5"
+              placeholder="What did you think of this?">{{ product.review_text or '' }}</textarea>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Photos <span class="text-xs text-faint">(paste or drop images)</span></label>
+            <input type="hidden" name="review_photos" id="reviewPhotosField"
+                   value="{{ (product.review_photos or [])|tojson_safe }}">
+            <div class="photo-strip" id="reviewPhotoStrip">
+              {% for img in product.review_photos or [] %}
+              <div class="photo-thumb" data-src="{{ img }}">
+                <img src="{{ image_src(img) }}" alt="Review photo {{ loop.index }}">
+                <span class="remove-btn" title="Remove">&times;</span>
               </div>
-              <div class="paste-zone-hint">or drag &amp; drop here, or click to upload</div>
+              {% endfor %}
+            </div>
+            <div id="reviewPasteZone" class="paste-zone" tabindex="0" style="margin-top:10px;">
+              <div class="paste-zone-content">
+                <div class="paste-zone-icon">&#128247;</div>
+                <div class="paste-zone-text">
+                  Press <kbd>Ctrl+V</kbd> / <kbd>&#8984;V</kbd> to paste an image
+                </div>
+                <div class="paste-zone-hint">or drag &amp; drop here, or click to upload</div>
+              </div>
             </div>
           </div>
-        </div>
 
-        <div class="form-group">
-          <label class="form-label">Video link <span class="text-xs text-faint">(YouTube / Vimeo / file URL)</span></label>
-          <input type="url" name="review_video_url" class="form-input"
-            value="{{ product.review_video_url or '' }}" placeholder="https://...">
-        </div>
+          <div class="form-group">
+            <label class="form-label">Video link <span class="text-xs text-faint">(YouTube / Vimeo / file URL)</span></label>
+            <input type="url" name="review_video_url" class="form-input"
+              value="{{ product.review_video_url or '' }}" placeholder="https://...">
+          </div>
 
-        <button type="submit" class="btn btn-primary">Save review</button>
-      </form>
+          <div class="flex gap-8">
+            <button type="submit" class="btn btn-primary">Save review</button>
+            {% if has_review %}
+            <button type="button" class="btn btn-secondary" onclick="cancelReviewEdit()">Cancel</button>
+            {% endif %}
+          </div>
+        </form>
+      </div>
+
     </div>
   </div>
 </div>
+
+<script>
+function showReviewEdit() {
+  document.getElementById('review-display').style.display = 'none';
+  document.getElementById('review-edit').style.display = '';
+}
+function cancelReviewEdit() {
+  document.getElementById('review-edit').style.display = 'none';
+  document.getElementById('review-display').style.display = '';
+}
+</script>
 {% endif %}
 
 <!-- ═══ Edit Modal ═══ -->

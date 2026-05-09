@@ -656,6 +656,40 @@ body.has-selection .card-select-checkbox { display: flex; }
 }
 .card-date-form .form-input-sm { flex: 1 1 auto; min-width: 0; }
 
+/* Review section — read-mode display (toggles with #review-edit form) */
+.review-text-display {
+  white-space: pre-wrap;
+  line-height: 1.55;
+  font-style: italic;
+  color: var(--text);
+  padding: 10px 12px;
+  background: var(--bg);
+  border-radius: var(--radius-sm);
+  border-left: 3px solid var(--accent);
+}
+.review-photos-display {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 8px;
+  margin-top: 12px;
+}
+.review-photo-display {
+  aspect-ratio: 1;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: var(--bg);
+}
+.review-photo-display img { width: 100%; height: 100%; object-fit: cover; }
+.review-video-display {
+  display: inline-block;
+  margin-top: 12px;
+  font-size: 13px;
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 500;
+}
+.review-video-display:hover { text-decoration: underline; }
+
 .hero-card-footer {
   padding: 6px 10px;
   border-top: 1px solid var(--border-light);
