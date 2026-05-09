@@ -7,14 +7,9 @@
     <div class="page-title">
       Compare{% if products %} {{ products|length }} product{{ 's' if products|length != 1 }}{% endif %}
     </div>
-    {% if products %}
     <div class="header-actions">
-      <form method="POST" action="{{ url_for('compare_clear') }}"
-        onsubmit="return confirm('Clear all items from compare?')">
-        <button type="submit" class="btn btn-secondary btn-sm">&times; Clear all</button>
-      </form>
+      <a href="{{ url_for('shopping_list') }}" class="btn btn-secondary btn-sm">&larr; Back to Browse</a>
     </div>
-    {% endif %}
   </div>
 </div>
 

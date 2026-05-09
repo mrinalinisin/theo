@@ -9,13 +9,6 @@
       <div class="page-title">Product Detail</div>
     </div>
     <div class="header-actions">
-      <button type="button"
-        class="btn btn-secondary btn-sm compare-toggle-btn {% if product.id in compare_product_ids %}in-compare{% endif %}"
-        data-product-id="{{ product.id }}"
-        title="{% if product.id in compare_product_ids %}Remove from comparison{% else %}Add to comparison{% endif %}"
-        onclick="toggleCompareDetail(event, this)">
-        {% if product.id in compare_product_ids %}&#x2696;&#xfe0f; In Compare &#x2713;{% else %}&#x2696;&#xfe0f; Compare{% endif %}
-      </button>
       <a href="{{ product.url }}" target="_blank" class="btn btn-secondary btn-sm" style="text-decoration:none;">Open Product Page</a>
       <a href="{{ url_for('product_clone', product_id=product.id) }}"
          class="btn btn-secondary btn-sm"
@@ -859,40 +852,5 @@ document.querySelectorAll('.modal-overlay').forEach(o => {
   });
 })();
 
-// ── Compare toggle on product detail header ──
-function toggleCompareDetail(event, btn) {
-  event.preventDefault();
-  var productId = btn.dataset.productId;
-  var inCompare = btn.classList.contains('in-compare');
-  var url = inCompare ? '/compare/remove/' + productId : '/compare/add/' + productId;
-  btn.style.opacity = '0.5';
-  fetch(url, { method: 'POST' })
-    .then(function(r) {
-      return r.json().then(function(data) { return { ok: r.ok, data: data }; });
-    })
-    .then(function(res) {
-      btn.style.opacity = '1';
-      var data = res.data;
-      if (!res.ok && data.error) {
-        alert(data.error);
-        return;
-      }
-      if (data.in_compare) {
-        btn.classList.add('in-compare');
-        btn.innerHTML = '⚖️ In Compare ✓';
-        btn.title = 'Remove from comparison';
-      } else {
-        btn.classList.remove('in-compare');
-        btn.innerHTML = '⚖️ Compare';
-        btn.title = 'Add to comparison';
-      }
-      document.querySelectorAll('#nav-compare-link, #nav-compare-link-mobile').forEach(function(link) {
-        link.style.display = data.compare_count > 0 ? '' : 'none';
-      });
-      document.querySelectorAll('#compare-badge, #compare-badge-mobile').forEach(function(badge) {
-        badge.textContent = data.compare_count;
-      });
-    });
-}
 </script>
 {% endblock %}

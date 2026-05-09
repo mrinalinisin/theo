@@ -284,13 +284,15 @@ document.getElementById('modal-purchase').addEventListener('click', e => {
 //     the link behaves normally and goes to /cart).
 const selectedIds = new Set();
 const navCartLinks = document.querySelectorAll('.nav-cart-link');
+const navCompareLinks = document.querySelectorAll('.nav-compare-link');
 
 function refreshSelectionUi() {
   const n = selectedIds.size;
   // Body-level toggle drives whether every selectable card's checkbox
   // is visible — see .card-select-checkbox CSS for the cascade.
   document.body.classList.toggle('has-selection', n > 0);
-  document.querySelectorAll('.cart-badge').forEach(function(badge) {
+  // Cart nav (existing — Checkout flow).
+  document.querySelectorAll('#cart-badge, #cart-badge-mobile').forEach(function(badge) {
     badge.textContent = n;
     badge.style.display = n > 0 ? '' : 'none';
   });
@@ -299,6 +301,13 @@ function refreshSelectionUi() {
   });
   document.querySelectorAll('.cart-label').forEach(function(label) {
     label.textContent = n > 0 ? 'Checkout' : 'Shift + Click to add';
+  });
+  // Compare nav (new — driven by the same selection).
+  document.querySelectorAll('#compare-badge, #compare-badge-mobile').forEach(function(badge) {
+    badge.textContent = n;
+  });
+  navCompareLinks.forEach(function(link) {
+    link.style.display = n > 0 ? '' : 'none';
   });
 }
 
@@ -353,6 +362,18 @@ navCartLinks.forEach(function(link) {
   });
 });
 
+// Compare nav link is hidden until selection > 0 (refreshSelectionUi
+// toggles display). On click, navigate to /compare?ids=1,2,3 — the
+// route already accepts that param and renders the side-by-side view.
+navCompareLinks.forEach(function(link) {
+  link.addEventListener('click', function(event) {
+    if (selectedIds.size === 0) return;
+    event.preventDefault();
+    const ids = [...selectedIds].join(',');
+    window.location.href = '/compare?ids=' + ids;
+  });
+});
+
 // ── Shift+Click on a card → toggle selection (power-user shortcut) ──
 // Delegated from document in CAPTURE phase so inner buttons that call
 // stopPropagation() (Open, Compare, etc.) can't swallow the event before
@@ -369,41 +390,5 @@ document.addEventListener('click', function(event) {
   toggleCardSelect(event, checkbox);
 }, true);
 
-// ── Compare toggle on product cards ──
-function toggleCompare(event, btn) {
-  event.preventDefault();
-  event.stopPropagation();
-  var productId = btn.dataset.productId;
-  var inCompare = btn.classList.contains('in-compare');
-  var url = inCompare ? '/compare/remove/' + productId : '/compare/add/' + productId;
-  btn.style.opacity = '0.5';
-  fetch(url, { method: 'POST' })
-    .then(function(r) {
-      return r.json().then(function(data) { return { ok: r.ok, data: data }; });
-    })
-    .then(function(res) {
-      btn.style.opacity = '1';
-      var data = res.data;
-      if (!res.ok && data.error) {
-        // Cap-of-4 hit (or other error). Surface to the user.
-        alert(data.error);
-        return;
-      }
-      if (data.in_compare) {
-        btn.classList.add('in-compare');
-        btn.innerHTML = 'In Compare &#x2713;';
-      } else {
-        btn.classList.remove('in-compare');
-        btn.innerHTML = '+ Compare';
-      }
-      // Update header badge(s) and visibility.
-      document.querySelectorAll('#nav-compare-link, #nav-compare-link-mobile').forEach(function(link) {
-        link.style.display = data.compare_count > 0 ? '' : 'none';
-      });
-      document.querySelectorAll('#compare-badge, #compare-badge-mobile').forEach(function(badge) {
-        badge.textContent = data.compare_count;
-      });
-    });
-}
 </script>
 {% endblock %}

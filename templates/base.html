@@ -44,17 +44,19 @@
       <a href="{{ url_for('shopping_list') }}" class="{{ 'active' if request.endpoint == 'shopping_list' }}">
         <span class="icon">&#x1f4d6;</span> Browse
       </a>
+      {# Compare link — driven by client-side selection (selectedIds Set in
+         shopping_list.html). Hidden until ≥1 card is selected. #}
+      <a href="{{ url_for('compare') }}" id="nav-compare-link"
+         class="nav-compare-link {{ 'active' if request.endpoint == 'compare' }}"
+         title="Compare selected"
+         style="display:none">
+        <span class="icon">&#x2696;&#xfe0f;</span> Compare
+        <span class="cart-badge" id="compare-badge">0</span>
+      </a>
       <a href="{{ url_for('cart') }}" class="nav-cart-link {{ 'active' if request.endpoint in ('cart', 'cart_checkout') }}" title="Cart">
         <span class="icon cart-icon">{% if cart_count %}&#x1f4b0;{% else %}&#x1f6d2;{% endif %}</span>
         <span class="cart-label">{% if cart_count %}Checkout{% else %}Shift + Click to add{% endif %}</span>
         <span class="cart-badge" id="cart-badge" {% if not cart_count %}style="display:none"{% endif %}>{{ cart_count }}</span>
-      </a>
-      <a href="{{ url_for('compare') }}" id="nav-compare-link"
-         class="nav-compare-link {{ 'active' if request.endpoint == 'compare' }}"
-         title="Compare"
-         {% if not compare_count %}style="display:none"{% endif %}>
-        <span class="icon">&#x2696;&#xfe0f;</span> Compare
-        <span class="cart-badge" id="compare-badge">{{ compare_count }}</span>
       </a>
       <a href="{{ url_for('purchases_calendar') }}" class="{{ 'active' if request.endpoint == 'purchases_calendar' }}">
         <span class="icon">&#x1f4c5;</span> Arriving today
@@ -85,16 +87,16 @@
     <a href="{{ url_for('shopping_list') }}" class="{{ 'active' if request.endpoint == 'shopping_list' }}">
       <span class="icon">&#x1f4d6;</span> Browse
     </a>
+    <a href="{{ url_for('compare') }}" id="nav-compare-link-mobile"
+       class="nav-compare-link {{ 'active' if request.endpoint == 'compare' }}"
+       style="display:none">
+      <span class="icon">&#x2696;&#xfe0f;</span> Compare
+      <span class="cart-badge" id="compare-badge-mobile">0</span>
+    </a>
     <a href="{{ url_for('cart') }}" class="nav-cart-link {{ 'active' if request.endpoint in ('cart', 'cart_checkout') }}">
       <span class="icon cart-icon">{% if cart_count %}&#x1f4b0;{% else %}&#x1f6d2;{% endif %}</span>
       <span class="cart-label">{% if cart_count %}Checkout{% else %}Shift + Click to add{% endif %}</span>
       <span class="cart-badge" id="cart-badge-mobile" {% if not cart_count %}style="display:none"{% endif %}>{{ cart_count }}</span>
-    </a>
-    <a href="{{ url_for('compare') }}" id="nav-compare-link-mobile"
-       class="nav-compare-link {{ 'active' if request.endpoint == 'compare' }}"
-       {% if not compare_count %}style="display:none"{% endif %}>
-      <span class="icon">&#x2696;&#xfe0f;</span> Compare
-      <span class="cart-badge" id="compare-badge-mobile">{{ compare_count }}</span>
     </a>
     <a href="{{ url_for('purchases_calendar') }}" class="{{ 'active' if request.endpoint == 'purchases_calendar' }}">
       <span class="icon">&#x1f4c5;</span> Arriving today

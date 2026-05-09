@@ -62,12 +62,6 @@
         &#x2197; Track
       </button>
       {% endif %}
-      <button type="button"
-        class="btn btn-sm compare-toggle-btn {% if p.id in compare_product_ids %}in-compare{% endif %}"
-        data-product-id="{{ p.id }}"
-        onclick="toggleCompare(event, this)">
-        {% if p.id in compare_product_ids %}In Compare &#x2713;{% else %}+ Compare{% endif %}
-      </button>
     </div>
     {% if not active_tag_obj %}
     {% set tag_text = p.tags|map(attribute='name')|join(', ') if p.tags else 'No tags' %}
