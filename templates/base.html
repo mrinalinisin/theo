@@ -74,7 +74,7 @@
         <span class="icon">&#x1f4ca;</span> Reports
       </a>
       <div class="nav-dropdown">
-        <a href="{{ url_for('settings') }}" class="{{ 'active' if request.endpoint in ('settings', 'settings_about', 'settings_stats', 'tags', 'tag_create', 'tag_edit') }}">
+        <a href="{{ url_for('settings_github') }}" class="{{ 'active' if request.endpoint in ('settings', 'settings_github', 'settings_about', 'settings_stats', 'tags', 'tag_create', 'tag_edit') }}">
           <span class="icon">&#x2699;&#xfe0f;</span> Settings
         </a>
         <div class="nav-dropdown-menu">

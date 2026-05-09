@@ -995,7 +995,7 @@ def create_app():
         s = Settings.get()
         if not s.github_token:
             flash("Connect GitHub first to publish.", "warning")
-            return redirect(url_for("settings"))
+            return redirect(url_for("settings_github"))
 
         repos = _resolve_publish_targets(s)
         ids_param = request.args.get("ids", "").strip()
@@ -1020,7 +1020,7 @@ def create_app():
         s = Settings.get()
         if not s.github_token:
             flash("Connect GitHub first to publish.", "warning")
-            return redirect(url_for("settings"))
+            return redirect(url_for("settings_github"))
 
         # Parse form
         page_name = (request.form.get("page_name") or "").strip()
@@ -1033,7 +1033,7 @@ def create_app():
         repo = (request.form.get("repo") or "").strip() or (repos[0] if repos else "")
         if not repo:
             flash("No publish target available.", "error")
-            return redirect(url_for("settings"))
+            return redirect(url_for("settings_github"))
 
         try:
             ids = [int(x) for x in (request.form.get("ids") or "").split(",") if x.strip()]
@@ -1295,8 +1295,12 @@ def create_app():
 
     @app.route("/settings")
     def settings():
-        s = Settings.get()
-        return render_template("settings.html", settings=s, tab="github")
+        # Settings is now a tabbed surface — bounce to GitHub as the default.
+        return redirect(url_for("settings_github"), code=302)
+
+    @app.route("/settings/github")
+    def settings_github():
+        return render_template("settings.html", settings=Settings.get(), tab="github")
 
     @app.route("/settings/about")
     def settings_about():
@@ -1338,7 +1342,7 @@ def create_app():
             load_times=load_times,
         )
 
-    @app.route("/settings", methods=["POST"])
+    @app.route("/settings/github", methods=["POST"])
     def settings_save():
         """Save GitHub publishing settings + verify connection.
 
@@ -1386,10 +1390,10 @@ def create_app():
                     db.session.commit()
                 elif u_resp.status_code == 401:
                     flash("GitHub rejected the token (401). Check it's valid.", "warning")
-                    return redirect(url_for("settings"))
+                    return redirect(url_for("settings_github"))
             except _req.RequestException as e:
                 flash(f"Couldn't reach GitHub ({e.__class__.__name__}).", "warning")
-                return redirect(url_for("settings"))
+                return redirect(url_for("settings_github"))
 
         # Validate each configured repo individually
         if s.github_token and s.github_repos:
@@ -1420,7 +1424,7 @@ def create_app():
             flash(f"Connected as {s.github_username}. Default target: {s.github_username}.github.io", "success")
         else:
             flash("Settings saved.", "info")
-        return redirect(url_for("settings"))
+        return redirect(url_for("settings_github"))
 
     # ── Template helpers ──────────────────────────────────────────────────────
 
