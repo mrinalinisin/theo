@@ -76,22 +76,9 @@
       <a href="{{ url_for('reports') }}" class="{{ 'active' if request.endpoint in ('reports', 'report_month') }}">
         <span class="icon">&#x1f4ca;</span> Reports
       </a>
-      <div class="nav-dropdown">
-        <a href="{{ url_for('settings_github') }}" class="{{ 'active' if request.endpoint in ('settings', 'settings_github', 'settings_about', 'settings_stats', 'tags', 'tag_create', 'tag_edit') }}">
-          <span class="icon">&#x2699;&#xfe0f;</span> Settings
-        </a>
-        <div class="nav-dropdown-menu">
-          <a href="{{ url_for('tags') }}" class="{{ 'active' if request.endpoint in ('tags', 'tag_create', 'tag_edit') }}">
-            <span class="icon">&#x1f3f7;&#xfe0f;</span> Tags
-          </a>
-          <a href="{{ url_for('settings_stats') }}" class="{{ 'active' if request.endpoint == 'settings_stats' }}">
-            <span class="icon">&#x1f4c8;</span> Stats
-          </a>
-          <a href="{{ url_for('settings_about') }}" class="{{ 'active' if request.endpoint == 'settings_about' }}">
-            <span class="icon">&#x2139;&#xfe0f;</span> About
-          </a>
-        </div>
-      </div>
+      <a href="{{ url_for('settings') }}" class="{{ 'active' if request.endpoint in ('settings', 'settings_github', 'settings_about', 'settings_stats') }}">
+        <span class="icon">&#x2699;&#xfe0f;</span> Settings
+      </a>
     </nav>
     <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Menu">&#x2630;</button>
   </header>
@@ -128,17 +115,8 @@
     <a href="{{ url_for('reports') }}" class="{{ 'active' if request.endpoint in ('reports', 'report_month') }}">
       <span class="icon">&#x1f4ca;</span> Reports
     </a>
-    <a href="{{ url_for('settings') }}" class="{{ 'active' if request.endpoint == 'settings' }}">
+    <a href="{{ url_for('settings') }}" class="{{ 'active' if request.endpoint in ('settings', 'settings_github', 'settings_about', 'settings_stats') }}">
       <span class="icon">&#x2699;&#xfe0f;</span> Settings
-    </a>
-    <a href="{{ url_for('tags') }}" class="mobile-submenu {{ 'active' if request.endpoint in ('tags', 'tag_create', 'tag_edit') }}">
-      <span class="icon">&#x1f3f7;&#xfe0f;</span> Tags
-    </a>
-    <a href="{{ url_for('settings_stats') }}" class="mobile-submenu {{ 'active' if request.endpoint == 'settings_stats' }}">
-      <span class="icon">&#x1f4c8;</span> Stats
-    </a>
-    <a href="{{ url_for('settings_about') }}" class="mobile-submenu {{ 'active' if request.endpoint == 'settings_about' }}">
-      <span class="icon">&#x2139;&#xfe0f;</span> About
     </a>
     {% if request.endpoint == 'shopping_list' %}
     <form class="mobile-search" method="GET" action="{{ url_for(request.endpoint) }}" role="search">
