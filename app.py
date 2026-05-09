@@ -29,7 +29,7 @@ import time
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, send_from_directory, session
 from sqlalchemy import func, or_, and_
 from config import Config
-from models import db, Product, Tag, Purchase, Settings, Currency, product_tags
+from models import db, Product, Tag, Purchase, Settings, Currency, Publication, product_tags
 
 
 def create_app():
@@ -915,6 +915,219 @@ def create_app():
 
         return render_template("compare.html", products=products, max_items=COMPARE_MAX)
 
+    # ── Publish (selection → static HTML on GitHub) ───────────────────────────
+    # Flow: client selects cards → Publish nav → /publish?ids=… → form for
+    # page name + (if multiple repos) repo picker → POST /publish/create →
+    # render HTML → push to GitHub → regenerate index.html → redirect.
+
+    def _resolve_publish_targets(s):
+        """Return the list of usable repos. If user configured none but is
+        connected, the default <username>.github.io is the implicit single
+        target. Empty list ⇒ no token configured → caller redirects to /settings.
+        """
+        if not s.github_token or not s.github_username:
+            return []
+        repos = list(s.github_repos or [])
+        if not repos:
+            repos = [f"{s.github_username}.github.io"]
+        return repos
+
+    def _slugify(name):
+        """Web-safe lowercase slug. Falls back to "page" if input is empty."""
+        import re as _re
+        slug = _re.sub(r"[^a-z0-9-]+", "-", (name or "").lower()).strip("-")
+        return slug or "page"
+
+    def _public_url(repo, slug):
+        """Public Pages URL for owner/name + filename slug. Both `<u>.github.io`
+        and `<u>/<repo>` flavours. Theo doesn't *enable* Pages — user has to
+        do that on github.com — but we can predict the URL regardless.
+        """
+        owner, _, name = repo.partition("/")
+        if name == f"{owner}.github.io":
+            return f"https://{owner}.github.io/{slug}.html"
+        return f"https://{owner}.github.io/{name}/{slug}.html"
+
+    @app.route("/publish")
+    def publish():
+        """GET → form. The selection comes via ?ids=1,2,3 (set by the nav
+        click handler in shopping_list.html, mirroring the Compare flow).
+        """
+        s = Settings.get()
+        if not s.github_token:
+            flash("Connect GitHub first to publish.", "warning")
+            return redirect(url_for("settings"))
+
+        repos = _resolve_publish_targets(s)
+        ids_param = request.args.get("ids", "").strip()
+        try:
+            ids = [int(x) for x in ids_param.split(",") if x.strip()]
+        except ValueError:
+            ids = []
+        if not ids:
+            flash("No items selected to publish.", "warning")
+            return redirect(url_for("shopping_list"))
+
+        rows = Product.query.filter(Product.id.in_(ids)).all()
+        by_id = {p.id: p for p in rows}
+        products = [by_id[i] for i in ids if i in by_id]
+        return render_template("publish_form.html", products=products, repos=repos, settings=s)
+
+    @app.route("/publish/create", methods=["POST"])
+    def publish_create():
+        """POST handler — render HTML, push to GitHub, record Publication."""
+        import requests as _req
+        import base64 as _b64
+        s = Settings.get()
+        if not s.github_token:
+            flash("Connect GitHub first to publish.", "warning")
+            return redirect(url_for("settings"))
+
+        # Parse form
+        page_name = (request.form.get("page_name") or "").strip()
+        if not page_name:
+            flash("Page name required.", "error")
+            return redirect(request.referrer or url_for("shopping_list"))
+        slug = _slugify(page_name)
+
+        repos = _resolve_publish_targets(s)
+        repo = (request.form.get("repo") or "").strip() or (repos[0] if repos else "")
+        if not repo:
+            flash("No publish target available.", "error")
+            return redirect(url_for("settings"))
+
+        try:
+            ids = [int(x) for x in (request.form.get("ids") or "").split(",") if x.strip()]
+        except ValueError:
+            ids = []
+        if not ids:
+            flash("No items to publish.", "warning")
+            return redirect(url_for("shopping_list"))
+        rows = Product.query.filter(Product.id.in_(ids)).all()
+        by_id = {p.id: p for p in rows}
+        products = [by_id[i] for i in ids if i in by_id]
+
+        # Render the static page. _published_page.html is a standalone
+        # document (no {% extends %}). Image references get inlined to data
+        # URIs by the template via a custom filter so the HTML is single-file.
+        html = render_template(
+            "_published_page.html",
+            page_title=page_name,
+            products=products,
+            published_at=datetime.now(timezone.utc),
+        )
+
+        # Push the page
+        ok, err = _github_put_file(
+            token=s.github_token,
+            repo=repo,
+            branch=s.github_branch or "main",
+            path=f"{slug}.html",
+            content_str=html,
+            commit_message=f"Publish: {page_name}",
+        )
+        if not ok:
+            flash(f"Push failed: {err}", "error")
+            return redirect(url_for("shopping_list"))
+
+        # Record Publication (upsert on repo+slug)
+        existing = Publication.query.filter_by(repo=repo, slug=slug).first()
+        if existing:
+            existing.name = page_name
+            existing.item_count = len(products)
+            existing.updated_at = datetime.now(timezone.utc)
+            existing.url = _public_url(repo, slug)
+        else:
+            db.session.add(Publication(
+                repo=repo, slug=slug, name=page_name,
+                item_count=len(products),
+                url=_public_url(repo, slug),
+            ))
+        db.session.commit()
+
+        # Regenerate index.html for this repo from all known Publications
+        pubs = (Publication.query
+                .filter_by(repo=repo)
+                .order_by(Publication.updated_at.desc())
+                .all())
+        index_html = render_template(
+            "_published_index.html",
+            repo=repo,
+            publications=pubs,
+            published_at=datetime.now(timezone.utc),
+        )
+        ok2, err2 = _github_put_file(
+            token=s.github_token,
+            repo=repo,
+            branch=s.github_branch or "main",
+            path="index.html",
+            content_str=index_html,
+            commit_message=f"Update index for {page_name}",
+        )
+        if not ok2:
+            flash(f"Page published but index update failed: {err2}", "warning")
+        else:
+            flash(f'Published "{page_name}" to {repo}. Public URL: {_public_url(repo, slug)}', "success")
+
+        return redirect(url_for("shopping_list"))
+
+    def _github_put_file(token, repo, branch, path, content_str, commit_message):
+        """PUT a file to a GitHub repo via Contents API. Handles update-vs-create
+        (needs SHA when updating). Returns (ok: bool, err: str|None).
+        """
+        import requests as _req
+        import base64 as _b64
+        headers = {
+            "Authorization": f"Bearer {token}",
+            "Accept": "application/vnd.github+json",
+        }
+        # Get current SHA if file exists (need it to update)
+        sha = None
+        try:
+            g = _req.get(
+                f"https://api.github.com/repos/{repo}/contents/{path}",
+                headers=headers,
+                params={"ref": branch},
+                timeout=15,
+            )
+            if g.status_code == 200:
+                sha = g.json().get("sha")
+            elif g.status_code not in (404,):
+                return False, f"GET {path} → {g.status_code}"
+        except _req.RequestException as e:
+            return False, f"GET {path} network: {e.__class__.__name__}"
+
+        # Encode content
+        if isinstance(content_str, str):
+            content_b64 = _b64.b64encode(content_str.encode("utf-8")).decode("ascii")
+        else:
+            content_b64 = _b64.b64encode(content_str).decode("ascii")
+
+        body = {
+            "message": commit_message,
+            "content": content_b64,
+            "branch": branch,
+        }
+        if sha:
+            body["sha"] = sha
+
+        try:
+            p = _req.put(
+                f"https://api.github.com/repos/{repo}/contents/{path}",
+                headers=headers,
+                json=body,
+                timeout=20,
+            )
+        except _req.RequestException as e:
+            return False, f"PUT {path} network: {e.__class__.__name__}"
+        if p.status_code in (200, 201):
+            return True, None
+        try:
+            err = p.json().get("message", f"HTTP {p.status_code}")
+        except Exception:
+            err = f"HTTP {p.status_code}"
+        return False, f"PUT {path}: {err}"
+
     # ── Purchases page removed — /products now lists everything by default. ──
 
     @app.route("/purchases/calendar")
@@ -1041,48 +1254,84 @@ def create_app():
 
     @app.route("/settings", methods=["POST"])
     def settings_save():
-        """Save GitHub publishing settings + verify the connection.
+        """Save GitHub publishing settings + verify connection.
 
-        Hits the GitHub API once to confirm the repo exists and the token
-        has access. On any auth/permission failure, the values are still
-        saved (so the user can fix one field without re-typing the others)
-        but a warning flash explains what went wrong.
+        Repos arrive as repeated `github_repos[]` form fields. Empty entries
+        and duplicates are dropped. Token: empty submission keeps existing,
+        "__clear__" wipes it.
         """
         import requests as _req
         s = Settings.get()
-        s.github_repo = (request.form.get("github_repo") or "").strip()
+
+        # Branch
         s.github_branch = (request.form.get("github_branch") or "main").strip() or "main"
-        # Token field: empty submission keeps the existing token (so users
-        # can edit repo/branch without re-pasting). A "__clear__" sentinel
-        # explicitly clears it.
+
+        # Repos — list of strings, dedupe + strip empty.
+        raw_repos = request.form.getlist("github_repos[]")
+        cleaned = []
+        for r in raw_repos:
+            r = (r or "").strip()
+            if r and r not in cleaned:
+                cleaned.append(r)
+        s.github_repos = cleaned
+
+        # Token sentinel handling
         token_raw = request.form.get("github_token", "")
         if token_raw == "__clear__":
             s.github_token = ""
+            s.github_username = ""
         elif token_raw.strip():
             s.github_token = token_raw.strip()
         db.session.commit()
 
-        # Validate connection if all three are now set.
-        if s.github_token and s.github_repo:
+        # Verify token + cache username if set
+        if s.github_token:
             try:
-                resp = _req.get(
-                    f"https://api.github.com/repos/{s.github_repo}",
+                u_resp = _req.get(
+                    "https://api.github.com/user",
                     headers={
                         "Authorization": f"Bearer {s.github_token}",
                         "Accept": "application/vnd.github+json",
                     },
                     timeout=10,
                 )
-                if resp.status_code == 200:
-                    flash(f"Connected to {s.github_repo}.", "success")
-                elif resp.status_code == 401:
-                    flash("GitHub rejected the token (401). Check it's valid and not expired.", "warning")
-                elif resp.status_code == 404:
-                    flash(f"Couldn't find repo {s.github_repo}. Check the owner/name and that the token has access.", "warning")
-                else:
-                    flash(f"GitHub returned {resp.status_code}. Connection saved but unverified.", "warning")
+                if u_resp.status_code == 200:
+                    s.github_username = u_resp.json().get("login", "") or ""
+                    db.session.commit()
+                elif u_resp.status_code == 401:
+                    flash("GitHub rejected the token (401). Check it's valid.", "warning")
+                    return redirect(url_for("settings"))
             except _req.RequestException as e:
-                flash(f"Couldn't reach GitHub ({e.__class__.__name__}). Settings saved but unverified.", "warning")
+                flash(f"Couldn't reach GitHub ({e.__class__.__name__}).", "warning")
+                return redirect(url_for("settings"))
+
+        # Validate each configured repo individually
+        if s.github_token and s.github_repos:
+            failures = []
+            for repo in s.github_repos:
+                try:
+                    r = _req.get(
+                        f"https://api.github.com/repos/{repo}",
+                        headers={
+                            "Authorization": f"Bearer {s.github_token}",
+                            "Accept": "application/vnd.github+json",
+                        },
+                        timeout=10,
+                    )
+                    if r.status_code != 200:
+                        failures.append(f"{repo} ({r.status_code})")
+                except _req.RequestException:
+                    failures.append(f"{repo} (network)")
+            if failures:
+                flash(f"Repo check failed for: {', '.join(failures)}.", "warning")
+            else:
+                user_label = f" as {s.github_username}" if s.github_username else ""
+                if s.github_repos:
+                    flash(f"Connected{user_label}. {len(s.github_repos)} repo{'s' if len(s.github_repos) != 1 else ''} verified.", "success")
+                else:
+                    flash(f"Connected{user_label}. Default target: {s.github_username}.github.io", "success")
+        elif s.github_token:
+            flash(f"Connected as {s.github_username}. Default target: {s.github_username}.github.io", "success")
         else:
             flash("Settings saved.", "info")
         return redirect(url_for("settings"))
@@ -1132,6 +1381,26 @@ def create_app():
         target = dt.date() if hasattr(dt, "date") else dt
         delta = (today - target).days
         return delta if delta > 0 else None
+
+    @app.template_filter("inline_image")
+    def inline_image_filter(path):
+        """Read an image from instance/images/ and return a base64 data URI.
+        Used by the publish templates so the static HTML is fully self-contained
+        (no external image hosting needed). Returns "" for missing files.
+        """
+        import base64 as _b64
+        import mimetypes as _mt
+        if not path:
+            return ""
+        # Normalize: strip any 'images/' prefix; the filter expects raw filenames.
+        fname = path.split("/")[-1]
+        full = os.path.join(app.instance_path, "images", fname)
+        if not os.path.exists(full):
+            return ""
+        mime = _mt.guess_type(fname)[0] or "image/jpeg"
+        with open(full, "rb") as f:
+            data = _b64.b64encode(f.read()).decode("ascii")
+        return f"data:{mime};base64,{data}"
 
     @app.template_filter("min_delivery_date")
     def min_delivery_date_filter(dt):
@@ -1249,6 +1518,25 @@ def _run_lightweight_migrations():
     if not column_exists("settings", "github_branch"):
         db.session.execute(text("ALTER TABLE settings ADD COLUMN github_branch TEXT DEFAULT 'main'"))
         db.session.commit()
+
+    # Multi-repo upgrade: github_repo (singular) → github_repos (JSON list).
+    # Old column stays orphaned for safety; we just stop using it.
+    if not column_exists("settings", "github_repos"):
+        db.session.execute(text("ALTER TABLE settings ADD COLUMN github_repos TEXT DEFAULT '[]'"))
+        # Backfill from the old singular column if it had a value.
+        db.session.execute(text("""
+            UPDATE settings
+            SET github_repos = '["' || github_repo || '"]'
+            WHERE github_repo IS NOT NULL AND github_repo != '' AND (github_repos IS NULL OR github_repos = '[]')
+        """))
+        db.session.commit()
+    if not column_exists("settings", "github_username"):
+        db.session.execute(text("ALTER TABLE settings ADD COLUMN github_username TEXT DEFAULT ''"))
+        db.session.commit()
+
+    # Publication table — see models.Publication. SQLAlchemy create_all
+    # below will create it on a fresh DB; nothing to do here for an
+    # upgrading DB beyond letting SQLAlchemy's metadata catch up.
 
     # Settings.state_refactor_done added 2026-05 — gates the one-shot
     # listing-states migration below (watching/awaiting_delivery/purchased

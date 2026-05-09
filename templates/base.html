@@ -53,6 +53,14 @@
         <span class="icon">&#x2696;&#xfe0f;</span> Compare
         <span class="cart-badge" id="compare-badge">0</span>
       </a>
+      {# Publish link — same selection. Hidden until ≥1 card is selected. #}
+      <a href="{{ url_for('publish') }}" id="nav-publish-link"
+         class="nav-publish-link {{ 'active' if request.endpoint == 'publish' }}"
+         title="Publish selected"
+         style="display:none">
+        <span class="icon">&#x1f4e2;</span> Publish
+        <span class="cart-badge" id="publish-badge">0</span>
+      </a>
       <a href="{{ url_for('cart') }}" class="nav-cart-link {{ 'active' if request.endpoint in ('cart', 'cart_checkout') }}" title="Cart">
         <span class="icon cart-icon">{% if cart_count %}&#x1f4b0;{% else %}&#x1f6d2;{% endif %}</span>
         <span class="cart-label">{% if cart_count %}Checkout{% else %}Shift + Click to add{% endif %}</span>
@@ -89,6 +97,12 @@
        style="display:none">
       <span class="icon">&#x2696;&#xfe0f;</span> Compare
       <span class="cart-badge" id="compare-badge-mobile">0</span>
+    </a>
+    <a href="{{ url_for('publish') }}" id="nav-publish-link-mobile"
+       class="nav-publish-link {{ 'active' if request.endpoint == 'publish' }}"
+       style="display:none">
+      <span class="icon">&#x1f4e2;</span> Publish
+      <span class="cart-badge" id="publish-badge-mobile">0</span>
     </a>
     <a href="{{ url_for('cart') }}" class="nav-cart-link {{ 'active' if request.endpoint in ('cart', 'cart_checkout') }}">
       <span class="icon cart-icon">{% if cart_count %}&#x1f4b0;{% else %}&#x1f6d2;{% endif %}</span>

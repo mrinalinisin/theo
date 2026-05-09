@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}Publish — Theo{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-header-top">
+    <div class="flex items-center gap-12">
+      <a href="{{ url_for('shopping_list') }}" class="btn btn-ghost btn-sm">&larr; Cancel</a>
+      <div class="page-title">Publish to GitHub</div>
+    </div>
+  </div>
+</div>
+
+<div class="page-body" style="max-width: 640px;">
+  <div class="text-sm text-faint mb-16">
+    Publishing <strong>{{ products|length }}</strong> selected
+    item{{ 's' if products|length != 1 else '' }} as a static HTML page on
+    {% if repos|length == 1 %}<code>{{ repos[0] }}</code>{% else %}your selected repo{% endif %}.
+    Images are embedded inline so the page is one self-contained file.
+  </div>
+
+  <form method="POST" action="{{ url_for('publish_create') }}">
+    <input type="hidden" name="ids" value="{{ products|map(attribute='id')|join(',') }}">
+
+    <div class="form-group">
+      <label class="form-label">Page name</label>
+      <input type="text" name="page_name" class="form-input" autofocus required
+             placeholder="e.g. Wishlist for spring">
+      <div class="form-hint">Becomes the filename (slugified) and the page heading.</div>
+    </div>
+
+    {% if repos|length > 1 %}
+    <div class="form-group">
+      <label class="form-label">Publish to</label>
+      <select name="repo" class="form-select">
+        {% for r in repos %}
+        <option value="{{ r }}">{{ r }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    {% else %}
+    <input type="hidden" name="repo" value="{{ repos[0] }}">
+    {% endif %}
+
+    <div class="form-group">
+      <label class="form-label">Items</label>
+      <ul class="text-sm" style="padding-left:20px;">
+        {% for p in products %}
+        <li>{{ p.name }}{% if p.store %} <span class="text-xs text-faint">— {{ p.store }}</span>{% endif %}</li>
+        {% endfor %}
+      </ul>
+    </div>
+
+    <div class="flex gap-8 mt-16">
+      <button type="submit" class="btn btn-primary">Publish</button>
+      <a href="{{ url_for('shopping_list') }}" class="btn btn-secondary">Cancel</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

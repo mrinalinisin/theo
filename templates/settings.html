@@ -11,25 +11,30 @@
 <div class="page-body" style="max-width: 640px;">
 
   {# ── GitHub publishing ─────────────────────────────────────────────── #}
-  {% set connected = settings.github_token and settings.github_repo %}
+  {% set connected = settings.github_token and settings.github_username %}
   <div class="card mb-16">
     <div class="card-header">
       GitHub publishing
-      {% if connected %}<span class="status-pill status-received" style="margin-left:8px;">Connected</span>{% endif %}
+      {% if connected %}<span class="status-pill status-received" style="margin-left:8px;">Connected as {{ settings.github_username }}</span>{% endif %}
     </div>
     <div class="card-body">
       <div class="text-sm text-faint mb-16">
-        Connect a GitHub repo to publish selected listings as static HTML
-        pages. The repo can be private or public; if you enable GitHub
-        Pages on it, publications get a public URL.
+        Connect a GitHub account to publish selected listings as static HTML.
+        Default target is <code>{{ settings.github_username or '&lt;username&gt;' }}.github.io</code>.
+        Add specific repos below if you want to push elsewhere — Theo will let you pick at publish time.
       </div>
 
       <form method="POST" action="{{ url_for('settings_save') }}">
         <div class="form-group">
-          <label class="form-label">Repository <span class="text-xs text-faint">(format: <code>owner/name</code>)</span></label>
-          <input type="text" name="github_repo" class="form-input"
-                 value="{{ settings.github_repo or '' }}"
-                 placeholder="sindhus/theo-collections">
+          <label class="form-label">Personal Access Token{% if settings.github_token %} <span class="text-xs text-faint">(saved — leave blank to keep)</span>{% endif %}</label>
+          <input type="password" name="github_token" class="form-input"
+                 placeholder="{{ 'ghp_•••••••••••••••••• (token saved)' if settings.github_token else 'ghp_xxxxxxxxxxxxxxxxxxxx' }}"
+                 autocomplete="off">
+          <div class="form-hint">
+            <a href="https://github.com/settings/tokens?type=beta" target="_blank" rel="noopener">Generate at github.com</a>
+            — needs <code>Contents: read &amp; write</code> on the target repo (fine-grained PAT)
+            or <code>repo</code> scope (classic PAT).
+          </div>
         </div>
 
         <div class="form-group">
@@ -40,19 +45,16 @@
         </div>
 
         <div class="form-group">
-          <label class="form-label">
-            Personal Access Token
-            {% if settings.github_token %}<span class="text-xs text-faint">(saved — leave blank to keep)</span>{% endif %}
-          </label>
-          <input type="password" name="github_token" class="form-input"
-                 placeholder="{{ 'ghp_•••••••••••••••••• (token saved)' if settings.github_token else 'ghp_xxxxxxxxxxxxxxxxxxxx' }}"
-                 autocomplete="off">
-          <div class="form-hint">
-            Generate at
-            <a href="https://github.com/settings/tokens?type=beta" target="_blank" rel="noopener">github.com → Settings → Developer settings → Personal access tokens</a>.
-            Needs <code>Contents: read &amp; write</code> on the target repo (fine-grained PAT)
-            or the <code>repo</code> scope (classic PAT).
+          <label class="form-label">Target repos <span class="text-xs text-faint">(format: <code>owner/name</code>; leave empty to default to <code>&lt;username&gt;.github.io</code>)</span></label>
+          <div id="repo-rows">
+            {% for r in (settings.github_repos or []) %}
+            <div class="repo-row" style="display:flex; gap:8px; margin-bottom:6px;">
+              <input type="text" name="github_repos[]" class="form-input" value="{{ r }}" style="flex:1;">
+              <button type="button" class="btn btn-secondary btn-sm" onclick="this.parentElement.remove()">&times;</button>
+            </div>
+            {% endfor %}
           </div>
+          <button type="button" id="repo-add-btn" class="btn btn-secondary btn-sm" style="margin-top:6px;">+ Add repo</button>
         </div>
 
         <div class="flex gap-8 mt-16">
@@ -70,4 +72,21 @@
   </div>
 
 </div>
+
+<script>
+(function() {
+  const btn = document.getElementById('repo-add-btn');
+  const rows = document.getElementById('repo-rows');
+  if (!btn || !rows) return;
+  btn.addEventListener('click', () => {
+    const row = document.createElement('div');
+    row.className = 'repo-row';
+    row.style.cssText = 'display:flex; gap:8px; margin-bottom:6px;';
+    row.innerHTML = '<input type="text" name="github_repos[]" class="form-input" placeholder="owner/name" style="flex:1;">' +
+                    '<button type="button" class="btn btn-secondary btn-sm" onclick="this.parentElement.remove()">&times;</button>';
+    rows.appendChild(row);
+    row.querySelector('input').focus();
+  });
+})();
+</script>
 {% endblock %}

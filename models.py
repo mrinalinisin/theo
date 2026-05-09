@@ -122,6 +122,28 @@ class Purchase(db.Model):
     delivered_at = db.Column(db.DateTime, nullable=True)
 
 
+class Publication(db.Model):
+    """A static HTML page Theo has published to a GitHub repo.
+
+    Theo is the source of truth for which pages exist per repo, so the
+    repo's index.html can be regenerated from this list on every publish.
+    Manually deleting a file from the repo leaves the row stale until
+    the user removes it via Theo (or it gets auto-cleaned by a future
+    repair routine).
+    """
+
+    id = db.Column(db.Integer, primary_key=True)
+    repo = db.Column(db.Text, nullable=False)        # "owner/name"
+    slug = db.Column(db.Text, nullable=False)        # filename without .html
+    name = db.Column(db.Text, nullable=False)        # human title shown on index
+    url = db.Column(db.Text, default="")             # full public URL
+    item_count = db.Column(db.Integer, default=0)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+    __table_args__ = (db.UniqueConstraint("repo", "slug", name="uq_pub_repo_slug"),)
+
+
 class Settings(db.Model):
     """Singleton settings row.
 
@@ -139,11 +161,15 @@ class Settings(db.Model):
 
     # GitHub publishing — credentials for pushing static HTML to a repo.
     # Token is a Personal Access Token with `repo` scope (or fine-grained
-    # equivalent). Stored as plain text; this is a personal app on a
-    # private device. Format of github_repo: "owner/name".
+    # equivalent). Stored plain — personal app on a private device.
     github_token = db.Column(db.Text, default="")
-    github_repo = db.Column(db.Text, default="")
+    # JSON list of "owner/name" strings. Empty list ⇒ use the default
+    # "<username>.github.io" repo (constructed from github_username).
+    github_repos = db.Column(db.JSON, default=list)
     github_branch = db.Column(db.Text, default="main")
+    # Cached from GET /user on first successful save. Used to construct
+    # the default repo name and the public Pages URL.
+    github_username = db.Column(db.Text, default="")
 
     @classmethod
     def get(cls):

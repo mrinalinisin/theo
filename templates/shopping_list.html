@@ -285,6 +285,7 @@ document.getElementById('modal-purchase').addEventListener('click', e => {
 const selectedIds = new Set();
 const navCartLinks = document.querySelectorAll('.nav-cart-link');
 const navCompareLinks = document.querySelectorAll('.nav-compare-link');
+const navPublishLinks = document.querySelectorAll('.nav-publish-link');
 
 function refreshSelectionUi() {
   const n = selectedIds.size;
@@ -302,11 +303,18 @@ function refreshSelectionUi() {
   document.querySelectorAll('.cart-label').forEach(function(label) {
     label.textContent = n > 0 ? 'Checkout' : 'Shift + Click to add';
   });
-  // Compare nav (new — driven by the same selection).
+  // Compare nav (driven by the same selection).
   document.querySelectorAll('#compare-badge, #compare-badge-mobile').forEach(function(badge) {
     badge.textContent = n;
   });
   navCompareLinks.forEach(function(link) {
+    link.style.display = n > 0 ? '' : 'none';
+  });
+  // Publish nav (also driven by the same selection).
+  document.querySelectorAll('#publish-badge, #publish-badge-mobile').forEach(function(badge) {
+    badge.textContent = n;
+  });
+  navPublishLinks.forEach(function(link) {
     link.style.display = n > 0 ? '' : 'none';
   });
 }
@@ -371,6 +379,18 @@ navCompareLinks.forEach(function(link) {
     event.preventDefault();
     const ids = [...selectedIds].join(',');
     window.location.href = '/compare?ids=' + ids;
+  });
+});
+
+// Publish nav: same shape — navigate to /publish?ids=… which renders the
+// page-name + repo-picker form. The route redirects to /settings if
+// GitHub isn't connected.
+navPublishLinks.forEach(function(link) {
+  link.addEventListener('click', function(event) {
+    if (selectedIds.size === 0) return;
+    event.preventDefault();
+    const ids = [...selectedIds].join(',');
+    window.location.href = '/publish?ids=' + ids;
   });
 });
 
