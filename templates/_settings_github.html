@@ -7,7 +7,15 @@
   <div class="card-body">
     <div class="text-sm text-faint mb-16">
       Connect a GitHub account to publish selected listings as static HTML.
-      Default target is <code>{{ settings.github_username or '&lt;username&gt;' }}.github.io</code>.
+      Default target:
+      {% if settings.github_username %}
+      <a href="https://github.com/{{ settings.github_username }}/{{ settings.github_username }}.github.io"
+         target="_blank" rel="noopener">
+        <code>{{ settings.github_username }}.github.io</code> &#x2197;
+      </a>
+      {% else %}
+      <code>&lt;username&gt;.github.io</code>
+      {% endif %}.
       Add specific repos below if you want to push elsewhere — Theo will let you pick at publish time.
     </div>
 
