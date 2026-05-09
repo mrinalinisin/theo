@@ -1141,7 +1141,8 @@ body.has-selection .card-select-checkbox { display: flex; }
 /* ── Cart / Compare badge — both nav links anchor an absolutely-positioned
    .cart-badge in their top-right corner, so they need a positioning context. */
 .nav-cart-link,
-.nav-compare-link {
+.nav-compare-link,
+.nav-publish-link {
   position: relative;
 }
 .cart-badge {
