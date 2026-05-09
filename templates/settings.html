@@ -31,9 +31,29 @@
                  placeholder="{{ 'ghp_•••••••••••••••••• (token saved)' if settings.github_token else 'ghp_xxxxxxxxxxxxxxxxxxxx' }}"
                  autocomplete="off">
           <div class="form-hint">
-            <a href="https://github.com/settings/tokens?type=beta" target="_blank" rel="noopener">Generate at github.com</a>
-            — needs <code>Contents: read &amp; write</code> on the target repo (fine-grained PAT)
-            or <code>repo</code> scope (classic PAT).
+            <details>
+              <summary style="cursor:pointer; user-select:none;">How to generate a token</summary>
+              <div style="margin-top:10px; padding:12px 14px; background:var(--bg); border-radius:var(--radius-sm); line-height:1.6;">
+                <div style="margin-bottom:10px;"><strong>Quick path — Classic PAT</strong> (simpler):</div>
+                <ol style="margin:0 0 16px 18px;">
+                  <li>Open <a href="https://github.com/settings/tokens/new" target="_blank" rel="noopener">github.com → Settings → Developer settings → Personal access tokens → Tokens (classic) → Generate new token</a>.</li>
+                  <li>Pick a Note (e.g. "Theo publish") and an expiry.</li>
+                  <li>Tick <code>public_repo</code> if your target repo is public, or the full <code>repo</code> scope if it's private.</li>
+                  <li>Click <strong>Generate token</strong>, copy it, paste above.</li>
+                </ol>
+
+                <div style="margin-bottom:10px;"><strong>Scoped path — Fine-grained PAT</strong> (more secure, more clicks):</div>
+                <ol style="margin:0 0 0 18px;">
+                  <li>Open <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">github.com → Settings → Developer settings → Personal access tokens → Fine-grained tokens → Generate new token</a>.</li>
+                  <li>Set a Token name and expiry.</li>
+                  <li>Under <strong>Repository access</strong>, choose <strong>Only select repositories</strong> and pick your target (e.g. <code>username.github.io</code>).</li>
+                  <li>Scroll down to <strong>Permissions → Repository permissions</strong>, click <strong>+ Add permissions</strong>.</li>
+                  <li>In the picker, <strong>tick the checkbox next to "Contents"</strong> (the picker is a checkbox list, not a row of dropdowns). Close the picker.</li>
+                  <li>A <strong>Contents</strong> row now appears in the Permissions block with <em>Access: Read</em>. <strong>Click "Read" and change it to "Read and write"</strong>.</li>
+                  <li>Click <strong>Generate token</strong>, copy it, paste above.</li>
+                </ol>
+              </div>
+            </details>
           </div>
         </div>
 
