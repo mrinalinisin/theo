@@ -1,14 +1,15 @@
 {% for p in products %}
 <a href="{{ url_for('product_detail', product_id=p.id) }}" class="hero-card" data-product-id="{{ p.id }}">
-  {% if p.status == 'added' %}
+  {# Checkbox renders on every card. Selection drives Compare and Publish
+     (any status valid) and Cart-checkout (which filters to status='added'
+     server-side, gracefully skipping non-Added items). #}
   <button type="button"
     class="card-select-checkbox"
     data-product-id="{{ p.id }}"
-    aria-label="Select {{ p.name }} for checkout"
+    aria-label="Select {{ p.name }}"
     onclick="toggleCardSelect(event, this)">
     <span class="card-select-tick">&#x2713;</span>
   </button>
-  {% endif %}
   <div class="hero-card-image">
     {% if p.image_url %}
     <img src="{{ image_src(p.image_url) }}" alt="{{ p.name }}">

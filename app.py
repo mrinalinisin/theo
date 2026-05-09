@@ -773,9 +773,15 @@ def create_app():
             valid_ids = []
 
         if not valid_ids:
-            flash("Nothing selected to check out.", "warning")
+            flash("Nothing to check out — only Added items can be marked Purchased.", "warning")
             return redirect(url_for("shopping_list"))
 
+        # If selection mixed Added with non-Added, surface that we're only
+        # processing the Added subset — prevents quiet "I selected 5, only 2
+        # got marked" surprises.
+        skipped = len(ids) - len(valid_ids)
+        if skipped:
+            flash(f"Checking out {len(valid_ids)} Added item{'s' if len(valid_ids) != 1 else ''}; {skipped} non-Added item{'s' if skipped != 1 else ''} were skipped.", "info")
         session["cart"] = valid_ids
         return redirect(url_for("cart_checkout"))
 
