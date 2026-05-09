@@ -89,6 +89,17 @@ def create_app():
     def index():
         return redirect(url_for("shopping_list"))
 
+    @app.route("/surprise")
+    def surprise():
+        """Redirect to a random product's detail page. SQLite RANDOM() is
+        fine at this scale (a few hundred rows); for a much larger DB
+        we'd swap to OFFSET random_int."""
+        p = Product.query.order_by(func.random()).limit(1).first()
+        if not p:
+            flash("No products to surprise you with yet.", "info")
+            return redirect(url_for("shopping_list"))
+        return redirect(url_for("product_detail", product_id=p.id))
+
     # ── Shopping List ─────────────────────────────────────────────────────────
 
     DEFAULT_PAGE_SIZE = 10

@@ -41,6 +41,9 @@
         <button type="submit" class="nav-search-submit" aria-label="Submit search" tabindex="-1">&#x1f50d;</button>
       </form>
       {% endif %}
+      <a href="{{ url_for('surprise') }}" class="{{ 'active' if request.endpoint == 'surprise' }}" title="Open a random product">
+        <span class="icon">&#x1f3b2;</span> Surprise Me!
+      </a>
       <a href="{{ url_for('shopping_list') }}" class="{{ 'active' if request.endpoint == 'shopping_list' }}">
         <span class="icon">&#x1f4d6;</span> Browse
       </a>
@@ -96,6 +99,9 @@
   {% block header_filters %}{% endblock %}
 
   <div class="mobile-menu" id="mobileMenu">
+    <a href="{{ url_for('surprise') }}" class="{{ 'active' if request.endpoint == 'surprise' }}">
+      <span class="icon">&#x1f3b2;</span> Surprise Me!
+    </a>
     <a href="{{ url_for('shopping_list') }}" class="{{ 'active' if request.endpoint == 'shopping_list' }}">
       <span class="icon">&#x1f4d6;</span> Browse
     </a>
