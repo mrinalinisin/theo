@@ -39,6 +39,10 @@
         onsubmit="return confirm('Move this back to Added? The order details and paid amount on record will be discarded.')">
         <button type="submit" class="btn btn-secondary btn-sm">Unmark</button>
       </form>
+      {% elif product.status == 'received' %}
+      <form method="POST" action="{{ url_for('product_unreceived', product_id=product.id) }}">
+        <button type="submit" class="btn btn-secondary btn-sm" title="Item not received yet — return to in-flight state">Unmark as Received</button>
+      </form>
       {% endif %}
     </div>
   </div>

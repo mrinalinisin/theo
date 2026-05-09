@@ -591,6 +591,29 @@ def create_app():
         next_url = request.form.get("next") or url_for("purchases_calendar")
         return redirect(next_url)
 
+    @app.route("/products/<int:product_id>/unreceived", methods=["POST"])
+    def product_unreceived(product_id):
+        """Inverse of /arrived — flips a Received item back to in-flight.
+
+        Clears delivered_at and reverts status to 'shipped' (if tracking is
+        on file — the typical case) or 'purchased' (no tracking). Everything
+        else on the Purchase row (paid amount, links, expected date, notes)
+        stays intact. Useful when an item gets auto-stamped but was actually
+        still in transit.
+        """
+        product = Product.query.get_or_404(product_id)
+        if not product.purchase:
+            flash(f"\"{product.name}\" has no purchase record.", "error")
+            return redirect(url_for("product_detail", product_id=product.id))
+        product.purchase.delivered_at = None
+        if product.purchase.tracking_url:
+            product.status = "shipped"
+        else:
+            product.status = "purchased"
+        db.session.commit()
+        flash(f"\"{product.name}\" moved back to {product.status.title()}.", "success")
+        return redirect(url_for("product_detail", product_id=product.id))
+
     @app.route("/products/<int:product_id>/unpurchase", methods=["POST"])
     def product_unpurchase(product_id):
         product = Product.query.get_or_404(product_id)
