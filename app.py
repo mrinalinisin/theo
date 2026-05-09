@@ -634,6 +634,40 @@ def create_app():
         flash(f"Removed \"{product.name}\".", "success")
         return redirect(url_for("shopping_list"))
 
+    @app.route("/products/<int:product_id>/clone", methods=["POST"])
+    def product_clone(product_id):
+        """Duplicate a product into a new 'added' row.
+
+        Copies user-facing fields (URL, name, store, prices, images,
+        variants, notes, quantity, currency, tags) but resets lifecycle
+        fields: status → 'added', no Purchase row, fresh timestamps.
+        Image paths are *referenced* (not deep-copied to disk) — the new
+        product points at the same files. See discussion in commit msg
+        for why that's safe given how image edits work.
+        """
+        src = Product.query.get_or_404(product_id)
+        clone = Product(
+            url=src.url,
+            name=src.name,
+            store=src.store,
+            current_price=src.current_price,
+            original_price=src.original_price,
+            image_url=src.image_url,
+            images=list(src.images or []),  # shallow-copy the list
+            variants=dict(src.variants or {}),  # shallow-copy the dict
+            notes=src.notes,
+            quantity=src.quantity,
+            currency_id=src.currency_id,
+            status="added",
+        )
+        db.session.add(clone)
+        db.session.flush()  # need clone.id before linking tags
+        for tag in src.tags:
+            clone.tags.append(tag)
+        db.session.commit()
+        flash(f"Cloned \"{src.name}\" — edit the new copy as needed.", "success")
+        return redirect(url_for("product_detail", product_id=clone.id))
+
     # ── Cart ──────────────────────────────────────────────────────────────────
 
     @app.route("/cart/add/<int:product_id>", methods=["POST"])
