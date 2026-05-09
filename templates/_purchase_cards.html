@@ -78,7 +78,7 @@
       {% if show_arrived_button and product %}
       <form method="POST" action="{{ url_for('product_arrived', product_id=product.id) }}"
             onclick="event.stopPropagation()" style="display:inline;">
-        <button type="submit" class="btn btn-sm btn-primary">&#x2713; Arrived</button>
+        <button type="submit" class="btn btn-sm btn-primary">&#x2713; Received</button>
       </form>
       {% endif %}
     </div>
