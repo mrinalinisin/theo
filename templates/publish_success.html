@@ -16,32 +16,23 @@
     </div>
   </div>
 
-  <div class="text-sm text-faint">
-    Opening in a new tab — if your browser blocked the popup, click the link above.
-    <a href="{{ url_for('shopping_list') }}">Back to Browse</a>
+  <div class="text-sm text-faint mb-16">
+    Opened in a new tab. If your browser blocked the popup, click the link above.
   </div>
+
+  <a href="{{ url_for('shopping_list') }}" class="btn btn-primary">&larr; Back to Browse</a>
 </div>
 
 <script>
 (function() {
   const publishedUrl = {{ url|tojson }};
-  const browseUrl    = {{ url_for('shopping_list')|tojson }};
-
   // Open the published page in a new tab. The user-gesture chain from the
   // form submit usually allows this; if a strict popup blocker rejects it
   // (w === null), the manual link above is the fallback.
   const w = window.open(publishedUrl, '_blank');
-
-  // Best-effort "background tab" — approximates Roger's behaviour by
-  // immediately blurring the new window and refocusing the original.
-  // Browser support varies; some browsers ignore .blur() / .focus() across
-  // tabs. When ignored, the new tab gets foreground focus, which is still
-  // a reasonable default.
+  // Best-effort "background tab" — bring focus back to the original window.
+  // Browser support varies; when ignored the new tab keeps foreground focus.
   if (w) { try { w.blur(); window.focus(); } catch (e) {} }
-
-  // Drop the original tab back to Browse after a short pause so the user
-  // sees the success message but isn't stranded on the success page.
-  setTimeout(function() { window.location.href = browseUrl; }, 1500);
 })();
 </script>
 {% endblock %}
