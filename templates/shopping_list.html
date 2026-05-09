@@ -301,14 +301,15 @@ function refreshSelectionUi() {
     icon.textContent = n > 0 ? '💰' : '🛒';
   });
   document.querySelectorAll('.cart-label').forEach(function(label) {
-    label.textContent = n > 0 ? 'Checkout' : 'Shift + Click to add';
+    label.textContent = n > 0 ? 'Checkout' : 'Shift + Click';
   });
-  // Compare nav (driven by the same selection).
+  // Compare nav (always-visible; same empty-state hint as Cart).
   document.querySelectorAll('#compare-badge, #compare-badge-mobile').forEach(function(badge) {
     badge.textContent = n;
+    badge.style.display = n > 0 ? '' : 'none';
   });
-  navCompareLinks.forEach(function(link) {
-    link.style.display = n > 0 ? '' : 'none';
+  document.querySelectorAll('.compare-label').forEach(function(label) {
+    label.textContent = n > 0 ? 'Compare' : 'Shift + Click';
   });
   // Publish nav (also driven by the same selection).
   document.querySelectorAll('#publish-badge, #publish-badge-mobile').forEach(function(badge) {
