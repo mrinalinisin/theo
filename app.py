@@ -1074,10 +1074,17 @@ def create_app():
         )
         if not ok2:
             flash(f"Page published but index update failed: {err2}", "warning")
-        else:
-            flash(f'Published "{page_name}" to {repo}. Public URL: {_public_url(repo, slug)}', "success")
 
-        return redirect(url_for("shopping_list"))
+        # Render a success page instead of redirecting — it opens the
+        # published URL in a new tab via JS (mirrors Roger's "open in
+        # background" UX) and falls back to a manual link if popups
+        # are blocked. After ~1.5s it sends the user to /products.
+        return render_template(
+            "publish_success.html",
+            page_name=page_name,
+            url=_public_url(repo, slug),
+            repo=repo,
+        )
 
     def _github_put_file(token, repo, branch, path, content_str, commit_message):
         """PUT a file to a GitHub repo via Contents API. Handles update-vs-create
