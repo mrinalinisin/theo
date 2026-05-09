@@ -102,3 +102,32 @@
   });
 })();
 </script>
+
+{# ── Published pages list ───────────────────────────────────────────── #}
+{% if publications %}
+<div class="card mt-16">
+  <div class="card-header">Published pages</div>
+  <div class="card-body">
+    <ul class="pub-list">
+      {% for pub in publications %}
+      <li class="pub-row">
+        <div class="pub-meta">
+          <a href="{{ pub.url }}" target="_blank" rel="noopener" class="pub-name">
+            {{ pub.name }} &#x2197;
+          </a>
+          <div class="pub-sub">
+            <code>{{ pub.repo }}</code> &middot;
+            {{ pub.item_count }} item{{ 's' if pub.item_count != 1 else '' }} &middot;
+            updated {{ pub.updated_at|time_ago }}
+          </div>
+        </div>
+        <form method="POST" action="{{ url_for('publication_delete', pub_id=pub.id) }}"
+              onsubmit="return confirm('Delete \'{{ pub.name }}\' from {{ pub.repo }}?');">
+          <button type="submit" class="btn btn-secondary btn-sm">Delete</button>
+        </form>
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+</div>
+{% endif %}

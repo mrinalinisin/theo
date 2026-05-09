@@ -1185,6 +1185,106 @@ def create_app():
             err = f"HTTP {p.status_code}"
         return False, f"PUT {path}: {err}"
 
+    def _github_delete_file(token, repo, branch, path, commit_message):
+        """DELETE a file from a GitHub repo via Contents API. Two-step like
+        PUT — fetch SHA, then DELETE with it. Returns (ok, err)."""
+        import requests as _req
+        headers = {
+            "Authorization": f"Bearer {token}",
+            "Accept": "application/vnd.github+json",
+        }
+        try:
+            g = _req.get(
+                f"https://api.github.com/repos/{repo}/contents/{path}",
+                headers=headers, params={"ref": branch}, timeout=15,
+            )
+        except _req.RequestException as e:
+            return False, f"GET {path} network: {e.__class__.__name__}"
+        if g.status_code == 404:
+            # File already gone on the repo — treat as success.
+            return True, None
+        if g.status_code != 200:
+            return False, f"GET {path} → {g.status_code}"
+        sha = g.json().get("sha")
+        try:
+            d = _req.delete(
+                f"https://api.github.com/repos/{repo}/contents/{path}",
+                headers=headers,
+                json={"message": commit_message, "sha": sha, "branch": branch},
+                timeout=20,
+            )
+        except _req.RequestException as e:
+            return False, f"DELETE {path} network: {e.__class__.__name__}"
+        if d.status_code in (200, 204):
+            return True, None
+        try:
+            err = d.json().get("message", f"HTTP {d.status_code}")
+        except Exception:
+            err = f"HTTP {d.status_code}"
+        return False, f"DELETE {path}: {err}"
+
+    @app.route("/publications/<int:pub_id>/delete", methods=["POST"])
+    def publication_delete(pub_id):
+        """Delete a published page from its repo + the Publication row.
+
+        Two GitHub calls: one DELETE on `<slug>.html`, one PUT to regenerate
+        index.html from the remaining Publications for that repo (so the
+        deleted entry stops appearing in the index).
+        """
+        s = Settings.get()
+        if not s.github_token:
+            flash("Connect GitHub first.", "warning")
+            return redirect(url_for("settings_github"))
+        pub = Publication.query.get_or_404(pub_id)
+
+        ok, err = _github_delete_file(
+            token=s.github_token,
+            repo=pub.repo,
+            branch=s.github_branch or "main",
+            path=f"{pub.slug}.html",
+            commit_message=f"Delete: {pub.name}",
+        )
+        if not ok:
+            flash(f"Couldn't delete from GitHub: {err}", "error")
+            return redirect(url_for("settings_github"))
+
+        repo = pub.repo
+        db.session.delete(pub)
+        db.session.commit()
+
+        # Rewrite index.html for this repo from whatever's left.
+        remaining = (
+            Publication.query
+            .filter_by(repo=repo)
+            .order_by(Publication.updated_at.desc())
+            .all()
+        )
+        if remaining:
+            index_html = render_template(
+                "_published_index.html",
+                repo=repo,
+                publications=remaining,
+                published_at=datetime.now(timezone.utc),
+            )
+            ok2, err2 = _github_put_file(
+                token=s.github_token,
+                repo=repo,
+                branch=s.github_branch or "main",
+                path="index.html",
+                content_str=index_html,
+                commit_message="Update index after delete",
+            )
+            if not ok2:
+                flash(f"Page deleted but index update failed: {err2}", "warning")
+            else:
+                flash(f'Deleted "{pub.name}".', "success")
+        else:
+            # Last publication on this repo gone — leave index.html as-is
+            # rather than blanking it. User can manually clean if desired.
+            flash(f'Deleted "{pub.name}". Index left in place (no remaining publications).', "info")
+
+        return redirect(url_for("settings_github"))
+
     # ── Purchases page removed — /products now lists everything by default. ──
 
     @app.route("/purchases/calendar")
@@ -1311,7 +1411,13 @@ def create_app():
 
     @app.route("/settings/github")
     def settings_github():
-        return render_template("settings.html", settings=Settings.get(), tab="github")
+        pubs = Publication.query.order_by(Publication.updated_at.desc()).all()
+        return render_template(
+            "settings.html",
+            settings=Settings.get(),
+            tab="github",
+            publications=pubs,
+        )
 
     @app.route("/settings/about")
     def settings_about():
