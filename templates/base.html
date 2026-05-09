@@ -68,7 +68,7 @@
         <span class="cart-badge" id="cart-badge" {% if not cart_count %}style="display:none"{% endif %}>{{ cart_count }}</span>
       </a>
       <a href="{{ url_for('purchases_calendar') }}" class="{{ 'active' if request.endpoint == 'purchases_calendar' }}">
-        <span class="icon">&#x1f4c5;</span> Arriving today
+        <span class="icon">&#x1f4c5;</span> Deliveries
       </a>
       <a href="{{ url_for('tags') }}" class="{{ 'active' if request.endpoint in ('tags', 'tag_create', 'tag_edit') }}">
         <span class="icon">&#x1f3f7;&#xfe0f;</span> Tags
@@ -111,7 +111,7 @@
       <span class="cart-badge" id="cart-badge-mobile" {% if not cart_count %}style="display:none"{% endif %}>{{ cart_count }}</span>
     </a>
     <a href="{{ url_for('purchases_calendar') }}" class="{{ 'active' if request.endpoint == 'purchases_calendar' }}">
-      <span class="icon">&#x1f4c5;</span> Arriving today
+      <span class="icon">&#x1f4c5;</span> Deliveries
     </a>
     <a href="{{ url_for('tags') }}" class="{{ 'active' if request.endpoint in ('tags', 'tag_create', 'tag_edit') }}">
       <span class="icon">&#x1f3f7;&#xfe0f;</span> Tags

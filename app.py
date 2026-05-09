@@ -569,7 +569,7 @@ def create_app():
         """Mark a purchased / shipped item as received.
 
         Sets delivered_at = now() and flips status to 'received' so the row
-        drops off the Arriving Today calendar. expected_delivery_at is
+        drops off the Deliveries page. expected_delivery_at is
         preserved as the *original* signal for late-arrival analytics.
         """
         product = Product.query.get_or_404(product_id)
@@ -1134,7 +1134,7 @@ def create_app():
 
     @app.route("/purchases/calendar")
     def purchases_calendar():
-        """Arriving Today — chronological list of items in flight.
+        """Deliveries — chronological list of items in flight.
 
         Shows Purchased + Shipped items that haven't yet been marked
         delivered. Each row is bucketed under
@@ -1151,7 +1151,7 @@ def create_app():
             .join(Product, Purchase.product_id == Product.id)
             .filter(
                 # Both Purchased (just bought, no tracking) and Shipped
-                # (in transit) belong on the Arriving Today page — anything
+                # (in transit) belong on the Deliveries page — anything
                 # not yet Received with a known or unknown date.
                 Product.status.in_(("purchased", "shipped")),
                 Purchase.delivered_at.is_(None),
@@ -1488,7 +1488,7 @@ def _run_lightweight_migrations():
         db.session.commit()
 
     # Purchase.expected_delivery_at / delivered_at added 2026-05 — feed the
-    # "Arriving today" calendar. Both nullable; existing rows backfill to NULL
+    # "Deliveries" page. Both nullable; existing rows backfill to NULL
     # which means they don't appear on the calendar (only matters for items
     # currently in awaiting_delivery — purchased rows never appear regardless).
     if not column_exists("purchase", "expected_delivery_at"):
