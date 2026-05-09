@@ -1036,10 +1036,56 @@ def create_app():
 
     @app.route("/settings")
     def settings():
-        # No user-configurable settings right now — the page renders an
-        # empty state. Kept as a route so the nav link + Stats submenu
-        # have a home; future settings can land here.
-        return render_template("settings.html")
+        s = Settings.get()
+        return render_template("settings.html", settings=s)
+
+    @app.route("/settings", methods=["POST"])
+    def settings_save():
+        """Save GitHub publishing settings + verify the connection.
+
+        Hits the GitHub API once to confirm the repo exists and the token
+        has access. On any auth/permission failure, the values are still
+        saved (so the user can fix one field without re-typing the others)
+        but a warning flash explains what went wrong.
+        """
+        import requests as _req
+        s = Settings.get()
+        s.github_repo = (request.form.get("github_repo") or "").strip()
+        s.github_branch = (request.form.get("github_branch") or "main").strip() or "main"
+        # Token field: empty submission keeps the existing token (so users
+        # can edit repo/branch without re-pasting). A "__clear__" sentinel
+        # explicitly clears it.
+        token_raw = request.form.get("github_token", "")
+        if token_raw == "__clear__":
+            s.github_token = ""
+        elif token_raw.strip():
+            s.github_token = token_raw.strip()
+        db.session.commit()
+
+        # Validate connection if all three are now set.
+        if s.github_token and s.github_repo:
+            try:
+                resp = _req.get(
+                    f"https://api.github.com/repos/{s.github_repo}",
+                    headers={
+                        "Authorization": f"Bearer {s.github_token}",
+                        "Accept": "application/vnd.github+json",
+                    },
+                    timeout=10,
+                )
+                if resp.status_code == 200:
+                    flash(f"Connected to {s.github_repo}.", "success")
+                elif resp.status_code == 401:
+                    flash("GitHub rejected the token (401). Check it's valid and not expired.", "warning")
+                elif resp.status_code == 404:
+                    flash(f"Couldn't find repo {s.github_repo}. Check the owner/name and that the token has access.", "warning")
+                else:
+                    flash(f"GitHub returned {resp.status_code}. Connection saved but unverified.", "warning")
+            except _req.RequestException as e:
+                flash(f"Couldn't reach GitHub ({e.__class__.__name__}). Settings saved but unverified.", "warning")
+        else:
+            flash("Settings saved.", "info")
+        return redirect(url_for("settings"))
 
     # ── Template helpers ──────────────────────────────────────────────────────
 
@@ -1191,6 +1237,17 @@ def _run_lightweight_migrations():
     if not column_exists("product", "review_photos"):
         # SQLite stores JSON as TEXT; SQLAlchemy reads/writes it transparently.
         db.session.execute(text("ALTER TABLE product ADD COLUMN review_photos TEXT DEFAULT '[]'"))
+        db.session.commit()
+
+    # GitHub publishing credentials added 2026-05.
+    if not column_exists("settings", "github_token"):
+        db.session.execute(text("ALTER TABLE settings ADD COLUMN github_token TEXT DEFAULT ''"))
+        db.session.commit()
+    if not column_exists("settings", "github_repo"):
+        db.session.execute(text("ALTER TABLE settings ADD COLUMN github_repo TEXT DEFAULT ''"))
+        db.session.commit()
+    if not column_exists("settings", "github_branch"):
+        db.session.execute(text("ALTER TABLE settings ADD COLUMN github_branch TEXT DEFAULT 'main'"))
         db.session.commit()
 
     # Settings.state_refactor_done added 2026-05 — gates the one-shot

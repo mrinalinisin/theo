@@ -137,6 +137,14 @@ class Settings(db.Model):
     # see True and skip the work.
     state_refactor_done = db.Column(db.Boolean, default=False, nullable=False)
 
+    # GitHub publishing — credentials for pushing static HTML to a repo.
+    # Token is a Personal Access Token with `repo` scope (or fine-grained
+    # equivalent). Stored as plain text; this is a personal app on a
+    # private device. Format of github_repo: "owner/name".
+    github_token = db.Column(db.Text, default="")
+    github_repo = db.Column(db.Text, default="")
+    github_branch = db.Column(db.Text, default="main")
+
     @classmethod
     def get(cls):
         """Return the singleton settings row, creating it if needed."""

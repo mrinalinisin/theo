@@ -9,10 +9,65 @@
 </div>
 
 <div class="page-body" style="max-width: 640px;">
-  <div class="empty-state">
-    <div class="empty-icon">&#x2699;&#xfe0f;</div>
-    <div class="empty-title">No settings yet</div>
-    <div class="empty-desc">There's nothing to configure right now. Stats are linked from the nav above.</div>
+
+  {# ── GitHub publishing ─────────────────────────────────────────────── #}
+  {% set connected = settings.github_token and settings.github_repo %}
+  <div class="card mb-16">
+    <div class="card-header">
+      GitHub publishing
+      {% if connected %}<span class="status-pill status-received" style="margin-left:8px;">Connected</span>{% endif %}
+    </div>
+    <div class="card-body">
+      <div class="text-sm text-faint mb-16">
+        Connect a GitHub repo to publish selected listings as static HTML
+        pages. The repo can be private or public; if you enable GitHub
+        Pages on it, publications get a public URL.
+      </div>
+
+      <form method="POST" action="{{ url_for('settings_save') }}">
+        <div class="form-group">
+          <label class="form-label">Repository <span class="text-xs text-faint">(format: <code>owner/name</code>)</span></label>
+          <input type="text" name="github_repo" class="form-input"
+                 value="{{ settings.github_repo or '' }}"
+                 placeholder="sindhus/theo-collections">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Branch</label>
+          <input type="text" name="github_branch" class="form-input"
+                 value="{{ settings.github_branch or 'main' }}"
+                 placeholder="main">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">
+            Personal Access Token
+            {% if settings.github_token %}<span class="text-xs text-faint">(saved — leave blank to keep)</span>{% endif %}
+          </label>
+          <input type="password" name="github_token" class="form-input"
+                 placeholder="{{ 'ghp_•••••••••••••••••• (token saved)' if settings.github_token else 'ghp_xxxxxxxxxxxxxxxxxxxx' }}"
+                 autocomplete="off">
+          <div class="form-hint">
+            Generate at
+            <a href="https://github.com/settings/tokens?type=beta" target="_blank" rel="noopener">github.com → Settings → Developer settings → Personal access tokens</a>.
+            Needs <code>Contents: read &amp; write</code> on the target repo (fine-grained PAT)
+            or the <code>repo</code> scope (classic PAT).
+          </div>
+        </div>
+
+        <div class="flex gap-8 mt-16">
+          <button type="submit" class="btn btn-primary">Save &amp; verify</button>
+          {% if settings.github_token %}
+          <button type="submit" name="github_token" value="__clear__"
+                  class="btn btn-secondary"
+                  onclick="return confirm('Clear the saved GitHub token?')">
+            Disconnect
+          </button>
+          {% endif %}
+        </div>
+      </form>
+    </div>
   </div>
+
 </div>
 {% endblock %}
