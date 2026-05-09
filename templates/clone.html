@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block title %}Clone {{ source.name }} — Theo{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-header-top">
+    <div class="flex items-center gap-12">
+      <a href="{{ url_for('product_detail', product_id=source.id) }}" class="btn btn-ghost btn-sm">&larr; Cancel</a>
+      <div class="page-title">Clone listing</div>
+    </div>
+  </div>
+</div>
+
+<div class="page-body" style="max-width: 720px;">
+  <div class="text-sm text-faint mb-16">
+    Pre-filled from <a href="{{ url_for('product_detail', product_id=source.id) }}">{{ source.name }}</a>.
+    Edit anything you want, then click Create to add a new Added row.
+    Images and variants carry over silently — change them on the new copy after creation.
+  </div>
+
+  <form method="POST" action="{{ url_for('product_clone', product_id=source.id) }}">
+    {% if source.image_url %}
+    <div class="form-group">
+      <label class="form-label">Main image <span class="text-xs text-faint">(carried over from source)</span></label>
+      <img src="{{ image_src(source.image_url) }}" alt="" style="max-height:120px;border-radius:var(--radius-sm);">
+    </div>
+    {% endif %}
+
+    <div class="form-group">
+      <label class="form-label">Name</label>
+      <input type="text" name="name" class="form-input" value="{{ source.name }}" required>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">URL</label>
+      <input type="url" name="url" class="form-input" value="{{ source.url }}">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Store</label>
+      <input type="text" name="store" class="form-input" value="{{ source.store or '' }}">
+    </div>
+
+    <div class="form-row mb-16">
+      <div class="form-group" style="margin-bottom:0;">
+        <label class="form-label">Price</label>
+        <input type="text" name="price" class="form-input"
+               value="{{ source.current_price|int if source.current_price else '' }}">
+      </div>
+      <div class="form-group" style="margin-bottom:0;">
+        <label class="form-label">Currency</label>
+        <select name="currency_id" class="form-select">
+          {% for c in currencies %}
+          <option value="{{ c.id }}" {% if c.id == source.currency_id %}selected{% endif %}>{{ c.code }} — {{ c.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group" style="margin-bottom:0;">
+        <label class="form-label">Quantity</label>
+        <input type="number" name="quantity" class="form-input" min="1" value="{{ source.quantity or 1 }}">
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Notes</label>
+      <textarea name="notes" class="form-input" rows="3">{{ source.notes or '' }}</textarea>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Tags</label>
+      <div class="flex gap-8 flex-wrap">
+        {% for tag in tags %}
+        <label class="chip {{ 'active' if tag in source.tags }}" style="cursor:pointer;">
+          <input type="checkbox" name="tag_ids" value="{{ tag.id }}" style="display:none;"
+                 {{ 'checked' if tag in source.tags }}
+                 onchange="this.parentElement.classList.toggle('active', this.checked)">
+          {{ tag.name }}
+        </label>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="flex gap-8 mt-16">
+      <button type="submit" class="btn btn-primary">Create clone</button>
+      <a href="{{ url_for('product_detail', product_id=source.id) }}" class="btn btn-secondary">Cancel</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

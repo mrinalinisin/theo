@@ -634,36 +634,62 @@ def create_app():
         flash(f"Removed \"{product.name}\".", "success")
         return redirect(url_for("shopping_list"))
 
-    @app.route("/products/<int:product_id>/clone", methods=["POST"])
+    @app.route("/products/<int:product_id>/clone", methods=["GET", "POST"])
     def product_clone(product_id):
-        """Duplicate a product into a new 'added' row.
-
-        Copies user-facing fields (URL, name, store, prices, images,
-        variants, notes, quantity, currency, tags) but resets lifecycle
-        fields: status → 'added', no Purchase row, fresh timestamps.
-        Image paths are *referenced* (not deep-copied to disk) — the new
-        product points at the same files. See discussion in commit msg
-        for why that's safe given how image edits work.
+        """Two-step clone: GET renders a form pre-filled from the source;
+        POST creates a new 'added' product from the (possibly edited) form
+        values. Images and variants carry over verbatim — user can edit
+        those on the new product after creation.
         """
         src = Product.query.get_or_404(product_id)
+
+        if request.method == "GET":
+            tags = Tag.query.order_by(Tag.name).all()
+            currencies = Currency.query.order_by(Currency.code).all()
+            return render_template(
+                "clone.html",
+                source=src,
+                tags=tags,
+                currencies=currencies,
+            )
+
+        # POST — read form values, fall back to source for unsubmitted fields.
+        name = (request.form.get("name") or src.name).strip()
+        url = (request.form.get("url") or src.url).strip()
+        store = (request.form.get("store") or "").strip()
+        notes = request.form.get("notes", "")
+        try:
+            quantity = max(1, int(request.form.get("quantity") or src.quantity or 1))
+        except (TypeError, ValueError):
+            quantity = src.quantity or 1
+        price_raw = request.form.get("price", "")
+        price = _parse_price(price_raw) if price_raw.strip() else (src.current_price or 0)
+        try:
+            currency_id = int(request.form.get("currency_id") or src.currency_id or 0) or None
+        except (TypeError, ValueError):
+            currency_id = src.currency_id
+        tag_ids = request.form.getlist("tag_ids")
+
         clone = Product(
-            url=src.url,
-            name=src.name,
-            store=src.store,
-            current_price=src.current_price,
-            original_price=src.original_price,
+            url=url,
+            name=name,
+            store=store,
+            current_price=price,
+            original_price=price,  # treat the listed price at clone-time as the new "original"
             image_url=src.image_url,
-            images=list(src.images or []),  # shallow-copy the list
-            variants=dict(src.variants or {}),  # shallow-copy the dict
-            notes=src.notes,
-            quantity=src.quantity,
-            currency_id=src.currency_id,
+            images=list(src.images or []),  # shallow-copy — see INSIGHTS.md
+            variants=dict(src.variants or {}),
+            notes=notes,
+            quantity=quantity,
+            currency_id=currency_id,
             status="added",
         )
         db.session.add(clone)
-        db.session.flush()  # need clone.id before linking tags
-        for tag in src.tags:
-            clone.tags.append(tag)
+        db.session.flush()
+        for tid in tag_ids:
+            tag = Tag.query.get(int(tid))
+            if tag:
+                clone.tags.append(tag)
         db.session.commit()
         flash(f"Cloned \"{src.name}\" — edit the new copy as needed.", "success")
         return redirect(url_for("product_detail", product_id=clone.id))
