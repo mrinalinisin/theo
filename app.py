@@ -109,12 +109,13 @@ def create_app():
 
     def _build_product_query():
         """Parse request args and return (ordered_query, sort_key, order_key,
-        status_filter, tag_filter, search_q)."""
+        status_filter, tag_filter, search_q, domain_filter)."""
         tag_filter = request.args.get("tag")
         search_q = (request.args.get("q") or "").strip()
         status_filter = request.args.get("status", "all")
         if status_filter not in ("added", "purchased", "shipped", "received", "all"):
             status_filter = "all"
+        domain_filter = (request.args.get("domain") or "").strip().lower()
 
         SORT_COLUMNS = {
             "created": Product.created_at,
@@ -136,20 +137,48 @@ def create_app():
         if search_q:
             escaped = search_q.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
             query = query.filter(Product.name.ilike(f"%{escaped}%", escape="\\"))
+        if domain_filter:
+            # Match both bare and www-prefixed forms; the `//` anchor avoids
+            # matching "fakeamazon.com" when filtering "amazon.com".
+            query = query.filter(or_(
+                Product.url.like(f"%//{domain_filter}%"),
+                Product.url.like(f"%//www.{domain_filter}%"),
+            ))
 
         primary = sort_col.asc() if order_key == "asc" else sort_col.desc()
         tiebreak = Product.id.asc() if order_key == "asc" else Product.id.desc()
         query = query.order_by(primary, tiebreak)
 
-        return query, sort_key, order_key, status_filter, tag_filter, search_q
+        return query, sort_key, order_key, status_filter, tag_filter, search_q, domain_filter
+
+    def _all_product_domains():
+        """Return the sorted unique list of normalized hostnames used by
+        any product. 'www.' prefix stripped so amazon.com and www.amazon.com
+        collapse to one entry. Empty/invalid URLs skipped.
+        """
+        from urllib.parse import urlparse
+        seen = set()
+        rows = db.session.query(Product.url).filter(Product.url != "").distinct().all()
+        for (url,) in rows:
+            try:
+                host = (urlparse(url).hostname or "").lower()
+            except Exception:
+                continue
+            if not host:
+                continue
+            if host.startswith("www."):
+                host = host[4:]
+            seen.add(host)
+        return sorted(seen)
 
     @app.route("/products")
     def shopping_list():
-        query, sort_key, order_key, status_filter, tag_filter, search_q = (
+        query, sort_key, order_key, status_filter, tag_filter, search_q, domain_filter = (
             _build_product_query()
         )
 
         tags = Tag.query.order_by(Tag.name).all()
+        domains = _all_product_domains()
 
         active_tag_obj = None
         if tag_filter:
@@ -185,6 +214,8 @@ def create_app():
             "shopping_list.html",
             products=products_page,
             tags=tags,
+            domains=domains,
+            domain_filter=domain_filter,
             active_tag=tag_filter,
             active_tag_obj=active_tag_obj,
             has_more=has_more,
@@ -199,7 +230,7 @@ def create_app():
     @app.route("/api/products")
     def shopping_list_api():
         """Return the next page of product cards as an HTML fragment."""
-        query, sort_key, order_key, status_filter, tag_filter, search_q = (
+        query, sort_key, order_key, status_filter, tag_filter, search_q, domain_filter = (
             _build_product_query()
         )
         offset = request.args.get("offset", 0, type=int)

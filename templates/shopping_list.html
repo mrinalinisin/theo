@@ -18,6 +18,12 @@
       <option value="received" {% if status_filter == 'received' %}selected{% endif %}>Received</option>
       <option value="all" {% if status_filter == 'all' %}selected{% endif %}>All</option>
     </select>
+    <select name="domain" id="domainSelect" class="form-input" title="Filter by domain">
+      <option value="">All domains</option>
+      {% for d in (domains or []) %}
+      <option value="{{ d }}" {% if domain_filter == d %}selected{% endif %}>{{ d }}</option>
+      {% endfor %}
+    </select>
     <select name="sort" id="sortSelect" class="form-input">
       <option value="created" {% if sort_key == 'created' %}selected{% endif %}>Creation</option>
       <option value="modified" {% if sort_key == 'modified' %}selected{% endif %}>Last modified</option>
