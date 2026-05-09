@@ -1296,7 +1296,47 @@ def create_app():
     @app.route("/settings")
     def settings():
         s = Settings.get()
-        return render_template("settings.html", settings=s)
+        return render_template("settings.html", settings=s, tab="github")
+
+    @app.route("/settings/about")
+    def settings_about():
+        return render_template("settings.html", settings=Settings.get(), tab="about")
+
+    @app.route("/settings/stats")
+    def settings_stats():
+        # Database size
+        db_path = os.path.join(app.instance_path, "theo.db")
+        db_bytes = os.path.getsize(db_path)
+        if db_bytes >= 1_048_576:
+            db_size = f"{db_bytes / 1_048_576:.1f} MB"
+        else:
+            db_size = f"{db_bytes / 1024:.1f} KB"
+
+        def _measure(path, fn, **kwargs):
+            with app.test_request_context(path):
+                t0 = time.perf_counter()
+                fn(**kwargs)
+                return f"{(time.perf_counter() - t0) * 1000:.0f} ms"
+
+        load_times = {
+            "/products": _measure("/products", shopping_list),
+            "/api/products": _measure("/api/products", shopping_list_api),
+            "/tags": _measure("/tags", tags),
+            "/settings": _measure("/settings", settings),
+        }
+        sample = Product.query.first()
+        if sample:
+            load_times["/products/<id>"] = _measure(
+                f"/products/{sample.id}", product_detail, product_id=sample.id
+            )
+
+        return render_template(
+            "settings.html",
+            settings=Settings.get(),
+            tab="stats",
+            db_size=db_size,
+            load_times=load_times,
+        )
 
     @app.route("/settings", methods=["POST"])
     def settings_save():
@@ -1463,11 +1503,11 @@ def create_app():
     def tojson_safe_filter(value):
         return json.dumps(value) if value else "[]"
 
-    # ── About ────────────────────────────────────────────────────────────────
+    # ── About / Stats redirects (now tabs inside /settings) ──────────────────
 
     @app.route("/about")
     def about():
-        return render_template("about.html")
+        return redirect(url_for("settings_about"), code=302)
 
     # ── Reports — monthly summaries computed on demand from Purchase rows ────
 
@@ -1577,35 +1617,7 @@ def create_app():
 
     @app.route("/stats")
     def stats():
-        # Database size
-        db_path = os.path.join(app.instance_path, "theo.db")
-        db_bytes = os.path.getsize(db_path)
-        if db_bytes >= 1_048_576:
-            db_size = f"{db_bytes / 1_048_576:.1f} MB"
-        else:
-            db_size = f"{db_bytes / 1024:.1f} KB"
-
-        def _measure(path, fn, **kwargs):
-            with app.test_request_context(path):
-                t0 = time.perf_counter()
-                fn(**kwargs)
-                return f"{(time.perf_counter() - t0) * 1000:.0f} ms"
-
-        load_times = {
-            "/products": _measure("/products", shopping_list),
-            "/api/products": _measure("/api/products", shopping_list_api),
-            "/tags": _measure("/tags", tags),
-            "/settings": _measure("/settings", settings),
-        }
-
-        # /products/<id> needs a real product; skip if DB is empty
-        sample = Product.query.first()
-        if sample:
-            load_times["/products/<id>"] = _measure(
-                f"/products/{sample.id}", product_detail, product_id=sample.id
-            )
-
-        return render_template("stats.html", db_size=db_size, load_times=load_times)
+        return redirect(url_for("settings_stats"), code=302)
 
     return app
 

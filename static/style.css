@@ -690,6 +690,55 @@ body.has-selection .card-select-checkbox { display: flex; }
 }
 .review-video-display:hover { text-decoration: underline; }
 
+/* Settings page — sidebar + content layout */
+.settings-shell {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+  max-width: 960px;
+}
+.settings-sidebar {
+  flex: 0 0 200px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  position: sticky;
+  top: 100px;  /* sit just below the sticky top header */
+}
+.settings-tab {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  text-decoration: none;
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 500;
+  transition: background 0.12s, color 0.12s;
+}
+.settings-tab:hover { background: var(--bg); color: var(--text); }
+.settings-tab.active {
+  background: var(--accent-light);
+  color: var(--accent);
+}
+.settings-tab .icon { font-size: 14px; }
+.settings-content {
+  flex: 1;
+  min-width: 0;
+  max-width: 640px;
+}
+@media (max-width: 768px) {
+  .settings-shell { flex-direction: column; }
+  .settings-sidebar {
+    flex: 0 0 auto;
+    flex-direction: row;
+    flex-wrap: wrap;
+    position: static;
+  }
+  .settings-content { max-width: none; }
+}
+
 /* Reports — index list + per-month tag breakdown */
 .report-list {
   list-style: none;

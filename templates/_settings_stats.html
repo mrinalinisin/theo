@@ -1,0 +1,18 @@
+<div class="stats-grid mb-20">
+  <div class="stat-card">
+    <div class="stat-label">Database Size</div>
+    <div class="stat-value">{{ db_size }}</div>
+  </div>
+</div>
+
+<details class="accordion" open>
+  <summary>Route Load Times</summary>
+  <div class="accordion-body" style="padding:0;">
+    {% for route, time in load_times.items() %}
+    <div class="interval-item">
+      <div class="interval-item-name" style="font-family: var(--font-mono, monospace);">{{ route }}</div>
+      <div class="stat-trend" style="white-space:nowrap;">{{ time }}</div>
+    </div>
+    {% endfor %}
+  </div>
+</details>

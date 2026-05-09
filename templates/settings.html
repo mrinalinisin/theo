@@ -8,105 +8,27 @@
   </div>
 </div>
 
-<div class="page-body" style="max-width: 640px;">
+<div class="settings-shell page-body">
+  <aside class="settings-sidebar">
+    <a href="{{ url_for('settings') }}"
+       class="settings-tab {% if tab == 'github' %}active{% endif %}">
+      <span class="icon">&#x1f4e6;</span> GitHub
+    </a>
+    <a href="{{ url_for('settings_about') }}"
+       class="settings-tab {% if tab == 'about' %}active{% endif %}">
+      <span class="icon">&#x2139;&#xfe0f;</span> About
+    </a>
+    <a href="{{ url_for('settings_stats') }}"
+       class="settings-tab {% if tab == 'stats' %}active{% endif %}">
+      <span class="icon">&#x1f4c8;</span> Stats
+    </a>
+  </aside>
 
-  {# ── GitHub publishing ─────────────────────────────────────────────── #}
-  {% set connected = settings.github_token and settings.github_username %}
-  <div class="card mb-16">
-    <div class="card-header">
-      GitHub publishing
-      {% if connected %}<span class="status-pill status-received" style="margin-left:8px;">Connected as {{ settings.github_username }}</span>{% endif %}
-    </div>
-    <div class="card-body">
-      <div class="text-sm text-faint mb-16">
-        Connect a GitHub account to publish selected listings as static HTML.
-        Default target is <code>{{ settings.github_username or '&lt;username&gt;' }}.github.io</code>.
-        Add specific repos below if you want to push elsewhere — Theo will let you pick at publish time.
-      </div>
-
-      <form method="POST" action="{{ url_for('settings_save') }}">
-        <div class="form-group">
-          <label class="form-label">Personal Access Token{% if settings.github_token %} <span class="text-xs text-faint">(saved — leave blank to keep)</span>{% endif %}</label>
-          <input type="password" name="github_token" class="form-input"
-                 placeholder="{{ 'ghp_•••••••••••••••••• (token saved)' if settings.github_token else 'ghp_xxxxxxxxxxxxxxxxxxxx' }}"
-                 autocomplete="off">
-          <div class="form-hint">
-            <details>
-              <summary style="cursor:pointer; user-select:none;">How to generate a token</summary>
-              <div style="margin-top:10px; padding:12px 14px; background:var(--bg); border-radius:var(--radius-sm); line-height:1.6;">
-                <div style="margin-bottom:10px;"><strong>Quick path — Classic PAT</strong> (simpler):</div>
-                <ol style="margin:0 0 16px 18px;">
-                  <li>Open <a href="https://github.com/settings/tokens/new" target="_blank" rel="noopener">github.com → Settings → Developer settings → Personal access tokens → Tokens (classic) → Generate new token</a>.</li>
-                  <li>Pick a Note (e.g. "Theo publish") and an expiry.</li>
-                  <li>Tick <code>public_repo</code> if your target repo is public, or the full <code>repo</code> scope if it's private.</li>
-                  <li>Click <strong>Generate token</strong>, copy it, paste above.</li>
-                </ol>
-
-                <div style="margin-bottom:10px;"><strong>Scoped path — Fine-grained PAT</strong> (more secure, more clicks):</div>
-                <ol style="margin:0 0 0 18px;">
-                  <li>Open <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">github.com → Settings → Developer settings → Personal access tokens → Fine-grained tokens → Generate new token</a>.</li>
-                  <li>Set a Token name and expiry.</li>
-                  <li>Under <strong>Repository access</strong>, choose <strong>Only select repositories</strong> and pick your target (e.g. <code>username.github.io</code>).</li>
-                  <li>Scroll down to <strong>Permissions → Repository permissions</strong>, click <strong>+ Add permissions</strong>.</li>
-                  <li>In the picker, <strong>tick the checkbox next to "Contents"</strong> (the picker is a checkbox list, not a row of dropdowns). Close the picker.</li>
-                  <li>A <strong>Contents</strong> row now appears in the Permissions block with <em>Access: Read</em>. <strong>Click "Read" and change it to "Read and write"</strong>.</li>
-                  <li>Click <strong>Generate token</strong>, copy it, paste above.</li>
-                </ol>
-              </div>
-            </details>
-          </div>
-        </div>
-
-        <div class="form-group">
-          <label class="form-label">Branch</label>
-          <input type="text" name="github_branch" class="form-input"
-                 value="{{ settings.github_branch or 'main' }}"
-                 placeholder="main">
-        </div>
-
-        <div class="form-group">
-          <label class="form-label">Target repos <span class="text-xs text-faint">(format: <code>owner/name</code>; leave empty to default to <code>&lt;username&gt;.github.io</code>)</span></label>
-          <div id="repo-rows">
-            {% for r in (settings.github_repos or []) %}
-            <div class="repo-row" style="display:flex; gap:8px; margin-bottom:6px;">
-              <input type="text" name="github_repos[]" class="form-input" value="{{ r }}" style="flex:1;">
-              <button type="button" class="btn btn-secondary btn-sm" onclick="this.parentElement.remove()">&times;</button>
-            </div>
-            {% endfor %}
-          </div>
-          <button type="button" id="repo-add-btn" class="btn btn-secondary btn-sm" style="margin-top:6px;">+ Add repo</button>
-        </div>
-
-        <div class="flex gap-8 mt-16">
-          <button type="submit" class="btn btn-primary">Save &amp; verify</button>
-          {% if settings.github_token %}
-          <button type="submit" name="github_token" value="__clear__"
-                  class="btn btn-secondary"
-                  onclick="return confirm('Clear the saved GitHub token?')">
-            Disconnect
-          </button>
-          {% endif %}
-        </div>
-      </form>
-    </div>
-  </div>
-
+  <main class="settings-content">
+    {% if tab == 'github' %}{% include '_settings_github.html' %}
+    {% elif tab == 'about' %}{% include '_settings_about.html' %}
+    {% elif tab == 'stats' %}{% include '_settings_stats.html' %}
+    {% endif %}
+  </main>
 </div>
-
-<script>
-(function() {
-  const btn = document.getElementById('repo-add-btn');
-  const rows = document.getElementById('repo-rows');
-  if (!btn || !rows) return;
-  btn.addEventListener('click', () => {
-    const row = document.createElement('div');
-    row.className = 'repo-row';
-    row.style.cssText = 'display:flex; gap:8px; margin-bottom:6px;';
-    row.innerHTML = '<input type="text" name="github_repos[]" class="form-input" placeholder="owner/name" style="flex:1;">' +
-                    '<button type="button" class="btn btn-secondary btn-sm" onclick="this.parentElement.remove()">&times;</button>';
-    rows.appendChild(row);
-    row.querySelector('input').focus();
-  });
-})();
-</script>
 {% endblock %}
