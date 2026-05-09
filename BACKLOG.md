@@ -2,7 +2,6 @@
 
 Ideas and feature requests captured for later. The first section is what's most on my mind right now; the rest are loosely in capture order.
 
-- [ ] Add reviews on items, with ability to paste-zone photos and link to product videos.
 - [ ] Listings should have a link to video instructions.
 - [ ] A running list reviewing much-less-appreciated household appliances.
 - [ ] A running-list article reviewing only totepacks / convertibles.
