@@ -921,15 +921,17 @@ def create_app():
     # render HTML → push to GitHub → regenerate index.html → redirect.
 
     def _resolve_publish_targets(s):
-        """Return the list of usable repos. If user configured none but is
-        connected, the default <username>.github.io is the implicit single
-        target. Empty list ⇒ no token configured → caller redirects to /settings.
+        """Return the list of usable repos in "owner/name" form. If user
+        configured none but is connected, the default
+        <username>/<username>.github.io is the implicit single target.
+        Empty list ⇒ no token configured → caller redirects to /settings.
         """
         if not s.github_token or not s.github_username:
             return []
         repos = list(s.github_repos or [])
         if not repos:
-            repos = [f"{s.github_username}.github.io"]
+            u = s.github_username
+            repos = [f"{u}/{u}.github.io"]
         return repos
 
     def _slugify(name):
