@@ -690,6 +690,49 @@ body.has-selection .card-select-checkbox { display: flex; }
 }
 .review-video-display:hover { text-decoration: underline; }
 
+/* Reports — index list + per-month tag breakdown */
+.report-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.report-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 18px;
+  background: var(--surface);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius);
+  text-decoration: none;
+  color: inherit;
+  gap: 12px;
+}
+.report-row:hover { border-color: var(--accent); background: white; }
+.report-row-label { font-size: 16px; font-weight: 600; }
+.report-row-stats { font-size: 13px; color: var(--text-muted); text-align: right; }
+
+.report-tag-list { list-style: none; padding: 0; margin: 0; }
+.report-tag-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 14px;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border-light);
+  font-size: 14px;
+}
+.report-tag-row:last-child { border-bottom: none; }
+.report-tag-name { display: flex; align-items: center; gap: 8px; font-weight: 500; }
+.report-tag-name .tag-dot {
+  width: 10px; height: 10px; border-radius: 50%; display: inline-block;
+}
+.report-tag-count { color: var(--text-muted); font-size: 13px; white-space: nowrap; }
+.report-tag-totals { color: var(--text); font-weight: 500; white-space: nowrap; }
+
 .hero-card-footer {
   padding: 6px 10px;
   border-top: 1px solid var(--border-light);

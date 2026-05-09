@@ -1469,6 +1469,110 @@ def create_app():
     def about():
         return render_template("about.html")
 
+    # ── Reports — monthly summaries computed on demand from Purchase rows ────
+
+    def _compute_month_report(year, month):
+        """Return (totals_by_currency, item_count, by_tag) for a given month.
+
+        totals_by_currency: list of (symbol, total) tuples, summed across
+                            every Purchase made that month.
+        item_count:         number of Purchase rows in scope.
+        by_tag:             list of dicts {tag, count, totals: {sym: amt}}
+                            sorted by count desc. An untagged bucket appears
+                            as tag=None when present.
+        """
+        from datetime import date as _date
+        start = datetime(year, month, 1, tzinfo=timezone.utc)
+        if month == 12:
+            end = datetime(year + 1, 1, 1, tzinfo=timezone.utc)
+        else:
+            end = datetime(year, month + 1, 1, tzinfo=timezone.utc)
+
+        purchases = (
+            Purchase.query
+            .join(Product, Purchase.product_id == Product.id)
+            .filter(Purchase.purchased_at >= start)
+            .filter(Purchase.purchased_at < end)
+            .all()
+        )
+
+        totals = {}              # symbol → running total
+        per_tag = {}             # tag.id (or None) → {tag, count, totals}
+        for p in purchases:
+            prod = p.product
+            if not prod:
+                continue
+            sym = prod.currency_symbol  # respects per-product currency
+            totals[sym] = totals.get(sym, 0) + (p.paid_amount or 0)
+            tags = list(prod.tags) if prod.tags else [None]
+            for t in tags:
+                key = t.id if t else None
+                if key not in per_tag:
+                    per_tag[key] = {"tag": t, "count": 0, "totals": {}}
+                per_tag[key]["count"] += 1
+                per_tag[key]["totals"][sym] = per_tag[key]["totals"].get(sym, 0) + (p.paid_amount or 0)
+
+        totals_list = sorted(totals.items(), key=lambda kv: -kv[1])
+        by_tag = sorted(per_tag.values(), key=lambda d: -d["count"])
+        return totals_list, len(purchases), by_tag
+
+    def _months_with_purchases():
+        """Distinct (year, month) of any Purchase, newest first."""
+        rows = (
+            db.session.query(
+                func.strftime("%Y", Purchase.purchased_at).label("y"),
+                func.strftime("%m", Purchase.purchased_at).label("m"),
+            )
+            .distinct()
+            .all()
+        )
+        out = []
+        for y, m in rows:
+            try:
+                out.append((int(y), int(m)))
+            except (TypeError, ValueError):
+                continue
+        return sorted(out, reverse=True)
+
+    @app.route("/reports")
+    def reports():
+        months = _months_with_purchases()
+        # Pre-compute lightweight summary per month for the index card list.
+        summaries = []
+        for (y, m) in months:
+            totals, count, _ = _compute_month_report(y, m)
+            summaries.append({
+                "year": y, "month": m,
+                "label": datetime(y, m, 1).strftime("%B %Y"),
+                "slug": f"{y:04d}-{m:02d}",
+                "totals": totals,
+                "count": count,
+            })
+        return render_template("reports_index.html", summaries=summaries)
+
+    @app.route("/reports/<period>")
+    def report_month(period):
+        # period format: YYYY-MM
+        try:
+            y_str, m_str = period.split("-", 1)
+            year, month = int(y_str), int(m_str)
+            if not (1 <= month <= 12):
+                raise ValueError
+        except (TypeError, ValueError):
+            flash("Invalid month.", "error")
+            return redirect(url_for("reports"))
+        totals, count, by_tag = _compute_month_report(year, month)
+        label = datetime(year, month, 1).strftime("%B %Y")
+        return render_template(
+            "report_month.html",
+            label=label,
+            year=year,
+            month=month,
+            totals=totals,
+            count=count,
+            by_tag=by_tag,
+        )
+
     # ── Stats ────────────────────────────────────────────────────────────────
 
     @app.route("/stats")

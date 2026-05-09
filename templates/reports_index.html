@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Reports — Theo{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-header-top">
+    <div class="page-title">Reports</div>
+  </div>
+</div>
+
+<div class="page-body" style="max-width: 720px;">
+{% if not summaries %}
+  <div class="empty-state">
+    <div class="empty-icon">&#x1f4c8;</div>
+    <div class="empty-title">No purchases yet</div>
+    <div class="empty-desc">Mark items as purchased to start building monthly reports.</div>
+  </div>
+{% else %}
+  <div class="text-sm text-faint mb-16">
+    One report per month — auto-generated from your purchases.
+  </div>
+  <ul class="report-list">
+    {% for s in summaries %}
+    <li>
+      <a href="{{ url_for('report_month', period=s.slug) }}" class="report-row">
+        <div class="report-row-label">{{ s.label }}</div>
+        <div class="report-row-stats">
+          {{ s.count }} item{{ 's' if s.count != 1 else '' }}
+          {% for sym, total in s.totals %}
+          &middot; <strong>{{ sym }}{{ total|int }}</strong>
+          {% endfor %}
+        </div>
+      </a>
+    </li>
+    {% endfor %}
+  </ul>
+{% endif %}
+</div>
+{% endblock %}

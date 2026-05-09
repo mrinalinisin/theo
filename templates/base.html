@@ -70,6 +70,9 @@
       <a href="{{ url_for('purchases_calendar') }}" class="{{ 'active' if request.endpoint == 'purchases_calendar' }}">
         <span class="icon">&#x1f4c5;</span> Deliveries
       </a>
+      <a href="{{ url_for('reports') }}" class="{{ 'active' if request.endpoint in ('reports', 'report_month') }}">
+        <span class="icon">&#x1f4ca;</span> Reports
+      </a>
       <div class="nav-dropdown">
         <a href="{{ url_for('settings') }}" class="{{ 'active' if request.endpoint in ('settings', 'tags', 'tag_create', 'tag_edit') or request.path == '/stats' }}">
           <span class="icon">&#x2699;&#xfe0f;</span> Settings
@@ -115,6 +118,9 @@
     </a>
     <a href="{{ url_for('purchases_calendar') }}" class="{{ 'active' if request.endpoint == 'purchases_calendar' }}">
       <span class="icon">&#x1f4c5;</span> Deliveries
+    </a>
+    <a href="{{ url_for('reports') }}" class="{{ 'active' if request.endpoint in ('reports', 'report_month') }}">
+      <span class="icon">&#x1f4ca;</span> Reports
     </a>
     <a href="{{ url_for('settings') }}" class="{{ 'active' if request.endpoint == 'settings' }}">
       <span class="icon">&#x2699;&#xfe0f;</span> Settings

@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}{{ label }} — Theo{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-header-top">
+    <div class="flex items-center gap-12">
+      <a href="{{ url_for('reports') }}" class="btn btn-ghost btn-sm">&larr; All reports</a>
+      <div class="page-title">{{ label }}</div>
+    </div>
+  </div>
+</div>
+
+<div class="page-body" style="max-width: 720px;">
+
+  {# ── Top summary ───────────────────────────────────────────────────── #}
+  <div class="card mb-16">
+    <div class="card-body">
+      <div class="text-xs text-faint" style="text-transform:uppercase; letter-spacing:0.04em;">Totals</div>
+      <div style="margin-top:8px;">
+        <span style="font-size:32px; font-weight:700;">{{ count }}</span>
+        <span class="text-sm text-faint">item{{ 's' if count != 1 else '' }} purchased</span>
+      </div>
+      {% if totals %}
+      <div style="margin-top:14px; display:flex; flex-wrap:wrap; gap:16px;">
+        {% for sym, total in totals %}
+        <div>
+          <div class="text-xs text-faint">spent</div>
+          <div style="font-size:22px; font-weight:600;">{{ sym }}{{ "%.0f"|format(total) }}</div>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  {# ── By tag ────────────────────────────────────────────────────────── #}
+  <div class="card">
+    <div class="card-header">By tag</div>
+    <div class="card-body">
+      {% if not by_tag %}
+      <div class="text-sm text-faint">No items.</div>
+      {% else %}
+      <ul class="report-tag-list">
+        {% for row in by_tag %}
+        <li class="report-tag-row">
+          <div class="report-tag-name">
+            {% if row.tag %}
+              <span class="tag-dot" style="background:{{ row.tag.colour }};"></span>{{ row.tag.name }}
+            {% else %}
+              <span class="text-faint">(no tag)</span>
+            {% endif %}
+          </div>
+          <div class="report-tag-count">{{ row.count }} item{{ 's' if row.count != 1 else '' }}</div>
+          <div class="report-tag-totals">
+            {% for sym, t in row.totals.items() %}
+            <span>{{ sym }}{{ "%.0f"|format(t) }}</span>{% if not loop.last %} &middot; {% endif %}
+            {% endfor %}
+          </div>
+        </li>
+        {% endfor %}
+      </ul>
+      {% endif %}
+    </div>
+  </div>
+
+</div>
+{% endblock %}
