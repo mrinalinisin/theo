@@ -139,7 +139,22 @@ def create_app():
 
         primary = sort_col.asc() if order_key == "asc" else sort_col.desc()
         tiebreak = Product.id.asc() if order_key == "asc" else Product.id.desc()
-        query = query.order_by(primary, tiebreak)
+        # When showing the unified "all" view, prepend a status-priority sort
+        # so Added items surface first — makes Shift+Click multi-select
+        # discoverable without forcing the user to manually filter.
+        # Within each status, the user's chosen sort still applies.
+        if status_filter == "all":
+            from sqlalchemy import case
+            status_priority = case(
+                (Product.status == "added", 0),
+                (Product.status == "purchased", 1),
+                (Product.status == "shipped", 2),
+                (Product.status == "received", 3),
+                else_=4,
+            )
+            query = query.order_by(status_priority, primary, tiebreak)
+        else:
+            query = query.order_by(primary, tiebreak)
 
         return query, sort_key, order_key, status_filter, tag_filter, search_q
 

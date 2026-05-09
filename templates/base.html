@@ -70,14 +70,14 @@
       <a href="{{ url_for('purchases_calendar') }}" class="{{ 'active' if request.endpoint == 'purchases_calendar' }}">
         <span class="icon">&#x1f4c5;</span> Deliveries
       </a>
-      <a href="{{ url_for('tags') }}" class="{{ 'active' if request.endpoint in ('tags', 'tag_create', 'tag_edit') }}">
-        <span class="icon">&#x1f3f7;&#xfe0f;</span> Tags
-      </a>
       <div class="nav-dropdown">
-        <a href="{{ url_for('settings') }}" class="{{ 'active' if request.endpoint == 'settings' or request.path == '/stats' }}">
+        <a href="{{ url_for('settings') }}" class="{{ 'active' if request.endpoint in ('settings', 'tags', 'tag_create', 'tag_edit') or request.path == '/stats' }}">
           <span class="icon">&#x2699;&#xfe0f;</span> Settings
         </a>
         <div class="nav-dropdown-menu">
+          <a href="{{ url_for('tags') }}" class="{{ 'active' if request.endpoint in ('tags', 'tag_create', 'tag_edit') }}">
+            <span class="icon">&#x1f3f7;&#xfe0f;</span> Tags
+          </a>
           <a href="{{ url_for('stats') }}" class="{{ 'active' if request.path == '/stats' }}">
             <span class="icon">&#x1f4c8;</span> Stats
           </a>
@@ -113,11 +113,11 @@
     <a href="{{ url_for('purchases_calendar') }}" class="{{ 'active' if request.endpoint == 'purchases_calendar' }}">
       <span class="icon">&#x1f4c5;</span> Deliveries
     </a>
-    <a href="{{ url_for('tags') }}" class="{{ 'active' if request.endpoint in ('tags', 'tag_create', 'tag_edit') }}">
-      <span class="icon">&#x1f3f7;&#xfe0f;</span> Tags
-    </a>
     <a href="{{ url_for('settings') }}" class="{{ 'active' if request.endpoint == 'settings' }}">
       <span class="icon">&#x2699;&#xfe0f;</span> Settings
+    </a>
+    <a href="{{ url_for('tags') }}" class="mobile-submenu {{ 'active' if request.endpoint in ('tags', 'tag_create', 'tag_edit') }}">
+      <span class="icon">&#x1f3f7;&#xfe0f;</span> Tags
     </a>
     <a href="{{ url_for('stats') }}" class="mobile-submenu {{ 'active' if request.path == '/stats' }}">
       <span class="icon">&#x1f4c8;</span> Stats
