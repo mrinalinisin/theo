@@ -81,6 +81,9 @@
           <a href="{{ url_for('stats') }}" class="{{ 'active' if request.path == '/stats' }}">
             <span class="icon">&#x1f4c8;</span> Stats
           </a>
+          <a href="{{ url_for('about') }}" class="{{ 'active' if request.endpoint == 'about' }}">
+            <span class="icon">&#x2139;&#xfe0f;</span> About
+          </a>
         </div>
       </div>
     </nav>
@@ -121,6 +124,9 @@
     </a>
     <a href="{{ url_for('stats') }}" class="mobile-submenu {{ 'active' if request.path == '/stats' }}">
       <span class="icon">&#x1f4c8;</span> Stats
+    </a>
+    <a href="{{ url_for('about') }}" class="mobile-submenu {{ 'active' if request.endpoint == 'about' }}">
+      <span class="icon">&#x2139;&#xfe0f;</span> About
     </a>
     {% if request.endpoint == 'shopping_list' %}
     <form class="mobile-search" method="GET" action="{{ url_for(request.endpoint) }}" role="search">

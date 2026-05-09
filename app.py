@@ -1463,6 +1463,12 @@ def create_app():
     def tojson_safe_filter(value):
         return json.dumps(value) if value else "[]"
 
+    # ── About ────────────────────────────────────────────────────────────────
+
+    @app.route("/about")
+    def about():
+        return render_template("about.html")
+
     # ── Stats ────────────────────────────────────────────────────────────────
 
     @app.route("/stats")
