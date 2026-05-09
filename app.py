@@ -117,9 +117,9 @@ def create_app():
         status_filter, tag_filter, search_q)."""
         tag_filter = request.args.get("tag")
         search_q = (request.args.get("q") or "").strip()
-        status_filter = request.args.get("status", "all")
+        status_filter = request.args.get("status", "added")
         if status_filter not in ("added", "purchased", "shipped", "received", "all"):
-            status_filter = "all"
+            status_filter = "added"
 
         SORT_COLUMNS = {
             "created": Product.created_at,
