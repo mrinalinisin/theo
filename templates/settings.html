@@ -14,10 +14,6 @@
        class="settings-tab {% if tab == 'github' %}active{% endif %}">
       <span class="icon">&#x1f4e6;</span> GitHub
     </a>
-    <a href="{{ url_for('settings_about') }}"
-       class="settings-tab {% if tab == 'about' %}active{% endif %}">
-      <span class="icon">&#x2139;&#xfe0f;</span> About
-    </a>
     <a href="{{ url_for('settings_stats') }}"
        class="settings-tab {% if tab == 'stats' %}active{% endif %}">
       <span class="icon">&#x1f4c8;</span> Stats
@@ -26,9 +22,13 @@
 
   <main class="settings-content">
     {% if tab == 'github' %}{% include '_settings_github.html' %}
-    {% elif tab == 'about' %}{% include '_settings_about.html' %}
     {% elif tab == 'stats' %}{% include '_settings_stats.html' %}
     {% endif %}
   </main>
 </div>
+
+<footer class="settings-footer">
+  Made with lots of tokens by Claude and Mrinalini S. &middot;
+  Write to her on <strong>mrinalini_s at icloud.com</strong>
+</footer>
 {% endblock %}

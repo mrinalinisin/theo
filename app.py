@@ -1421,7 +1421,8 @@ def create_app():
 
     @app.route("/settings/about")
     def settings_about():
-        return render_template("settings.html", settings=Settings.get(), tab="about")
+        # About moved to a footer on all /settings pages; preserve the old URL.
+        return redirect(url_for("settings_github"), code=302)
 
     @app.route("/settings/stats")
     def settings_stats():
