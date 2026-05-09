@@ -117,9 +117,9 @@ def create_app():
         status_filter, tag_filter, search_q)."""
         tag_filter = request.args.get("tag")
         search_q = (request.args.get("q") or "").strip()
-        status_filter = request.args.get("status", "added")
+        status_filter = request.args.get("status", "all")
         if status_filter not in ("added", "purchased", "shipped", "received", "all"):
-            status_filter = "added"
+            status_filter = "all"
 
         SORT_COLUMNS = {
             "created": Product.created_at,
@@ -823,7 +823,7 @@ def create_app():
         db.session.commit()
         session["cart"] = []
         flash(f"Checked out {count} item{'s' if count != 1 else ''} successfully!", "success")
-        return redirect(url_for("purchases"))
+        return redirect(url_for("shopping_list"))
 
     # ── Compare ───────────────────────────────────────────────────────────────
     # The compare basket mirrors the cart pattern: a session-stored list of
@@ -890,106 +890,7 @@ def create_app():
 
         return render_template("compare.html", products=products, max_items=COMPARE_MAX)
 
-    # ── Purchases ─────────────────────────────────────────────────────────────
-
-    def _build_purchase_query():
-        """Parse request args and return (ordered_query, period, tag_filter,
-        sort_key, order_key, search_q, active_date)."""
-        period = request.args.get("period", "all")
-        tag_filter = request.args.get("tag", "")
-        search_q = (request.args.get("q") or "").strip()
-        sort_key = request.args.get("sort", "date")
-        order_key = request.args.get("order", "desc")
-        now = datetime.utcnow()
-
-        # Optional single-day filter (YYYY-MM-DD). When set it wins over `period`
-        # — a specific day is strictly narrower than any rolling window.
-        active_date = None
-        date_str = (request.args.get("date") or "").strip()
-        if date_str:
-            try:
-                active_date = datetime.strptime(date_str, "%Y-%m-%d").date()
-            except ValueError:
-                active_date = None
-
-        query = Purchase.query.join(Product, Purchase.product_id == Product.id, isouter=True)
-        if active_date:
-            next_day = active_date + timedelta(days=1)
-            query = query.filter(
-                Purchase.purchased_at >= active_date,
-                Purchase.purchased_at < next_day,
-            )
-        elif period == "1m":
-            query = query.filter(Purchase.purchased_at >= now - timedelta(days=30))
-        elif period == "3m":
-            query = query.filter(Purchase.purchased_at >= now - timedelta(days=90))
-        elif period == "6m":
-            query = query.filter(Purchase.purchased_at >= now - timedelta(days=180))
-        elif period == "1y":
-            query = query.filter(Purchase.purchased_at >= now - timedelta(days=365))
-
-        if tag_filter:
-            try:
-                query = query.filter(Product.tags.any(Tag.id == int(tag_filter)))
-            except (TypeError, ValueError):
-                pass
-
-        if search_q:
-            escaped = search_q.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
-            query = query.filter(Product.name.ilike(f"%{escaped}%", escape="\\"))
-
-        if sort_key == "amount":
-            sort_col = Purchase.paid_amount
-        elif sort_key == "modified":
-            sort_col = Product.updated_at
-        else:
-            sort_col = Purchase.purchased_at
-        query = query.order_by(sort_col.asc() if order_key == "asc" else sort_col.desc())
-
-        return query, period, tag_filter, sort_key, order_key, search_q, active_date
-
-    @app.route("/purchases")
-    def purchases():
-        query, period, tag_filter, sort_key, order_key, search_q, active_date = (
-            _build_purchase_query()
-        )
-        tags = Tag.query.order_by(Tag.name).all()
-
-        page_size = _get_page_size()
-        total_count = query.count()
-        purchases_page = query.limit(page_size).all()
-        has_more = len(purchases_page) < total_count
-
-        return render_template(
-            "purchases.html",
-            purchases=purchases_page,
-            tags=tags,
-            active_tag=tag_filter,
-            period=period,
-            sort_key=sort_key,
-            order_key=order_key,
-            search_q=search_q,
-            has_more=has_more,
-            total_count=total_count,
-            active_date=active_date,
-        )
-
-    @app.route("/api/purchases")
-    def purchases_api():
-        """Return the next page of purchase cards as an HTML fragment."""
-        query, period, tag_filter, sort_key, order_key, search_q, _active_date = (
-            _build_purchase_query()
-        )
-        offset = request.args.get("offset", 0, type=int)
-        limit = request.args.get("limit", _get_page_size(), type=int)
-
-        total_count = query.count()
-        purchases_page = query.offset(offset).limit(limit).all()
-        has_more = (offset + len(purchases_page)) < total_count
-        next_offset = offset + len(purchases_page)
-
-        html = render_template("_purchase_cards.html", purchases=purchases_page)
-        return jsonify(html=html, has_more=has_more, next_offset=next_offset, total_count=total_count)
+    # ── Purchases page removed — /products now lists everything by default. ──
 
     @app.route("/purchases/calendar")
     def purchases_calendar():
@@ -1274,7 +1175,6 @@ def create_app():
         load_times = {
             "/products": _measure("/products", shopping_list),
             "/api/products": _measure("/api/products", shopping_list_api),
-            "/purchases": _measure("/purchases", purchases),
             "/tags": _measure("/tags", tags),
             "/settings": _measure("/settings", settings),
         }

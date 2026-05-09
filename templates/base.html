@@ -24,7 +24,7 @@
       <span class="top-header-logo-text">Theo<span class="top-header-tagline">Inventory for life</span></span>
     </a>
     <nav class="top-header-nav">
-      {% if request.endpoint in ('shopping_list', 'purchases') %}
+      {% if request.endpoint == 'shopping_list' %}
       <form class="nav-search" method="GET" action="{{ url_for(request.endpoint) }}" role="search">
         {% for k, v in request.args.items() %}{% if k != 'q' %}
         <input type="hidden" name="{{ k }}" value="{{ v }}">
@@ -55,9 +55,6 @@
          {% if not compare_count %}style="display:none"{% endif %}>
         <span class="icon">&#x2696;&#xfe0f;</span> Compare
         <span class="cart-badge" id="compare-badge">{{ compare_count }}</span>
-      </a>
-      <a href="{{ url_for('purchases') }}" class="{{ 'active' if request.endpoint == 'purchases' }}">
-        <span class="icon">&#x1f4e6;</span> Purchases
       </a>
       <a href="{{ url_for('purchases_calendar') }}" class="{{ 'active' if request.endpoint == 'purchases_calendar' }}">
         <span class="icon">&#x1f4c5;</span> Arriving today
@@ -99,9 +96,6 @@
       <span class="icon">&#x2696;&#xfe0f;</span> Compare
       <span class="cart-badge" id="compare-badge-mobile">{{ compare_count }}</span>
     </a>
-    <a href="{{ url_for('purchases') }}" class="{{ 'active' if request.endpoint == 'purchases' }}">
-      <span class="icon">&#x1f4e6;</span> Purchases
-    </a>
     <a href="{{ url_for('purchases_calendar') }}" class="{{ 'active' if request.endpoint == 'purchases_calendar' }}">
       <span class="icon">&#x1f4c5;</span> Arriving today
     </a>
@@ -117,7 +111,7 @@
     <a href="{{ url_for('admin') }}" class="mobile-submenu {{ 'active' if request.endpoint == 'admin' }}">
       <span class="icon">&#x1f6e0;&#xfe0f;</span> Admin
     </a>
-    {% if request.endpoint in ('shopping_list', 'purchases') %}
+    {% if request.endpoint == 'shopping_list' %}
     <form class="mobile-search" method="GET" action="{{ url_for(request.endpoint) }}" role="search">
       {% for k, v in request.args.items() %}{% if k != 'q' %}
       <input type="hidden" name="{{ k }}" value="{{ v }}">
