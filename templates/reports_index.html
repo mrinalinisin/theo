@@ -3,24 +3,25 @@
 
 {% block content %}
 <div class="page-body" style="max-width: 720px;">
-{% if not summaries %}
+{% if not days %}
   <div class="empty-state">
     <div class="empty-icon">&#x1f4c8;</div>
     <div class="empty-title">No purchases yet</div>
-    <div class="empty-desc">Mark items as purchased to start building monthly reports.</div>
+    <div class="empty-desc">Mark items as purchased to start building reports.</div>
   </div>
 {% else %}
   <div class="text-sm text-faint mb-16">
-    One report per month — auto-generated from your purchases.
+    One row per day you bought something — click any row to see that
+    month's calendar and tag breakdown.
   </div>
   <ul class="report-list">
-    {% for s in summaries %}
+    {% for d in days %}
     <li>
-      <a href="{{ url_for('report_month', period=s.slug) }}" class="report-row">
-        <div class="report-row-label">{{ s.label }}</div>
+      <a href="{{ url_for('report_month', period=d.month_slug) }}#day-{{ d.date.day }}" class="report-row">
+        <div class="report-row-label">{{ d.label }}</div>
         <div class="report-row-stats">
-          {{ s.count }} item{{ 's' if s.count != 1 else '' }}
-          {% for sym, total in s.totals %}
+          {{ d.count }} item{{ 's' if d.count != 1 else '' }}
+          {% for sym, total in d.totals %}
           &middot; <strong>{{ sym }}{{ total|int }}</strong>
           {% endfor %}
         </div>

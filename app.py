@@ -2304,21 +2304,47 @@ def create_app():
                 continue
         return sorted(out, reverse=True)
 
+    def _days_with_purchases_summary():
+        """Day-level rollup for the /reports index — one entry per date that
+        carries any purchase, newest first. Bucketing happens in Python so we
+        can read each product's currency_symbol (a derived attribute on the
+        Currency relationship rather than a stored column)."""
+        rows = (
+            Purchase.query
+            .join(Product, Purchase.product_id == Product.id)
+            .all()
+        )
+        by_day = {}  # date → {count, totals: {sym: amt}}
+        for p in rows:
+            if not p.purchased_at:
+                continue
+            prod = p.product
+            if not prod:
+                continue
+            d = p.purchased_at.date()
+            sym = prod.currency_symbol
+            entry = by_day.setdefault(d, {"count": 0, "totals": {}})
+            entry["count"] += 1
+            entry["totals"][sym] = entry["totals"].get(sym, 0) + (p.paid_amount or 0)
+
+        out = []
+        for d in sorted(by_day.keys(), reverse=True):
+            info = by_day[d]
+            out.append({
+                "date": d,
+                "label": d.strftime("%a, %b %d, %Y"),
+                "month_slug": d.strftime("%Y-%m"),
+                "count": info["count"],
+                # Sort symbols by absolute spend so the dominant currency
+                # leads the row.
+                "totals": sorted(info["totals"].items(), key=lambda kv: -kv[1]),
+            })
+        return out
+
     @app.route("/reports")
     def reports():
-        months = _months_with_purchases()
-        # Pre-compute lightweight summary per month for the index card list.
-        summaries = []
-        for (y, m) in months:
-            totals, count, _ = _compute_month_report(y, m)
-            summaries.append({
-                "year": y, "month": m,
-                "label": datetime(y, m, 1).strftime("%B %Y"),
-                "slug": f"{y:04d}-{m:02d}",
-                "totals": totals,
-                "count": count,
-            })
-        return render_template("reports_index.html", summaries=summaries)
+        days = _days_with_purchases_summary()
+        return render_template("reports_index.html", days=days)
 
     @app.route("/reports/<period>")
     def report_month(period):

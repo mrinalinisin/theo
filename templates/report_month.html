@@ -50,6 +50,7 @@
             {% else %}
               {% set c = day_counts.get(day, 0) %}
               <div class="report-cal-cell {% if c %}has-items{% endif %}"
+                   id="day-{{ day }}"
                    {% if c %}title="{{ c }} item{{ '' if c == 1 else 's' }} on {{ '%02d'|format(day) }}/{{ '%02d'|format(month) }}/{{ year }}"{% endif %}>
                 <div class="report-cal-day">{{ day }}</div>
                 {% if c %}
