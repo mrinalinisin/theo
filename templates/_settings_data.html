@@ -1,10 +1,11 @@
 <div class="card">
-  <div class="card-header">Export</div>
+  <div class="card-header">Migration bundle &mdash; export</div>
   <div class="card-body">
     <div class="text-faint mb-16" style="font-size:15px; line-height:1.55;">
-      Download every product, tag, purchase, and review (plus the image files
-      they reference) as a single <code>.zip</code> bundle. Tokens, publications,
-      and cached previews are <strong>not</strong> included.
+      Single <code>.zip</code> for moving your inventory between Theo
+      instances. Includes products, tags, currencies, purchases, brands,
+      See-Also relations, and every image file they reference. Tokens,
+      publications, and cached previews are <strong>not</strong> included.
     </div>
     <div class="text-faint mb-16" style="font-size:13px;">
       Current inventory: <strong>{{ stats.products }}</strong> products
@@ -19,14 +20,14 @@
 </div>
 
 <div class="card mt-16">
-  <div class="card-header">Import</div>
+  <div class="card-header">Migration bundle &mdash; import</div>
   <div class="card-body">
     <div class="text-faint mb-16" style="font-size:15px; line-height:1.55;">
       Upload a <code>theo_export.zip</code> produced by any Theo instance.
-      Products are matched by URL — existing ones are left untouched, new ones
-      are added. Tags and currencies are reused if already present, otherwise
-      created. Image files are renamed on the way in so they never collide with
-      what you already have.
+      Products are matched by URL &mdash; existing ones are left untouched,
+      new ones are added. Tags, currencies, and brands are reused if already
+      present, otherwise created. Image files are renamed on the way in so
+      they never collide with what you already have.
     </div>
     <form method="POST" action="{{ url_for('settings_import') }}" enctype="multipart/form-data">
       <div class="form-group">
@@ -37,5 +38,52 @@
         &#x2b06;&#xfe0f; Import bundle
       </button>
     </form>
+  </div>
+</div>
+
+<div class="card mt-16">
+  <div class="card-header">Human-readable exports</div>
+  <div class="card-body">
+    <div class="text-faint mb-16" style="font-size:15px; line-height:1.55;">
+      Standalone files for reading outside Theo &mdash; share, print, or
+      open in any browser, spreadsheet, or text editor. None of these are
+      importable; use the migration bundle above for that.
+    </div>
+    <div class="export-grid">
+      <a href="{{ url_for('settings_export_listings') }}" class="export-card">
+        <div class="export-card-icon">&#x1f4dc;</div>
+        <div class="export-card-name">Listings</div>
+        <div class="export-card-format">.html</div>
+        <div class="export-card-desc text-faint">
+          One self-contained HTML page of every product, images embedded
+          inline. Same format the Publish flow uses.
+        </div>
+      </a>
+      <a href="{{ url_for('settings_export_reports') }}" class="export-card">
+        <div class="export-card-icon">&#x1f4ca;</div>
+        <div class="export-card-name">Reports</div>
+        <div class="export-card-format">.csv</div>
+        <div class="export-card-desc text-faint">
+          Spreadsheet of per-day purchase rollups: date, weekday, item
+          count, and total per currency.
+        </div>
+      </a>
+      <a href="{{ url_for('settings_export_brands') }}" class="export-card">
+        <div class="export-card-icon">&#x1f3ec;</div>
+        <div class="export-card-name">Brands</div>
+        <div class="export-card-format">.txt</div>
+        <div class="export-card-desc text-faint">
+          Plain text dump of brand notes, one section per brand.
+        </div>
+      </a>
+      <a href="{{ url_for('settings_export_tags') }}" class="export-card">
+        <div class="export-card-icon">&#x1f3f7;&#xfe0f;</div>
+        <div class="export-card-name">Tags</div>
+        <div class="export-card-format">.txt</div>
+        <div class="export-card-desc text-faint">
+          Plain text list of tags &mdash; name, colour swatch, description.
+        </div>
+      </a>
+    </div>
   </div>
 </div>

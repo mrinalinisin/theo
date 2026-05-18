@@ -1756,7 +1756,10 @@ def create_app():
     # are rewritten before insert. Products are deduped by URL — re-importing
     # is therefore safe.
 
-    EXPORT_SCHEMA_VERSION = 1
+    # v1 → original (products, tags, currencies, purchases)
+    # v2 → adds brands + related_pairs (See Also backlinks). v1 imports still
+    #      accepted; the new fields are read defensively with .get(..., []).
+    EXPORT_SCHEMA_VERSION = 2
 
     def _is_local_filename(value):
         """True if `value` looks like a local image filename rather than a
@@ -1847,6 +1850,24 @@ def create_app():
                 "purchase": purchase,
             })
 
+        # Brands — free-text notes keyed by name. No products embedded;
+        # association is by case-insensitive match on Product.store at read.
+        brands_out = [
+            {"name": b.name, "notes": b.notes or ""}
+            for b in Brand.query.order_by(Brand.name).all()
+        ]
+
+        # See-Also relations — pairs of URLs (stable across instances) rather
+        # than pairs of ids (which are renumbered on import).
+        from models import product_related as _pr
+        id_to_url = {p_id: p_url for p_id, p_url in db.session.query(Product.id, Product.url).all()}
+        related_pairs_out = []
+        for a_id, b_id in db.session.query(_pr.c.a_id, _pr.c.b_id).all():
+            a_url = id_to_url.get(a_id)
+            b_url = id_to_url.get(b_id)
+            if a_url and b_url:
+                related_pairs_out.append([a_url, b_url])
+
         payload = {
             "schema_version": EXPORT_SCHEMA_VERSION,
             "exported_at": datetime.now(timezone.utc).isoformat(),
@@ -1854,10 +1875,14 @@ def create_app():
                 "products": len(products_out),
                 "tags": len(tags),
                 "currencies": len(currencies),
+                "brands": len(brands_out),
+                "related_pairs": len(related_pairs_out),
             },
             "currencies": currencies,
             "tags": tags,
+            "brands": brands_out,
             "products": products_out,
+            "related_pairs": related_pairs_out,
         }
 
         buf = io.BytesIO()
@@ -1875,6 +1900,108 @@ def create_app():
             mimetype="application/zip",
             as_attachment=True,
             download_name=f"theo_export_{stamp}.zip",
+        )
+
+    # ── Human-readable exports ────────────────────────────────────────────
+    # Distinct from the migration bundle above. Each format matches the data
+    # shape: HTML for listings (visual catalogue), CSV for reports (rows of
+    # numbers), TXT for brand/tag notes (free-form prose).
+
+    @app.route("/settings/export/listings.html")
+    def settings_export_listings():
+        """Self-contained HTML of every product Theo knows about — reuses
+        the publish-page template so images are embedded inline and the
+        file works offline / anywhere."""
+        from flask import Response
+        products = Product.query.order_by(Product.created_at.desc()).all()
+        html = render_template(
+            "_published_page.html",
+            page_title="Theo — full inventory",
+            products=products,
+            published_at=datetime.now(timezone.utc),
+        )
+        stamp = datetime.now(timezone.utc).strftime("%Y%m%d")
+        return Response(
+            html,
+            mimetype="text/html",
+            headers={"Content-Disposition": f'attachment; filename="theo_listings_{stamp}.html"'},
+        )
+
+    @app.route("/settings/export/reports.csv")
+    def settings_export_reports():
+        """Per-day purchase rollup as CSV — one row per date with item count
+        and per-currency totals exploded into named columns."""
+        from flask import Response
+        import csv
+        import io
+
+        days = _days_with_purchases_summary()
+        # Collect every currency symbol that appears so columns are stable.
+        all_syms = sorted({sym for d in days for sym, _ in d["totals"]})
+
+        buf = io.StringIO()
+        writer = csv.writer(buf)
+        writer.writerow(["date", "weekday", "item_count"] + [f"total_{s}" for s in all_syms])
+        for d in days:
+            totals_map = dict(d["totals"])
+            row = [
+                d["date"].isoformat(),
+                d["date"].strftime("%a"),
+                d["count"],
+            ] + [f"{totals_map.get(s, 0):.2f}" for s in all_syms]
+            writer.writerow(row)
+
+        stamp = datetime.now(timezone.utc).strftime("%Y%m%d")
+        return Response(
+            buf.getvalue(),
+            mimetype="text/csv",
+            headers={"Content-Disposition": f'attachment; filename="theo_reports_{stamp}.csv"'},
+        )
+
+    @app.route("/settings/export/brands.txt")
+    def settings_export_brands():
+        """Plain-text dump of brand notes — one section per brand."""
+        from flask import Response
+        brands = Brand.query.order_by(func.lower(Brand.name)).all()
+        lines = []
+        lines.append(f"# Theo brands — exported {datetime.now(timezone.utc).strftime('%Y-%m-%d')}")
+        lines.append("")
+        for b in brands:
+            lines.append(f"=== {b.name} ===")
+            notes = (b.notes or "").strip()
+            lines.append(notes if notes else "(no notes)")
+            lines.append("")
+        body = "\n".join(lines)
+        stamp = datetime.now(timezone.utc).strftime("%Y%m%d")
+        return Response(
+            body,
+            mimetype="text/plain; charset=utf-8",
+            headers={"Content-Disposition": f'attachment; filename="theo_brands_{stamp}.txt"'},
+        )
+
+    @app.route("/settings/export/tags.txt")
+    def settings_export_tags():
+        """Plain-text dump of tags — name, colour swatch, description."""
+        from flask import Response
+        tags = Tag.query.order_by(func.lower(Tag.name)).all()
+        lines = []
+        lines.append(f"# Theo tags — exported {datetime.now(timezone.utc).strftime('%Y-%m-%d')}")
+        lines.append("")
+        for t in tags:
+            desc = (t.description or "").strip()
+            head = f"{t.name}  ({t.colour})"
+            lines.append(head)
+            if desc:
+                # Indent descriptions for visual grouping under the tag name.
+                for line in desc.splitlines():
+                    lines.append(f"    {line}")
+            lines.append("")
+        body = "\n".join(lines)
+        stamp = datetime.now(timezone.utc).strftime("%Y%m%d")
+        return Response(
+            body,
+            mimetype="text/plain; charset=utf-8",
+            headers={"Content-Disposition": f'attachment; filename="theo_tags_{stamp}.txt"'},
         )
 
     @app.route("/settings/import", methods=["POST"])
@@ -1903,10 +2030,11 @@ def create_app():
             flash(f"data.json is malformed: {e}", "error")
             return redirect(url_for("settings_data"))
 
-        if data.get("schema_version") != EXPORT_SCHEMA_VERSION:
+        bundle_version = data.get("schema_version")
+        if bundle_version not in (1, EXPORT_SCHEMA_VERSION):
             flash(
-                f"Bundle schema version {data.get('schema_version')!r} doesn't match "
-                f"this build ({EXPORT_SCHEMA_VERSION}). Aborting.",
+                f"Bundle schema version {bundle_version!r} isn't supported by "
+                f"this build (expects 1 or {EXPORT_SCHEMA_VERSION}). Aborting.",
                 "error",
             )
             return redirect(url_for("settings_data"))
@@ -1935,6 +2063,18 @@ def create_app():
                 )
                 db.session.add(new_t)
                 tag_cache[t["name"]] = new_t
+        db.session.flush()
+
+        # 2b. Brands — lookup-or-create by case-insensitive name. Notes from
+        # the bundle only fill in *new* rows; existing brand notes on this
+        # instance are preserved so an import doesn't overwrite local edits.
+        for br in data.get("brands", []):
+            bname = (br.get("name") or "").strip()
+            if not bname:
+                continue
+            existing = Brand.query.filter(func.lower(Brand.name) == bname.lower()).first()
+            if not existing:
+                db.session.add(Brand(name=bname, notes=br.get("notes", "")))
         db.session.flush()
 
         # 3. Images — extract everything under images/ into instance/images/
@@ -2024,10 +2164,26 @@ def create_app():
                 ))
             added += 1
 
+        # 5. See-Also relations — pairs of URLs. Look up the products on
+        # this instance (whether just-imported or pre-existing) and call
+        # link_related, which idempotently canonicalizes a < b and skips
+        # duplicates.
+        linked_pairs = 0
+        for pair in data.get("related_pairs", []) or []:
+            if not (isinstance(pair, (list, tuple)) and len(pair) == 2):
+                continue
+            url_a, url_b = pair
+            pa = Product.query.filter_by(url=url_a).first()
+            pb = Product.query.filter_by(url=url_b).first()
+            if pa and pb and pa.id != pb.id:
+                pa.link_related(pb.id)
+                linked_pairs += 1
+
         db.session.commit()
         flash(
             f"Imported {added} product{'s' if added != 1 else ''}"
-            f"{f', skipped {skipped} duplicate' + ('s' if skipped != 1 else '') if skipped else ''}.",
+            f"{f', skipped {skipped} duplicate' + ('s' if skipped != 1 else '') if skipped else ''}"
+            f"{f', linked {linked_pairs} related pair' + ('s' if linked_pairs != 1 else '') if linked_pairs else ''}.",
             "success",
         )
         return redirect(url_for("settings_data"))
