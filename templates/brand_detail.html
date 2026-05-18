@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}{{ brand.name }} — Brand — Theo{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-header-top">
+    <div class="flex items-center gap-12">
+      <a href="{{ url_for('settings_brands') }}" class="btn btn-ghost btn-sm">&larr; Brands</a>
+      <div class="page-title">
+        {{ brand.name }}
+        <span class="text-faint" style="font-weight:400; font-size:0.6em;">
+          ({{ products|length }})
+        </span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="page-body">
+  {% if brand.notes and brand.notes|trim %}
+  <div class="card mb-16" style="max-width:720px;">
+    <div class="card-body">
+      <div style="white-space:pre-wrap; line-height:1.55; font-size:14px;">{{ brand.notes }}</div>
+    </div>
+  </div>
+  {% endif %}
+
+  {% if products %}
+  <div class="hero-card-grid">
+    {% include '_shopping_list_cards.html' %}
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <div class="empty-icon">&#x1f3ec;</div>
+    <div class="empty-title">No listings yet</div>
+    <div class="empty-desc">
+      No products carry "{{ brand.name }}" in their store field.
+      Listings have to match this name (case doesn't matter) to show up here.
+    </div>
+    <a href="{{ url_for('settings_brands') }}" class="btn btn-secondary mt-16">Back to brands</a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

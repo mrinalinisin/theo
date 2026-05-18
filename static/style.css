@@ -1004,17 +1004,25 @@ body.has-selection .card-select-checkbox { display: flex; }
   outline-offset: -2px;
 }
 
-/* Brand admin list — under /settings/brands */
+/* Brand admin — under /settings/brands */
+.brand-admin-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+.brand-admin-toolbar-title {
+  font-size: 16px;
+  font-weight: 600;
+}
 .brand-admin-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
-.brand-admin-row {
+.brand-admin-card {
   padding: 14px 16px;
-  border-bottom: 1px solid var(--border);
 }
-.brand-admin-row:last-child { border-bottom: none; }
 .brand-admin-form {
   display: flex;
   flex-direction: column;
@@ -1036,9 +1044,12 @@ body.has-selection .card-select-checkbox { display: flex; }
 }
 .brand-admin-name-display {
   flex: 1;
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 600;
+  color: var(--text);
+  text-decoration: none;
 }
+.brand-admin-name-display:hover { color: var(--accent, #2d5a27); }
 .brand-admin-notes-display {
   font-size: 13px;
   line-height: 1.5;

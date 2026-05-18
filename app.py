@@ -1670,6 +1670,18 @@ def create_app():
             unclaimed_stores=unclaimed,
         )
 
+    @app.route("/brands/<int:brand_id>")
+    def brand_detail(brand_id):
+        """All listings carrying this brand's name in Product.store
+        (case-insensitive). Brand notes shown at the top so they're
+        the first thing the user sees before scanning items."""
+        brand = Brand.query.get_or_404(brand_id)
+        products = (Product.query
+                    .filter(func.lower(Product.store) == brand.name.lower())
+                    .order_by(Product.updated_at.desc())
+                    .all())
+        return render_template("brand_detail.html", brand=brand, products=products)
+
     def _brand_redirect():
         nxt = (request.form.get("next") or "").strip()
         if nxt.startswith("/") and not nxt.startswith("//"):
