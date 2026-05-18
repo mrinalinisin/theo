@@ -73,6 +73,9 @@
       <a href="{{ url_for('purchases_calendar') }}" class="{{ 'active' if request.endpoint == 'purchases_calendar' }}">
         <span class="icon">&#x1f4c5;</span> Deliveries
       </a>
+      <a href="{{ url_for('reviews_list') }}" class="{{ 'active' if request.endpoint == 'reviews_list' }}">
+        <span class="icon">&#x270d;&#xfe0f;</span> Reviews
+      </a>
       <a href="{{ url_for('reports') }}" class="{{ 'active' if request.endpoint in ('reports', 'report_month') }}">
         <span class="icon">&#x1f4ca;</span> Reports
       </a>
@@ -111,6 +114,9 @@
     </a>
     <a href="{{ url_for('purchases_calendar') }}" class="{{ 'active' if request.endpoint == 'purchases_calendar' }}">
       <span class="icon">&#x1f4c5;</span> Deliveries
+    </a>
+    <a href="{{ url_for('reviews_list') }}" class="{{ 'active' if request.endpoint == 'reviews_list' }}">
+      <span class="icon">&#x270d;&#xfe0f;</span> Reviews
     </a>
     <a href="{{ url_for('reports') }}" class="{{ 'active' if request.endpoint in ('reports', 'report_month') }}">
       <span class="icon">&#x1f4ca;</span> Reports

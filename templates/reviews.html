@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Reviews — Theo{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-header-top">
+    <div class="page-title">
+      Reviews
+      <span class="text-faint" style="font-weight:400; font-size:0.6em;">
+        ({{ products|length }})
+      </span>
+    </div>
+  </div>
+</div>
+
+<div class="page-body">
+  {% if products %}
+  <div class="hero-card-grid">
+    {% include '_shopping_list_cards.html' %}
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <div class="empty-icon">&#x270d;&#xfe0f;</div>
+    <div class="empty-title">No reviews yet</div>
+    <div class="empty-desc">
+      Open a purchased item and add a review — your written thoughts,
+      photos, or a video link. Anything reviewed shows up here.
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

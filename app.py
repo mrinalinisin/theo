@@ -1470,6 +1470,25 @@ def create_app():
 
     # ── Purchases page removed — /products now lists everything by default. ──
 
+    def _has_review(p):
+        """A product 'has a review' if any of the review fields carry
+        content. Used by /reviews and could be reused elsewhere later."""
+        return bool(
+            (p.review_text and p.review_text.strip())
+            or (p.review_video_url and p.review_video_url.strip())
+            or p.review_photos
+        )
+
+    @app.route("/reviews")
+    def reviews_list():
+        """Listings that have a written review, photos, or a video link.
+        Filtering happens in Python — the JSON review_photos column is
+        awkward to predicate on in SQL and the table is small enough
+        that the cost is negligible."""
+        candidates = Product.query.order_by(Product.updated_at.desc()).all()
+        products = [p for p in candidates if _has_review(p)]
+        return render_template("reviews.html", products=products)
+
     @app.route("/purchases/calendar")
     def purchases_calendar():
         """Deliveries — chronological list of items in flight.
