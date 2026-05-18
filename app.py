@@ -869,14 +869,24 @@ def create_app():
             currency_id = src.currency_id
         tag_ids = request.form.getlist("tag_ids")
 
+        # Photos arrive as a JSON list mixing existing filenames (inherited
+        # from the source and not removed by the user) with new data: URIs
+        # from paste/drop/upload. save_new_images_for_product handles both.
+        try:
+            incoming_images = json.loads(request.form.get("images") or "[]")
+        except (json.JSONDecodeError, TypeError):
+            incoming_images = []
+        if not isinstance(incoming_images, list):
+            incoming_images = []
+
         clone = Product(
             url=url,
             name=name,
             store=store,
             current_price=price,
             original_price=price,  # treat the listed price at clone-time as the new "original"
-            image_url=src.image_url,
-            images=list(src.images or []),  # shallow-copy — see INSIGHTS.md
+            image_url="",
+            images=[],
             variants=dict(src.variants or {}),
             notes=notes,
             quantity=quantity,
@@ -885,6 +895,13 @@ def create_app():
         )
         db.session.add(clone)
         db.session.flush()
+
+        if incoming_images:
+            from image_store import save_new_images_for_product
+            saved = save_new_images_for_product(incoming_images, clone.id, app)
+            clone.images = saved
+            clone.image_url = saved[0] if saved else ""
+
         for tid in tag_ids:
             tag = Tag.query.get(int(tid))
             if tag:

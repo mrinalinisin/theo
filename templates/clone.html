@@ -19,12 +19,28 @@
   </div>
 
   <form method="POST" action="{{ url_for('product_clone', product_id=source.id) }}">
-    {% if source.image_url %}
     <div class="form-group">
-      <label class="form-label">Main image <span class="text-xs text-faint">(carried over from source)</span></label>
-      <img src="{{ image_src(source.image_url) }}" alt="" style="max-height:120px;border-radius:var(--radius-sm);">
+      <label class="form-label">Photos <span class="text-xs text-faint">(carried over &mdash; paste, drop, or click to add; &times; to remove)</span></label>
+      <input type="hidden" name="images" id="cloneImagesField"
+             value="{{ source.images|tojson_safe if source.images else '[]' }}">
+      <div class="photo-strip" id="clonePhotoStrip">
+        {% for img in source.images or [] %}
+        <div class="photo-thumb" data-src="{{ img }}">
+          <img src="{{ image_src(img) }}" alt="Source photo {{ loop.index }}">
+          <span class="remove-btn" title="Remove">&times;</span>
+        </div>
+        {% endfor %}
+      </div>
+      <div id="clonePasteZone" class="paste-zone" tabindex="0" style="margin-top:10px;">
+        <div class="paste-zone-content">
+          <div class="paste-zone-icon">&#128247;</div>
+          <div class="paste-zone-text">
+            Press <kbd>Ctrl+V</kbd> / <kbd>&#8984;V</kbd> to paste an image
+          </div>
+          <div class="paste-zone-hint">or drag &amp; drop here, or click to upload</div>
+        </div>
+      </div>
     </div>
-    {% endif %}
 
     <div class="form-group">
       <label class="form-label">Name</label>
@@ -86,4 +102,75 @@
     </div>
   </form>
 </div>
+
+<script>
+// Clone-form paste-zone — mirrors the review/new-listing/edit-modal pattern.
+// The strip is pre-populated with the source's existing filenames; the hidden
+// #cloneImagesField stays in sync as a JSON list of strings (mix of filenames
+// and new data: URIs). save_new_images_for_product persists data URIs and
+// passes filenames through untouched.
+(function() {
+  const strip = document.getElementById('clonePhotoStrip');
+  const zone = document.getElementById('clonePasteZone');
+  const field = document.getElementById('cloneImagesField');
+  if (!strip || !zone || !field) return;
+
+  function inTextField() {
+    const el = document.activeElement;
+    if (!el) return false;
+    const tag = el.tagName;
+    return tag === 'INPUT' || tag === 'TEXTAREA' || el.isContentEditable;
+  }
+  function syncField() {
+    const items = [...strip.querySelectorAll('.photo-thumb')].map(t => t.dataset.src);
+    field.value = JSON.stringify(items);
+  }
+  function appendThumb(dataUrl) {
+    const el = document.createElement('div');
+    el.className = 'photo-thumb';
+    el.dataset.src = dataUrl;
+    el.innerHTML = '<img src="' + dataUrl + '" alt=""><span class="remove-btn" title="Remove">&times;</span>';
+    strip.appendChild(el);
+    syncField();
+  }
+  function readFile(file) {
+    if (!file || !file.type.startsWith('image/')) return;
+    const r = new FileReader();
+    r.onload = e => appendThumb(e.target.result);
+    r.readAsDataURL(file);
+  }
+
+  // Paste anywhere on the page — only intercept image items, text pastes
+  // into name/url/notes/etc. fall through to the browser's default.
+  document.addEventListener('paste', e => {
+    for (const item of (e.clipboardData?.items || [])) {
+      if (item.type.startsWith('image/')) {
+        readFile(item.getAsFile());
+        e.preventDefault();
+      }
+    }
+  });
+
+  zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag-over'); });
+  zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+  zone.addEventListener('drop', e => {
+    e.preventDefault();
+    zone.classList.remove('drag-over');
+    [...e.dataTransfer.files].forEach(readFile);
+  });
+  zone.addEventListener('click', () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.multiple = true;
+    input.onchange = () => [...input.files].forEach(readFile);
+    input.click();
+  });
+  strip.addEventListener('click', e => {
+    if (!e.target.classList.contains('remove-btn')) return;
+    e.target.closest('.photo-thumb').remove();
+    syncField();
+  });
+})();
+</script>
 {% endblock %}
