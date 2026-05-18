@@ -11,88 +11,99 @@
   </div>
 </div>
 
-<div class="page-body" style="max-width: 720px;">
+<div class="page-body report-month-grid">
 
-  {# ── Top summary ───────────────────────────────────────────────────── #}
-  <div class="card mb-16">
-    <div class="card-body">
-      <div class="text-xs text-faint" style="text-transform:uppercase; letter-spacing:0.04em;">Totals</div>
-      <div style="margin-top:8px;">
-        <span style="font-size:32px; font-weight:700;">{{ count }}</span>
-        <span class="text-sm text-faint">item{{ 's' if count != 1 else '' }} purchased</span>
-      </div>
-      {% if totals %}
-      <div style="margin-top:14px; display:flex; flex-wrap:wrap; gap:16px;">
-        {% for sym, total in totals %}
-        <div>
-          <div class="text-xs text-faint">spent</div>
-          <div style="font-size:22px; font-weight:600;">{{ sym }}{{ "%.0f"|format(total) }}</div>
+  {# Left column: narrow lists. Bounded column keeps each row legible
+     instead of stretching across a wide monitor. #}
+  <aside class="report-month-side">
+
+    {# ── Top summary ─────────────────────────────────────────────────── #}
+    <div class="card mb-16">
+      <div class="card-body">
+        <div class="text-xs text-faint" style="text-transform:uppercase; letter-spacing:0.04em;">Totals</div>
+        <div style="margin-top:8px;">
+          <span style="font-size:32px; font-weight:700;">{{ count }}</span>
+          <span class="text-sm text-faint">item{{ 's' if count != 1 else '' }} purchased</span>
         </div>
-        {% endfor %}
-      </div>
-      {% endif %}
-    </div>
-  </div>
-
-  {# ── Calendar of items per day ─────────────────────────────────────── #}
-  <div class="card mb-16">
-    <div class="card-header">Items by day</div>
-    <div class="card-body">
-      <div class="report-cal">
-        {% for h in weekday_headers %}
-        <div class="report-cal-head">{{ h }}</div>
-        {% endfor %}
-
-        {% for week in cal_weeks %}
-          {% for day in week %}
-            {% if day == 0 %}
-              <div class="report-cal-cell report-cal-cell-pad"></div>
-            {% else %}
-              {% set c = day_counts.get(day, 0) %}
-              <div class="report-cal-cell {% if c %}has-items{% endif %}"
-                   id="day-{{ day }}"
-                   {% if c %}title="{{ c }} item{{ '' if c == 1 else 's' }} on {{ '%02d'|format(day) }}/{{ '%02d'|format(month) }}/{{ year }}"{% endif %}>
-                <div class="report-cal-day">{{ day }}</div>
-                {% if c %}
-                <div class="report-cal-count">{{ c }}</div>
-                {% endif %}
-              </div>
-            {% endif %}
+        {% if totals %}
+        <div style="margin-top:14px; display:flex; flex-wrap:wrap; gap:16px;">
+          {% for sym, total in totals %}
+          <div>
+            <div class="text-xs text-faint">spent</div>
+            <div style="font-size:22px; font-weight:600;">{{ sym }}{{ "%.0f"|format(total) }}</div>
+          </div>
           {% endfor %}
-        {% endfor %}
+        </div>
+        {% endif %}
       </div>
     </div>
-  </div>
 
-  {# ── By tag ────────────────────────────────────────────────────────── #}
-  <div class="card">
-    <div class="card-header">By tag</div>
-    <div class="card-body">
-      {% if not by_tag %}
-      <div class="text-sm text-faint">No items.</div>
-      {% else %}
-      <ul class="report-tag-list">
-        {% for row in by_tag %}
-        <li class="report-tag-row">
-          <div class="report-tag-name">
-            {% if row.tag %}
-              <span class="tag-dot" style="background:{{ row.tag.colour }};"></span>{{ row.tag.name }}
-            {% else %}
-              <span class="text-faint">(no tag)</span>
-            {% endif %}
-          </div>
-          <div class="report-tag-count">{{ row.count }} item{{ 's' if row.count != 1 else '' }}</div>
-          <div class="report-tag-totals">
-            {% for sym, t in row.totals.items() %}
-            <span>{{ sym }}{{ "%.0f"|format(t) }}</span>{% if not loop.last %} &middot; {% endif %}
-            {% endfor %}
-          </div>
-        </li>
-        {% endfor %}
-      </ul>
-      {% endif %}
+    {# ── By tag ──────────────────────────────────────────────────────── #}
+    <div class="card">
+      <div class="card-header">By tag</div>
+      <div class="card-body">
+        {% if not by_tag %}
+        <div class="text-sm text-faint">No items.</div>
+        {% else %}
+        <ul class="report-tag-list">
+          {% for row in by_tag %}
+          <li class="report-tag-row">
+            <div class="report-tag-name">
+              {% if row.tag %}
+                <span class="tag-dot" style="background:{{ row.tag.colour }};"></span>{{ row.tag.name }}
+              {% else %}
+                <span class="text-faint">(no tag)</span>
+              {% endif %}
+            </div>
+            <div class="report-tag-count">{{ row.count }} item{{ 's' if row.count != 1 else '' }}</div>
+            <div class="report-tag-totals">
+              {% for sym, t in row.totals.items() %}
+              <span>{{ sym }}{{ "%.0f"|format(t) }}</span>{% if not loop.last %} &middot; {% endif %}
+              {% endfor %}
+            </div>
+          </li>
+          {% endfor %}
+        </ul>
+        {% endif %}
+      </div>
     </div>
-  </div>
+
+  </aside>
+
+  {# Right column: the calendar — the wide element that benefits from
+     extra horizontal space. #}
+  <main class="report-month-main">
+
+    <div class="card">
+      <div class="card-header">Items by day</div>
+      <div class="card-body">
+        <div class="report-cal">
+          {% for h in weekday_headers %}
+          <div class="report-cal-head">{{ h }}</div>
+          {% endfor %}
+
+          {% for week in cal_weeks %}
+            {% for day in week %}
+              {% if day == 0 %}
+                <div class="report-cal-cell report-cal-cell-pad"></div>
+              {% else %}
+                {% set c = day_counts.get(day, 0) %}
+                <div class="report-cal-cell {% if c %}has-items{% endif %}"
+                     id="day-{{ day }}"
+                     {% if c %}title="{{ c }} item{{ '' if c == 1 else 's' }} on {{ '%02d'|format(day) }}/{{ '%02d'|format(month) }}/{{ year }}"{% endif %}>
+                  <div class="report-cal-day">{{ day }}</div>
+                  {% if c %}
+                  <div class="report-cal-count">{{ c }}</div>
+                  {% endif %}
+                </div>
+              {% endif %}
+            {% endfor %}
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+  </main>
 
 </div>
 {% endblock %}

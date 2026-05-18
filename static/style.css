@@ -1274,6 +1274,23 @@ body.has-selection .card-select-checkbox { display: flex; }
 }
 .day-card-totals span { white-space: nowrap; }
 
+/* /reports/<YYYY-MM> layout — narrow left rail + wide calendar pane.
+   Collapses to single column on narrow viewports. */
+.report-month-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+  max-width: 1400px;
+}
+@media (min-width: 900px) {
+  .report-month-grid {
+    grid-template-columns: minmax(260px, 340px) 1fr;
+    align-items: start;
+  }
+}
+.report-month-side { min-width: 0; }
+.report-month-main { min-width: 0; }
+
 /* Per-month calendar — items per day on /reports/<YYYY-MM> */
 .report-cal {
   display: grid;
