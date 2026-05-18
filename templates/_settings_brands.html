@@ -1,0 +1,111 @@
+{% set next_url = url_for('settings_brands') %}
+
+<div class="card">
+  <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
+    <span>Brands <span class="text-faint" style="font-weight:400; font-size:13px;">({{ brand_rows|length }})</span></span>
+    <button class="btn btn-primary btn-sm"
+            onclick="document.getElementById('modal-new-brand').classList.add('open');
+                     setTimeout(function(){
+                       var f = document.querySelector('#modal-new-brand input[name=&quot;name&quot;]');
+                       if (f) f.focus();
+                     }, 50);">+ New brand</button>
+  </div>
+  <div class="card-body" style="padding:0;">
+    {% if brand_rows %}
+    <ul class="brand-admin-list">
+      {% for row in brand_rows %}
+      {% set b = row.brand %}
+      <li class="brand-admin-row">
+        <form method="POST" action="{{ url_for('brand_edit', brand_id=b.id) }}" class="brand-admin-form">
+          <input type="hidden" name="next" value="{{ next_url }}">
+          <div class="brand-admin-head">
+            <input type="text" name="name" value="{{ b.name }}" class="form-input brand-admin-name" required>
+            <div class="brand-admin-count text-faint">
+              {{ row.count }} item{{ '' if row.count == 1 else 's' }}
+            </div>
+          </div>
+          <textarea name="notes" class="form-input brand-admin-notes" rows="3"
+                    placeholder="Free-text notes — fit, returns, quality, sizing, anything.">{{ b.notes or '' }}</textarea>
+          <div class="brand-admin-actions">
+            <button type="submit" class="btn btn-primary btn-sm">Save</button>
+            <button type="button" class="btn btn-ghost btn-sm"
+                    formaction="{{ url_for('brand_delete', brand_id=b.id) }}"
+                    formnovalidate
+                    onclick="if (!confirm('Remove brand &quot;{{ b.name }}&quot;? Notes will be lost; product listings stay untouched.')) return false;
+                             this.form.action = this.getAttribute('formaction'); this.form.submit();"
+                    style="color:var(--danger, #b94545);">Delete</button>
+          </div>
+        </form>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <div class="empty-state" style="padding:32px 24px;">
+      <div class="empty-icon">&#x1f3ec;</div>
+      <div class="empty-title">No brands yet</div>
+      <div class="empty-desc">Add a brand to keep free-text notes about fit, returns, quality, or anything else you want to remember about a store.</div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+{% if unclaimed_stores %}
+<div class="card mt-16">
+  <div class="card-header">
+    Stores without a brand entry <span class="text-faint" style="font-weight:400; font-size:13px;">({{ unclaimed_stores|length }})</span>
+  </div>
+  <div class="card-body">
+    <div class="text-faint mb-16" style="font-size:13px;">
+      Theo found these store names on your listings. Click <strong>+ Add</strong>
+      to start a brand entry for any of them — you can fill in notes right after.
+    </div>
+    <div class="brand-unclaimed">
+      {% for s in unclaimed_stores %}
+      <form method="POST" action="{{ url_for('brand_create') }}" class="brand-unclaimed-row">
+        <input type="hidden" name="name" value="{{ s }}">
+        <input type="hidden" name="next" value="{{ next_url }}">
+        <span class="brand-unclaimed-name">{{ s }}</span>
+        <button type="submit" class="btn btn-secondary btn-sm">+ Add</button>
+      </form>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<!-- ═══ Modal: New Brand ═══ -->
+<div class="modal-overlay" id="modal-new-brand">
+  <div class="modal" style="max-width:480px;">
+    <form method="POST" action="{{ url_for('brand_create') }}">
+      <input type="hidden" name="next" value="{{ next_url }}">
+      <div class="modal-header">
+        <div class="modal-title">New brand</div>
+        <button type="button" class="btn btn-ghost btn-sm"
+                onclick="document.getElementById('modal-new-brand').classList.remove('open')">&#x2715;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Name</label>
+          <input type="text" name="name" class="form-input" required
+                 placeholder="e.g. Goodearth, Converse, Patagonia">
+        </div>
+        <div class="form-group" style="margin-bottom:0;">
+          <label class="form-label">Notes <span class="text-xs text-faint">(optional)</span></label>
+          <textarea name="notes" class="form-input" rows="4"
+                    placeholder="Anything you want to remember about this brand."></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary"
+                onclick="document.getElementById('modal-new-brand').classList.remove('open')">Cancel</button>
+        <button type="submit" class="btn btn-primary">Create</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+document.querySelectorAll('.modal-overlay').forEach(function(o) {
+  o.addEventListener('click', function(e) { if (e.target === o) o.classList.remove('open'); });
+});
+</script>

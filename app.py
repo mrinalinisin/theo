@@ -29,7 +29,7 @@ import time
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, send_from_directory, session
 from sqlalchemy import func, or_, and_
 from config import Config
-from models import db, Product, Tag, Purchase, Settings, Currency, Publication, product_tags
+from models import db, Product, Tag, Purchase, Settings, Currency, Publication, Brand, product_tags
 
 
 def create_app():
@@ -1634,6 +1634,90 @@ def create_app():
     def settings_about():
         # About moved to a footer on all /settings pages; preserve the old URL.
         return redirect(url_for("settings_github"), code=302)
+
+    @app.route("/settings/brands")
+    def settings_brands():
+        """Manage Brand rows — free-text notes keyed to brand/store names.
+        Surfaces every distinct Product.store value that doesn't yet have
+        a Brand row so the user can claim them in one click."""
+        brands = Brand.query.order_by(func.lower(Brand.name)).all()
+        # Per-brand product counts via case-insensitive match on Product.store.
+        # One query per brand is fine — Brand counts are tiny.
+        rows = []
+        for b in brands:
+            count = Product.query.filter(
+                func.lower(Product.store) == b.name.lower()
+            ).count()
+            rows.append({"brand": b, "count": count})
+
+        # Distinct stores not yet claimed by any Brand row.
+        all_stores = {
+            (s[0] or "").strip()
+            for s in db.session.query(Product.store).distinct().all()
+            if s[0] and s[0].strip()
+        }
+        claimed = {b.name.lower() for b in brands}
+        unclaimed = sorted(
+            (s for s in all_stores if s.lower() not in claimed),
+            key=str.lower,
+        )
+
+        return render_template(
+            "settings.html",
+            settings=Settings.get(),
+            tab="brands",
+            brand_rows=rows,
+            unclaimed_stores=unclaimed,
+        )
+
+    def _brand_redirect():
+        nxt = (request.form.get("next") or "").strip()
+        if nxt.startswith("/") and not nxt.startswith("//"):
+            return redirect(nxt)
+        return redirect(url_for("settings_brands"))
+
+    @app.route("/brands/create", methods=["POST"])
+    def brand_create():
+        name = (request.form.get("name") or "").strip()
+        if not name:
+            flash("Brand name is required.", "error")
+            return _brand_redirect()
+        if Brand.query.filter(func.lower(Brand.name) == name.lower()).first():
+            flash(f"Brand \"{name}\" already exists.", "warning")
+            return _brand_redirect()
+        db.session.add(Brand(name=name, notes=request.form.get("notes", "")))
+        db.session.commit()
+        flash(f"Brand \"{name}\" added.", "success")
+        return _brand_redirect()
+
+    @app.route("/brands/<int:brand_id>/edit", methods=["POST"])
+    def brand_edit(brand_id):
+        brand = Brand.query.get_or_404(brand_id)
+        new_name = (request.form.get("name") or "").strip()
+        if new_name and new_name.lower() != brand.name.lower():
+            # Reject name clashes (case-insensitive).
+            clash = Brand.query.filter(
+                func.lower(Brand.name) == new_name.lower(),
+                Brand.id != brand.id,
+            ).first()
+            if clash:
+                flash(f"Brand \"{new_name}\" already exists.", "error")
+                return _brand_redirect()
+            brand.name = new_name
+        brand.notes = request.form.get("notes", brand.notes)
+        brand.updated_at = datetime.now(timezone.utc)
+        db.session.commit()
+        flash(f"Brand \"{brand.name}\" updated.", "success")
+        return _brand_redirect()
+
+    @app.route("/brands/<int:brand_id>/delete", methods=["POST"])
+    def brand_delete(brand_id):
+        brand = Brand.query.get_or_404(brand_id)
+        name = brand.name
+        db.session.delete(brand)
+        db.session.commit()
+        flash(f"Brand \"{name}\" removed.", "info")
+        return _brand_redirect()
 
     @app.route("/settings/tags")
     def settings_tags():

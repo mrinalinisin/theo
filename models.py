@@ -196,6 +196,24 @@ class Publication(db.Model):
     __table_args__ = (db.UniqueConstraint("repo", "slug", name="uq_pub_repo_slug"),)
 
 
+class Brand(db.Model):
+    """A free-text note keyed to a brand/store name.
+
+    There's no foreign key to Product.store — products keep storing the
+    brand as a plain string so the new-listing modal stays as forgiving
+    as it is. Brand rows are looked up by case-insensitive name when we
+    want to associate products with a brand at read time.
+    """
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(128), nullable=False, unique=True)
+    notes = db.Column(db.Text, default="")
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+    def __repr__(self):
+        return f"<Brand {self.name}>"
+
+
 class Settings(db.Model):
     """Singleton settings row.
 
