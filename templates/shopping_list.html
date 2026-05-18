@@ -212,8 +212,18 @@
           </div>
         </div>
         <div class="form-group">
-          <label class="form-label">Image URL <span class="text-xs text-faint">(optional)</span></label>
-          <input type="url" name="image_url" class="form-input" placeholder="https://...">
+          <label class="form-label">Photos <span class="text-xs text-faint">(paste, drop, or click)</span></label>
+          <input type="hidden" name="images" id="newListingImagesField" value="[]">
+          <div class="photo-strip" id="newListingPhotoStrip"></div>
+          <div id="newListingPasteZone" class="paste-zone" tabindex="0" style="margin-top:10px;">
+            <div class="paste-zone-content">
+              <div class="paste-zone-icon">&#128247;</div>
+              <div class="paste-zone-text">
+                Press <kbd>Ctrl+V</kbd> / <kbd>&#8984;V</kbd> to paste an image
+              </div>
+              <div class="paste-zone-hint">or drag &amp; drop here, or click to upload</div>
+            </div>
+          </div>
         </div>
         {% if tags %}
         <div class="form-group">
@@ -503,6 +513,93 @@ document.addEventListener('click', function(event) {
   event.stopPropagation();
   toggleCardSelect(event, checkbox);
 }, true);
+
+// ── New-listing modal: paste-zone for photos ──
+// Pasted / dropped / picked images become data URIs in the strip, and the
+// hidden #newListingImagesField stays in sync as a JSON list of strings.
+// The route turns data URIs into saved files via save_new_images_for_product
+// once the new product row has an id.
+(function() {
+  const modal = document.getElementById('modal-new-listing');
+  const strip = document.getElementById('newListingPhotoStrip');
+  const zone = document.getElementById('newListingPasteZone');
+  const field = document.getElementById('newListingImagesField');
+  if (!modal || !strip || !zone || !field) return;
+
+  function modalOpen() { return modal.classList.contains('open'); }
+  function inTextField() {
+    const el = document.activeElement;
+    if (!el) return false;
+    const t = el.tagName;
+    return t === 'INPUT' || t === 'TEXTAREA' || el.isContentEditable;
+  }
+
+  function syncField() {
+    const items = [...strip.querySelectorAll('.photo-thumb')].map(t => t.dataset.src);
+    field.value = JSON.stringify(items);
+  }
+
+  function appendThumb(dataUrl) {
+    const el = document.createElement('div');
+    el.className = 'photo-thumb';
+    el.dataset.src = dataUrl;
+    el.innerHTML = '<img src="' + dataUrl + '" alt=""><span class="remove-btn" title="Remove">&times;</span>';
+    strip.appendChild(el);
+    syncField();
+  }
+
+  function readFile(file) {
+    if (!file || !file.type.startsWith('image/')) return;
+    const reader = new FileReader();
+    reader.onload = e => appendThumb(e.target.result);
+    reader.readAsDataURL(file);
+  }
+
+  // Paste anywhere on the page while the modal is open — except when typing
+  // into the modal's text inputs (so URL/name pastes still work normally).
+  document.addEventListener('paste', e => {
+    if (!modalOpen() || inTextField()) return;
+    for (const item of (e.clipboardData?.items || [])) {
+      if (item.type.startsWith('image/')) {
+        readFile(item.getAsFile());
+        e.preventDefault();
+      }
+    }
+  });
+
+  // Drag & drop
+  zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag-over'); });
+  zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+  zone.addEventListener('drop', e => {
+    e.preventDefault();
+    zone.classList.remove('drag-over');
+    [...e.dataTransfer.files].forEach(readFile);
+  });
+
+  // Click → file picker
+  zone.addEventListener('click', () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.multiple = true;
+    input.onchange = () => [...input.files].forEach(readFile);
+    input.click();
+  });
+
+  // Remove button on thumbnails
+  strip.addEventListener('click', e => {
+    if (!e.target.classList.contains('remove-btn')) return;
+    e.target.closest('.photo-thumb').remove();
+    syncField();
+  });
+
+  // Reset the strip + field on close so a re-open starts clean.
+  modal.addEventListener('click', e => {
+    if (e.target !== modal) return;
+    strip.innerHTML = '';
+    field.value = '[]';
+  });
+})();
 
 </script>
 {% endblock %}

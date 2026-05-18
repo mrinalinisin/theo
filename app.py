@@ -726,7 +726,6 @@ def create_app():
 
         store = (request.form.get("store") or "").strip()
         notes = request.form.get("notes", "")
-        image_url = (request.form.get("image_url") or "").strip()
         try:
             quantity = max(1, int(request.form.get("quantity") or 1))
         except (TypeError, ValueError):
@@ -739,21 +738,38 @@ def create_app():
         except (TypeError, ValueError):
             currency_id = None
 
+        # Pasted/dropped photos arrive as a JSON list of data: URIs in the
+        # hidden field. Persist them after we have a product id, matching
+        # the review-form pattern.
+        try:
+            incoming_images = json.loads(request.form.get("images") or "[]")
+        except (json.JSONDecodeError, TypeError):
+            incoming_images = []
+        if not isinstance(incoming_images, list):
+            incoming_images = []
+
         product = Product(
             url=url,
             name=name,
             store=store,
             current_price=price,
             original_price=price,
-            image_url=image_url,
-            images=[image_url] if image_url else [],
+            image_url="",
+            images=[],
             notes=notes,
             quantity=quantity,
             currency_id=currency_id,
             status="added",
         )
         db.session.add(product)
-        db.session.flush()
+        db.session.flush()  # need product.id before saving images
+
+        if incoming_images:
+            from image_store import save_new_images_for_product
+            saved = save_new_images_for_product(incoming_images, product.id, app)
+            product.images = saved
+            product.image_url = saved[0] if saved else ""
+
         for tid in request.form.getlist("tag_ids"):
             try:
                 tag = Tag.query.get(int(tid))
