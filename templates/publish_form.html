@@ -96,11 +96,11 @@
           </optgroup>
           {% endfor %}
         </select>
-        <div class="form-hint" id="legacyWarning" style="display:none; color:var(--warning, #b8860b);">
-          This page was published before Theo started tracking its items.
-          <strong>Add</strong> can't merge them — it will rewrite the page with
-          only the currently-selected items. Pick a different page if that's
-          not what you want.
+        <div class="form-hint" id="legacyWarning" style="display:none; color:var(--text-muted);">
+          This page predates Theo tracking its items, so the previous list
+          will be <strong>recovered by reading the live page</strong> on GitHub
+          and merged with your selection. Any items whose URLs no longer match
+          a local listing will be skipped.
         </div>
       </div>
     </div>

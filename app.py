@@ -1227,8 +1227,18 @@ def create_app():
         # published ids with the new selection (preserve old order, then
         # append anything new). For everything else, the form's selection
         # is authoritative.
-        if mode == "add" and target_pub and target_pub.item_ids:
-            existing_ids = list(target_pub.item_ids)
+        recovered_count = 0
+        if mode == "add" and target_pub:
+            existing_ids = list(target_pub.item_ids or [])
+            # Legacy publications (created before item_ids existed) have an
+            # empty list stored. Recover the content by scraping the live
+            # HTML — URL is the stable identifier across builds.
+            if not existing_ids:
+                existing_ids = _recover_publication_ids(
+                    s.github_token, target_pub.repo,
+                    s.github_branch or "main", target_pub.slug,
+                )
+                recovered_count = len(existing_ids)
             ids = existing_ids + [i for i in new_ids if i not in existing_ids]
         else:
             ids = new_ids
@@ -1300,6 +1310,14 @@ def create_app():
         if not ok2:
             flash(f"Page published but index update failed: {err2}", "warning")
 
+        # Surface recovery so the user knows the merge actually merged.
+        if mode == "add" and recovered_count:
+            flash(
+                f"Recovered {recovered_count} item{'s' if recovered_count != 1 else ''} "
+                f"from the live page (legacy publication) and merged with the new selection.",
+                "info",
+            )
+
         # Render a success page instead of redirecting — it opens the
         # published URL in a new tab via JS (mirrors Roger's "open in
         # background" UX) and falls back to a manual link if popups
@@ -1310,6 +1328,43 @@ def create_app():
             url=_public_url(repo, slug),
             repo=repo,
         )
+
+    def _recover_publication_ids(token, repo, branch, slug):
+        """Best-effort recovery of the product ids that compose an already-
+        published page. Used as a fallback for legacy Publication rows
+        created before item_ids existed (commit 4edc96d): fetch the live
+        HTML, regex out each card's product href, and look up by URL.
+
+        Returns a list of ids in source-page order, or [] if the fetch /
+        parse fails or no urls match local products. Silently drops cards
+        whose URL no longer matches any Product (deleted / URL-changed)."""
+        import requests as _req
+        import re as _re
+        try:
+            r = _req.get(
+                f"https://api.github.com/repos/{repo}/contents/{slug}.html",
+                headers={
+                    "Authorization": f"Bearer {token}",
+                    "Accept": "application/vnd.github.raw",
+                },
+                params={"ref": branch},
+                timeout=15,
+            )
+        except _req.RequestException:
+            return []
+        if r.status_code != 200:
+            return []
+        urls = _re.findall(r'<a\s+class="card-main"\s+href="([^"]+)"', r.text)
+        ids = []
+        seen = set()
+        for u in urls:
+            if u in seen or u == "#":
+                continue
+            seen.add(u)
+            p = Product.query.filter_by(url=u).first()
+            if p:
+                ids.append(p.id)
+        return ids
 
     def _github_put_file(token, repo, branch, path, content_str, commit_message):
         """PUT a file to a GitHub repo via Contents API. Handles update-vs-create
