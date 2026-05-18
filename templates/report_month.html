@@ -34,6 +34,35 @@
     </div>
   </div>
 
+  {# ── Calendar of items per day ─────────────────────────────────────── #}
+  <div class="card mb-16">
+    <div class="card-header">Items by day</div>
+    <div class="card-body">
+      <div class="report-cal">
+        {% for h in weekday_headers %}
+        <div class="report-cal-head">{{ h }}</div>
+        {% endfor %}
+
+        {% for week in cal_weeks %}
+          {% for day in week %}
+            {% if day == 0 %}
+              <div class="report-cal-cell report-cal-cell-pad"></div>
+            {% else %}
+              {% set c = day_counts.get(day, 0) %}
+              <div class="report-cal-cell {% if c %}has-items{% endif %}"
+                   {% if c %}title="{{ c }} item{{ '' if c == 1 else 's' }} on {{ '%02d'|format(day) }}/{{ '%02d'|format(month) }}/{{ year }}"{% endif %}>
+                <div class="report-cal-day">{{ day }}</div>
+                {% if c %}
+                <div class="report-cal-count">{{ c }}</div>
+                {% endif %}
+              </div>
+            {% endif %}
+          {% endfor %}
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
   {# ── By tag ────────────────────────────────────────────────────────── #}
   <div class="card">
     <div class="card-header">By tag</div>

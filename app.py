@@ -2333,6 +2333,31 @@ def create_app():
             return redirect(url_for("reports"))
         totals, count, by_tag = _compute_month_report(year, month)
         label = datetime(year, month, 1).strftime("%B %Y")
+
+        # ── Per-day item counts for the calendar grid ───────────────────────
+        # Cheap second pass — we re-query rather than refactor
+        # _compute_month_report so its other callers stay untouched.
+        start = datetime(year, month, 1, tzinfo=timezone.utc)
+        if month == 12:
+            end = datetime(year + 1, 1, 1, tzinfo=timezone.utc)
+        else:
+            end = datetime(year, month + 1, 1, tzinfo=timezone.utc)
+        day_counts = {}
+        for purchased_at, in (
+            db.session.query(Purchase.purchased_at)
+            .filter(Purchase.purchased_at >= start)
+            .filter(Purchase.purchased_at < end)
+            .all()
+        ):
+            if not purchased_at:
+                continue
+            d = purchased_at.day
+            day_counts[d] = day_counts.get(d, 0) + 1
+
+        # calendar.Calendar(firstweekday=0) → Monday is column 0
+        cal_weeks = stdlib_calendar.Calendar(firstweekday=0).monthdayscalendar(year, month)
+        weekday_headers = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+
         return render_template(
             "report_month.html",
             label=label,
@@ -2341,6 +2366,9 @@ def create_app():
             totals=totals,
             count=count,
             by_tag=by_tag,
+            cal_weeks=cal_weeks,
+            day_counts=day_counts,
+            weekday_headers=weekday_headers,
         )
 
     # ── Stats ────────────────────────────────────────────────────────────────
