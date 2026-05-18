@@ -44,16 +44,9 @@
         {% endif %}
       </div>
 
-      {# Name + meta sit between the review and the image as the bridge. #}
-      <div class="hero-card-body review-card-meta">
-        <div class="hero-card-title">{{ p.name }}</div>
-        <div class="hero-card-description">
-          {% if p.store %}{{ p.store }} &middot; {% endif %}
-          {{ p.fmt_price(p.current_price) }}{% if p.quantity and p.quantity > 1 %} &times; {{ p.quantity }}{% endif %}
-        </div>
-      </div>
-
-      {# Product image at the bottom as a visual reminder of the thing reviewed. #}
+      {# Product image at the bottom as a visual reminder of the thing reviewed.
+         Name/price are intentionally omitted — the image carries enough
+         identity, and the user can click through to see the rest. #}
       <div class="hero-card-image review-card-image-bottom">
         {% if p.image_url %}
         <img src="{{ image_src(p.image_url) }}" alt="{{ p.name }}">

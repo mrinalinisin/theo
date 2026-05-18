@@ -806,13 +806,9 @@ body.has-selection .card-select-checkbox { display: flex; }
   background: var(--accent-light, #e8f0e6);
   border-radius: 999px;
 }
-/* Name + meta are now sandwiched between review (above) and image (below). */
-.review-card-meta {
-  border-top: 1px solid var(--border);
-  padding-top: 10px;
-}
 /* Push the product image to the bottom of the card and keep it modest
-   in height — it's a visual reminder, not the headline anymore. */
+   in height — it's a visual reminder, not the headline. The card has
+   no name/price block anymore; image identity + the review carry it. */
 .review-card .review-card-image-bottom {
   margin-top: auto;
   aspect-ratio: 16 / 10;
