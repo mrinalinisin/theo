@@ -751,6 +751,56 @@ body.has-selection .card-select-checkbox { display: flex; }
 }
 .settings-footer strong { color: var(--text); }
 
+/* Floating "+" button on the homepage — opens New-listing modal */
+.fab-add {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: none;
+  background: var(--accent, #2d5a27);
+  color: #fff;
+  font-size: 28px;
+  line-height: 1;
+  font-weight: 300;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.18);
+  z-index: 50;
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+.fab-add:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.22);
+}
+.fab-add:active { transform: translateY(0); }
+
+/* Tag picker (checkbox-as-chip) — used in the New-listing modal */
+.tag-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.tag-pick { cursor: pointer; }
+.tag-pick input { display: none; }
+.tag-pick-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  opacity: 0.55;
+  transition: opacity 0.12s;
+}
+.tag-pick input:checked + .tag-pick-chip {
+  opacity: 1;
+  outline: 2px solid currentColor;
+  outline-offset: -2px;
+}
+
 /* Tag admin list — under /settings/tags */
 .tag-admin-list {
   list-style: none;

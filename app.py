@@ -190,6 +190,7 @@ def create_app():
 
         tags = Tag.query.order_by(Tag.name).all()
         domains = _all_product_domains()
+        currencies = Currency.query.order_by(Currency.code).all()
 
         active_tag_obj = None
         if tag_filter:
@@ -236,6 +237,7 @@ def create_app():
             order_key=order_key,
             status_filter=status_filter,
             value_by_currency=value_by_currency,
+            currencies=currencies,
         )
 
     @app.route("/api/products")
@@ -704,6 +706,63 @@ def create_app():
         product.updated_at = datetime.now(timezone.utc)
         db.session.commit()
         flash("Review saved.", "success")
+        return redirect(url_for("product_detail", product_id=product.id))
+
+    @app.route("/products/create", methods=["POST"])
+    def product_create():
+        """Manual create from the homepage FAB modal. Roger remains the
+        primary path; this is the fallback for one-offs and anything the
+        scraper missed. Mandatory: name + url. Everything else optional."""
+        name = (request.form.get("name") or "").strip()
+        url = (request.form.get("url") or "").strip()
+        if not name or not url:
+            flash("Name and URL are required.", "error")
+            return redirect(url_for("shopping_list"))
+
+        # Reject obvious dupes by URL — the same guardrail import uses.
+        if Product.query.filter_by(url=url).first():
+            flash("A listing with that URL already exists.", "warning")
+            return redirect(url_for("shopping_list"))
+
+        store = (request.form.get("store") or "").strip()
+        notes = request.form.get("notes", "")
+        image_url = (request.form.get("image_url") or "").strip()
+        try:
+            quantity = max(1, int(request.form.get("quantity") or 1))
+        except (TypeError, ValueError):
+            quantity = 1
+
+        price_raw = (request.form.get("price") or "").strip()
+        price = _parse_price(price_raw) if price_raw else None
+        try:
+            currency_id = int(request.form.get("currency_id") or 0) or None
+        except (TypeError, ValueError):
+            currency_id = None
+
+        product = Product(
+            url=url,
+            name=name,
+            store=store,
+            current_price=price,
+            original_price=price,
+            image_url=image_url,
+            images=[image_url] if image_url else [],
+            notes=notes,
+            quantity=quantity,
+            currency_id=currency_id,
+            status="added",
+        )
+        db.session.add(product)
+        db.session.flush()
+        for tid in request.form.getlist("tag_ids"):
+            try:
+                tag = Tag.query.get(int(tid))
+            except (TypeError, ValueError):
+                continue
+            if tag:
+                product.tags.append(tag)
+        db.session.commit()
+        flash(f"Added \"{name}\".", "success")
         return redirect(url_for("product_detail", product_id=product.id))
 
     @app.route("/products/<int:product_id>/clone", methods=["GET", "POST"])
