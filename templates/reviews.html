@@ -18,20 +18,8 @@
   <div class="hero-card-grid reviews-grid">
     {% for p in products %}
     <a href="{{ url_for('product_detail', product_id=p.id) }}" class="hero-card review-card">
-      <div class="hero-card-image">
-        {% if p.image_url %}
-        <img src="{{ image_src(p.image_url) }}" alt="{{ p.name }}">
-        {% else %}
-        <span class="hero-card-image-placeholder">&#x1f6cd;&#xfe0f;</span>
-        {% endif %}
-      </div>
-      <div class="hero-card-body">
-        <div class="hero-card-title">{{ p.name }}</div>
-        <div class="hero-card-description">
-          {% if p.store %}{{ p.store }} &middot; {% endif %}
-          {{ p.fmt_price(p.current_price) }}{% if p.quantity and p.quantity > 1 %} &times; {{ p.quantity }}{% endif %}
-        </div>
-
+      {# Review first — it's the reason the card is on this page. #}
+      <div class="review-card-top">
         {% if p.review_text and p.review_text|trim %}
         <div class="review-card-text">{{ p.review_text }}</div>
         {% endif %}
@@ -53,6 +41,24 @@
           <span class="review-card-video">&#x25b6;&#xfe0f; Video</span>
           {% endif %}
         </div>
+        {% endif %}
+      </div>
+
+      {# Name + meta sit between the review and the image as the bridge. #}
+      <div class="hero-card-body review-card-meta">
+        <div class="hero-card-title">{{ p.name }}</div>
+        <div class="hero-card-description">
+          {% if p.store %}{{ p.store }} &middot; {% endif %}
+          {{ p.fmt_price(p.current_price) }}{% if p.quantity and p.quantity > 1 %} &times; {{ p.quantity }}{% endif %}
+        </div>
+      </div>
+
+      {# Product image at the bottom as a visual reminder of the thing reviewed. #}
+      <div class="hero-card-image review-card-image-bottom">
+        {% if p.image_url %}
+        <img src="{{ image_src(p.image_url) }}" alt="{{ p.name }}">
+        {% else %}
+        <span class="hero-card-image-placeholder">&#x1f6cd;&#xfe0f;</span>
         {% endif %}
       </div>
     </a>

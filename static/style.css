@@ -752,35 +752,34 @@ body.has-selection .card-select-checkbox { display: flex; }
 .settings-footer strong { color: var(--text); }
 
 /* Reviews — card grid (/reviews). Widens the standard hero grid so the
-   inline review text has room without forcing single-column. */
+   inline review text has room without forcing single-column. Visual
+   order on this surface is inverted: review on top, name/meta in the
+   middle, product image at the bottom. */
 .reviews-grid {
   grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
   gap: 14px;
 }
-.review-card .hero-card-body {
+.review-card-top {
+  padding: 14px 14px 10px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
 }
 .review-card-text {
   font-size: 13px;
   line-height: 1.5;
   color: var(--text);
   display: -webkit-box;
-  -webkit-line-clamp: 5;
+  -webkit-line-clamp: 6;
   -webkit-box-orient: vertical;
   overflow: hidden;
   white-space: pre-wrap;
-  margin-top: 4px;
-  padding-top: 8px;
-  border-top: 1px solid var(--border);
 }
 .review-card-extras {
   display: flex;
   align-items: center;
   gap: 8px;
   flex-wrap: wrap;
-  margin-top: auto;
 }
 .review-card-photos {
   display: flex;
@@ -806,6 +805,18 @@ body.has-selection .card-select-checkbox { display: flex; }
   padding: 2px 8px;
   background: var(--accent-light, #e8f0e6);
   border-radius: 999px;
+}
+/* Name + meta are now sandwiched between review (above) and image (below). */
+.review-card-meta {
+  border-top: 1px solid var(--border);
+  padding-top: 10px;
+}
+/* Push the product image to the bottom of the card and keep it modest
+   in height — it's a visual reminder, not the headline anymore. */
+.review-card .review-card-image-bottom {
+  margin-top: auto;
+  aspect-ratio: 16 / 10;
+  border-top: 1px solid var(--border);
 }
 
 /* See Also — related products on /products/<id> */
