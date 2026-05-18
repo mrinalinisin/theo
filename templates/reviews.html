@@ -15,51 +15,49 @@
 
 <div class="page-body">
   {% if products %}
-  <ul class="review-list">
+  <div class="hero-card-grid reviews-grid">
     {% for p in products %}
-    <li class="review-row">
-      <a href="{{ url_for('product_detail', product_id=p.id) }}" class="review-row-link">
-        <div class="review-row-thumb"
-             {% if p.image_url %}style="background-image:url('{{ image_src(p.image_url) }}');"{% endif %}>
-          {% if not p.image_url %}<span class="review-row-thumb-fallback">&#x1f6cd;&#xfe0f;</span>{% endif %}
+    <a href="{{ url_for('product_detail', product_id=p.id) }}" class="hero-card review-card">
+      <div class="hero-card-image">
+        {% if p.image_url %}
+        <img src="{{ image_src(p.image_url) }}" alt="{{ p.name }}">
+        {% else %}
+        <span class="hero-card-image-placeholder">&#x1f6cd;&#xfe0f;</span>
+        {% endif %}
+      </div>
+      <div class="hero-card-body">
+        <div class="hero-card-title">{{ p.name }}</div>
+        <div class="hero-card-description">
+          {% if p.store %}{{ p.store }} &middot; {% endif %}
+          {{ p.fmt_price(p.current_price) }}{% if p.quantity and p.quantity > 1 %} &times; {{ p.quantity }}{% endif %}
         </div>
-        <div class="review-row-body">
-          <div class="review-row-head">
-            <div class="review-row-name">{{ p.name }}</div>
-            <div class="review-row-meta text-faint">
-              {% if p.store %}{{ p.store }} &middot; {% endif %}
-              {{ p.fmt_price(p.current_price) }}{% if p.quantity and p.quantity > 1 %} &times; {{ p.quantity }}{% endif %}
-            </div>
-          </div>
 
-          {% if p.review_text and p.review_text|trim %}
-          <div class="review-row-text">{{ p.review_text }}</div>
+        {% if p.review_text and p.review_text|trim %}
+        <div class="review-card-text">{{ p.review_text }}</div>
+        {% endif %}
+
+        {% if p.review_photos or (p.review_video_url and p.review_video_url|trim) %}
+        <div class="review-card-extras">
+          {% if p.review_photos %}
+          <div class="review-card-photos">
+            {% for img in p.review_photos[:5] %}
+            <span class="review-card-photo"
+                  style="background-image:url('{{ image_src(img) }}');"></span>
+            {% endfor %}
+            {% if p.review_photos|length > 5 %}
+            <span class="review-card-photos-more">+{{ p.review_photos|length - 5 }}</span>
+            {% endif %}
+          </div>
           {% endif %}
-
-          <div class="review-row-extras">
-            {% if p.review_photos %}
-            <div class="review-row-photos">
-              {% for img in p.review_photos[:6] %}
-              <span class="review-row-photo"
-                    style="background-image:url('{{ image_src(img) }}');"></span>
-              {% endfor %}
-              {% if p.review_photos|length > 6 %}
-              <span class="review-row-photos-more">+{{ p.review_photos|length - 6 }}</span>
-              {% endif %}
-            </div>
-            {% endif %}
-
-            {% if p.review_video_url and p.review_video_url|trim %}
-            <span class="review-row-video" title="{{ p.review_video_url }}">
-              &#x25b6;&#xfe0f; Video
-            </span>
-            {% endif %}
-          </div>
+          {% if p.review_video_url and p.review_video_url|trim %}
+          <span class="review-card-video">&#x25b6;&#xfe0f; Video</span>
+          {% endif %}
         </div>
-      </a>
-    </li>
+        {% endif %}
+      </div>
+    </a>
     {% endfor %}
-  </ul>
+  </div>
   {% else %}
   <div class="empty-state">
     <div class="empty-icon">&#x270d;&#xfe0f;</div>
