@@ -2344,6 +2344,28 @@ def create_app():
     @app.route("/reports")
     def reports():
         days = _days_with_purchases_summary()
+
+        # Streak detection — mark every date that sits inside a run of
+        # consecutive calendar days (length ≥ 2). Walk the dates ascending
+        # so adjacency is just date_next - date == 1 day.
+        sorted_asc = sorted(days, key=lambda d: d["date"])
+        streak_dates = set()
+        i = 0
+        while i < len(sorted_asc):
+            j = i
+            while (j + 1 < len(sorted_asc)
+                   and (sorted_asc[j + 1]["date"] - sorted_asc[j]["date"]).days == 1):
+                j += 1
+            if j > i:
+                streak_len = j - i + 1
+                for k in range(i, j + 1):
+                    sorted_asc[k]["streak_len"] = streak_len
+                    streak_dates.add(sorted_asc[k]["date"])
+            i = j + 1
+
+        for d in days:
+            d["in_streak"] = d["date"] in streak_dates
+
         return render_template("reports_index.html", days=days)
 
     @app.route("/reports/<period>")

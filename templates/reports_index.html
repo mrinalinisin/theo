@@ -17,7 +17,8 @@
   <div class="day-card-grid">
     {% for d in days %}
     <a href="{{ url_for('report_month', period=d.month_slug) }}#day-{{ d.date.day }}"
-       class="day-card">
+       class="day-card {% if d.in_streak %}in-streak{% endif %}"
+       {% if d.in_streak %}title="Part of a {{ d.streak_len }}-day shopping streak"{% endif %}>
       <div class="day-card-date">{{ d.date.strftime('%a') }}</div>
       <div class="day-card-num">{{ d.date.day }}</div>
       <div class="day-card-month">{{ d.date.strftime('%b %Y') }}</div>

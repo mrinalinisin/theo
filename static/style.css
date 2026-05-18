@@ -1235,6 +1235,15 @@ body.has-selection .card-select-checkbox { display: flex; }
   box-shadow: 0 4px 14px rgba(0,0,0,0.07);
   border-color: var(--accent, #2d5a27);
 }
+/* Streak: this date sits inside a run of ≥2 consecutive shopping days.
+   Pale accent wash + a thicker accent rail on the left clearly marks
+   the run without introducing a new theme colour. */
+.day-card.in-streak {
+  background: var(--accent-light, #e8f0e6);
+  border-left: 3px solid var(--accent, #2d5a27);
+  padding-left: 13px;  /* compensate for the thicker left border */
+}
+.day-card.in-streak .day-card-num { color: var(--accent, #2d5a27); }
 .day-card-date {
   font-size: 11px;
   font-weight: 600;
