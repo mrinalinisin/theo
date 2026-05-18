@@ -2198,30 +2198,110 @@ def create_app():
         else:
             db_size = f"{db_bytes / 1024:.1f} KB"
 
-        def _measure(path, fn, **kwargs):
-            with app.test_request_context(path):
-                t0 = time.perf_counter()
-                fn(**kwargs)
-                return f"{(time.perf_counter() - t0) * 1000:.0f} ms"
+        # ── Per-route load-time sweep ────────────────────────────────────────
+        # Walk the url_map, fill in sample values for any path parameters we
+        # know how to satisfy, and time each GET handler. Routes we can't
+        # synthesize a real path for are reported as "skipped" with a reason
+        # so the page stays an honest catalogue of GET surfaces.
 
-        load_times = {
-            "/products": _measure("/products", shopping_list),
-            "/api/products": _measure("/api/products", shopping_list_api),
-            "/tags": _measure("/tags", tags),
-            "/settings": _measure("/settings", settings),
+        # Sample IDs from the DB — one cheap fetch each.
+        sample_product = Product.query.first()
+        sample_tag = Tag.query.first()
+        sample_brand = Brand.query.first()
+        sample_pub = Publication.query.first()
+        sample_period_row = (
+            Purchase.query.filter(Purchase.purchased_at.isnot(None))
+            .order_by(Purchase.purchased_at.desc()).first()
+        )
+        sample_period = (
+            sample_period_row.purchased_at.strftime("%Y-%m")
+            if sample_period_row and sample_period_row.purchased_at else None
+        )
+
+        samples = {
+            "product_id": sample_product.id if sample_product else None,
+            "other_id": sample_product.id if sample_product else None,
+            "tag_id": sample_tag.id if sample_tag else None,
+            "brand_id": sample_brand.id if sample_brand else None,
+            "pub_id": sample_pub.id if sample_pub else None,
+            "period": sample_period,
+            "brand_id": sample_brand.id if sample_brand else None,
         }
-        sample = Product.query.first()
-        if sample:
-            load_times["/products/<id>"] = _measure(
-                f"/products/{sample.id}", product_detail, product_id=sample.id
-            )
+
+        # Routes whose body is intentionally heavy (large file downloads).
+        # We skip-and-mark rather than time, so the stats page itself stays fast.
+        heavy_routes = {"/settings/export/listings.html", "/settings/export"}
+        # Self-skip: measuring /settings/stats would call this function
+        # recursively (each inner call re-times all 30+ routes), turning a
+        # 30 ms page into a 100-second page. The real number is the page
+        # render time the user just waited for.
+        self_route = "/settings/stats"
+
+        # Some path-parameter names we can't manufacture sample values for —
+        # filename/path on /images/<...> would 404 without a real file.
+        unfillable = {"filename"}
+
+        route_rows = []
+        for rule in sorted(app.url_map.iter_rules(), key=lambda r: r.rule):
+            if rule.endpoint == "static":
+                continue
+            methods = rule.methods or set()
+            if "GET" not in methods:
+                continue
+
+            # Build kwargs for the view from rule.arguments + samples.
+            kwargs = {}
+            skip_reason = None
+            for arg in rule.arguments:
+                if arg in unfillable:
+                    skip_reason = f"needs <{arg}>"
+                    break
+                if arg not in samples:
+                    skip_reason = f"unknown param <{arg}>"
+                    break
+                if samples[arg] is None:
+                    skip_reason = f"no sample for <{arg}>"
+                    break
+                kwargs[arg] = samples[arg]
+            if skip_reason:
+                route_rows.append({"path": rule.rule, "ms": None, "note": skip_reason})
+                continue
+
+            if rule.rule in heavy_routes:
+                route_rows.append({"path": rule.rule, "ms": None, "note": "skipped (large download)"})
+                continue
+            if rule.rule == self_route:
+                route_rows.append({"path": rule.rule, "ms": None, "note": "self — see page load"})
+                continue
+
+            # Concrete path used for test_request_context.
+            try:
+                with app.test_request_context("/"):
+                    concrete = url_for(rule.endpoint, **kwargs)
+            except Exception as e:
+                route_rows.append({"path": rule.rule, "ms": None, "note": f"url_for: {e.__class__.__name__}"})
+                continue
+
+            view_fn = app.view_functions.get(rule.endpoint)
+            if view_fn is None:
+                route_rows.append({"path": rule.rule, "ms": None, "note": "no view fn"})
+                continue
+
+            try:
+                with app.test_request_context(concrete):
+                    t0 = time.perf_counter()
+                    view_fn(**kwargs)
+                    ms = (time.perf_counter() - t0) * 1000
+                route_rows.append({"path": rule.rule, "ms": int(ms), "note": None})
+            except Exception as e:
+                route_rows.append({"path": rule.rule, "ms": None, "note": f"err: {e.__class__.__name__}"})
 
         return render_template(
             "settings.html",
             settings=Settings.get(),
             tab="stats",
             db_size=db_size,
-            load_times=load_times,
+            route_rows=route_rows,
         )
 
     @app.route("/settings/github", methods=["POST"])

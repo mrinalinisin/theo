@@ -3,15 +3,27 @@
     <div class="stat-label">Database Size</div>
     <div class="stat-value">{{ db_size }}</div>
   </div>
+  <div class="stat-card">
+    <div class="stat-label">GET routes</div>
+    <div class="stat-value">{{ route_rows|length }}</div>
+  </div>
 </div>
 
 <details class="accordion" open>
   <summary>Route Load Times</summary>
   <div class="accordion-body" style="padding:0;">
-    {% for route, time in load_times.items() %}
+    {% for row in route_rows %}
     <div class="interval-item">
-      <div class="interval-item-name" style="font-family: var(--font-mono, monospace);">{{ route }}</div>
-      <div class="stat-trend" style="white-space:nowrap;">{{ time }}</div>
+      <div class="interval-item-name" style="font-family: var(--font-mono, monospace);">
+        {{ row.path }}
+      </div>
+      <div class="stat-trend" style="white-space:nowrap;">
+        {% if row.ms is not none %}
+          <strong>{{ row.ms }} ms</strong>
+        {% else %}
+          <span class="text-faint" style="font-size:12px;">{{ row.note }}</span>
+        {% endif %}
+      </div>
     </div>
     {% endfor %}
   </div>
