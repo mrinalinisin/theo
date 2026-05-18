@@ -87,3 +87,36 @@
     </div>
   </div>
 </div>
+
+<div class="card mt-16 danger-card">
+  <div class="card-header danger-card-header">Danger zone &mdash; reset app</div>
+  <div class="card-body">
+    <div class="mb-16" style="font-size:14px; line-height:1.55;">
+      Wipes <strong>everything</strong> from this Theo instance: every product,
+      tag, brand, purchase, See Also link, published-page record, and every
+      image file in <code>instance/images/</code>.
+    </div>
+    <div class="text-faint mb-16" style="font-size:13px; line-height:1.55;">
+      Preserved: <strong>Settings</strong> (so your GitHub token survives) and
+      <strong>Currency</strong> reference rows (so the New-listing form still
+      offers $/₹/€). If you want to keep the data, download the
+      <strong>migration bundle</strong> at the top first &mdash; reset cannot
+      be undone.
+    </div>
+    <form method="POST" action="{{ url_for('settings_reset') }}"
+          onsubmit="return confirm('Last chance. Reset and wipe all data from this Theo instance?');">
+      <div class="form-group">
+        <label class="form-label">
+          Type <code>RESET ALL DATA</code> to confirm
+        </label>
+        <input type="text" name="confirm" class="form-input"
+               placeholder="RESET ALL DATA"
+               autocomplete="off"
+               oninput="document.getElementById('resetBtn').disabled = this.value !== 'RESET ALL DATA';">
+      </div>
+      <button type="submit" id="resetBtn" class="btn btn-danger" disabled>
+        &#x1f4a3; Wipe all data
+      </button>
+    </form>
+  </div>
+</div>

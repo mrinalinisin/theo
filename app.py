@@ -29,7 +29,7 @@ import time
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, send_from_directory, session
 from sqlalchemy import func, or_, and_
 from config import Config
-from models import db, Product, Tag, Purchase, Settings, Currency, Publication, Brand, product_tags
+from models import db, Product, Tag, Purchase, Settings, Currency, Publication, Brand, ImageHash, product_tags, product_related
 
 
 def create_app():
@@ -2187,6 +2187,60 @@ def create_app():
             "success",
         )
         return redirect(url_for("settings_data"))
+
+    # ── Destructive reset ─────────────────────────────────────────────────
+    # Wipes every user-data table and the image cache. Settings (GitHub PAT,
+    # schema migration flags) and Currency rows (reference data the new-
+    # listing modal depends on) are intentionally preserved so the user
+    # doesn't have to re-connect GitHub or re-seed currencies after a reset.
+
+    RESET_CONFIRM_PHRASE = "RESET ALL DATA"
+
+    @app.route("/settings/reset", methods=["POST"])
+    def settings_reset():
+        if request.form.get("confirm") != RESET_CONFIRM_PHRASE:
+            flash(
+                f"Type the exact phrase “{RESET_CONFIRM_PHRASE}” to confirm reset.",
+                "error",
+            )
+            return redirect(url_for("settings_data"))
+
+        # 1. Delete user-data tables in FK-safe order.
+        db.session.execute(product_related.delete())
+        db.session.execute(product_tags.delete())
+        Purchase.query.delete()
+        ImageHash.query.delete()
+        Publication.query.delete()
+        Product.query.delete()
+        Tag.query.delete()
+        Brand.query.delete()
+        db.session.commit()
+
+        # 2. Clear image files on disk. Honour dotfiles (e.g. .DS_Store).
+        images_dir = os.path.join(app.instance_path, "images")
+        cleared_files = 0
+        if os.path.isdir(images_dir):
+            for fname in os.listdir(images_dir):
+                if fname.startswith("."):
+                    continue
+                try:
+                    os.remove(os.path.join(images_dir, fname))
+                    cleared_files += 1
+                except OSError:
+                    pass
+
+        # 3. Clear the client cart in the current session — anything else
+        #    is per-other-session and will rebuild from the empty DB.
+        session.pop("cart", None)
+
+        flash(
+            f"App reset. Wiped products, tags, brands, purchases, "
+            f"publications, See Also links, and {cleared_files} image file"
+            f"{'s' if cleared_files != 1 else ''}. "
+            f"Settings and currencies preserved.",
+            "success",
+        )
+        return redirect(url_for("shopping_list"))
 
     @app.route("/settings/stats")
     def settings_stats():
