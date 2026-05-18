@@ -1029,6 +1029,22 @@ body.has-selection .card-select-checkbox { display: flex; }
   flex: 1;
   font-weight: 600;
 }
+.brand-admin-display {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.brand-admin-name-display {
+  flex: 1;
+  font-size: 15px;
+  font-weight: 600;
+}
+.brand-admin-notes-display {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text);
+  white-space: pre-wrap;
+}
 .brand-admin-count {
   font-size: 12px;
   white-space: nowrap;

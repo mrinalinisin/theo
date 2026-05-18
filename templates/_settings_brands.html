@@ -15,8 +15,36 @@
     <ul class="brand-admin-list">
       {% for row in brand_rows %}
       {% set b = row.brand %}
-      <li class="brand-admin-row">
-        <form method="POST" action="{{ url_for('brand_edit', brand_id=b.id) }}" class="brand-admin-form">
+      <li class="brand-admin-row" data-brand-id="{{ b.id }}">
+        {# ── Read mode (default) ─────────────────────────────────────── #}
+        <div class="brand-admin-display" id="brand-display-{{ b.id }}">
+          <div class="brand-admin-head">
+            <div class="brand-admin-name-display">{{ b.name }}</div>
+            <div class="brand-admin-count text-faint">
+              {{ row.count }} item{{ '' if row.count == 1 else 's' }}
+            </div>
+          </div>
+          {% if b.notes and b.notes|trim %}
+          <div class="brand-admin-notes-display">{{ b.notes }}</div>
+          {% else %}
+          <div class="brand-admin-notes-display text-faint" style="font-style:italic;">
+            No notes yet.
+          </div>
+          {% endif %}
+          <div class="brand-admin-actions">
+            <button type="button" class="btn btn-ghost btn-sm"
+                    onclick="toggleBrandEdit({{ b.id }}, true)">Edit</button>
+            <form method="POST" action="{{ url_for('brand_delete', brand_id=b.id) }}" style="display:inline;"
+                  onsubmit="return confirm('Remove brand &quot;{{ b.name }}&quot;? Notes will be lost; product listings stay untouched.');">
+              <input type="hidden" name="next" value="{{ next_url }}">
+              <button type="submit" class="btn btn-ghost btn-sm" style="color:var(--danger, #b94545);">Delete</button>
+            </form>
+          </div>
+        </div>
+
+        {# ── Edit mode (hidden until "Edit" is clicked) ──────────────── #}
+        <form method="POST" action="{{ url_for('brand_edit', brand_id=b.id) }}"
+              class="brand-admin-form" id="brand-edit-{{ b.id }}" style="display:none;">
           <input type="hidden" name="next" value="{{ next_url }}">
           <div class="brand-admin-head">
             <input type="text" name="name" value="{{ b.name }}" class="form-input brand-admin-name" required>
@@ -28,17 +56,23 @@
                     placeholder="Free-text notes — fit, returns, quality, sizing, anything.">{{ b.notes or '' }}</textarea>
           <div class="brand-admin-actions">
             <button type="submit" class="btn btn-primary btn-sm">Save</button>
-            <button type="button" class="btn btn-ghost btn-sm"
-                    formaction="{{ url_for('brand_delete', brand_id=b.id) }}"
-                    formnovalidate
-                    onclick="if (!confirm('Remove brand &quot;{{ b.name }}&quot;? Notes will be lost; product listings stay untouched.')) return false;
-                             this.form.action = this.getAttribute('formaction'); this.form.submit();"
-                    style="color:var(--danger, #b94545);">Delete</button>
+            <button type="button" class="btn btn-secondary btn-sm"
+                    onclick="toggleBrandEdit({{ b.id }}, false)">Cancel</button>
           </div>
         </form>
       </li>
       {% endfor %}
     </ul>
+    <script>
+    function toggleBrandEdit(id, editing) {
+      document.getElementById('brand-display-' + id).style.display = editing ? 'none' : '';
+      document.getElementById('brand-edit-' + id).style.display = editing ? '' : 'none';
+      if (editing) {
+        const nameInput = document.querySelector('#brand-edit-' + id + ' input[name="name"]');
+        if (nameInput) nameInput.focus();
+      }
+    }
+    </script>
     {% else %}
     <div class="empty-state" style="padding:32px 24px;">
       <div class="empty-icon">&#x1f3ec;</div>
