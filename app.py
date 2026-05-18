@@ -147,7 +147,14 @@ def create_app():
             query = query.filter(Product.tags.any(Tag.id == int(tag_filter)))
         if search_q:
             escaped = search_q.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
-            query = query.filter(Product.name.ilike(f"%{escaped}%", escape="\\"))
+            like = f"%{escaped}%"
+            # Match product name OR tracking URL — pasting a bare tracking
+            # number finds the parcel even though the carrier-specific
+            # querystring isn't part of the typed query.
+            query = query.filter(or_(
+                Product.name.ilike(like, escape="\\"),
+                Product.purchase.has(Purchase.tracking_url.ilike(like, escape="\\")),
+            ))
         if domain_filter:
             # Match both bare and www-prefixed forms; the `//` anchor avoids
             # matching "fakeamazon.com" when filtering "amazon.com".
@@ -215,7 +222,11 @@ def create_app():
             val_query = val_query.filter(Product.tags.any(Tag.id == int(tag_filter)))
             if search_q:
                 escaped = search_q.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
-                val_query = val_query.filter(Product.name.ilike(f"%{escaped}%", escape="\\"))
+                like = f"%{escaped}%"
+                val_query = val_query.filter(or_(
+                    Product.name.ilike(like, escape="\\"),
+                    Product.purchase.has(Purchase.tracking_url.ilike(like, escape="\\")),
+                ))
             value_by_currency = [
                 (symbol or "₹", total)
                 for symbol, total in val_query.group_by(Currency.symbol).all()
