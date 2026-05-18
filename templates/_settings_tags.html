@@ -1,0 +1,160 @@
+{% set next_url = url_for('settings_tags') %}
+{% set swatches = ['#3d6b8a', '#7a4a9e', '#a05c1e', '#2d7a5a', '#8a3a3a', '#6a6a6a', '#c2781e', '#2d5a27'] %}
+
+<div class="card">
+  <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
+    <span>Tags <span class="text-faint" style="font-weight:400; font-size:13px;">({{ tag_rows|length }})</span></span>
+    <button class="btn btn-primary btn-sm"
+            onclick="document.getElementById('modal-new-tag').classList.add('open')">+ New tag</button>
+  </div>
+  <div class="card-body" style="padding:0;">
+    {% if tag_rows %}
+    <ul class="tag-admin-list">
+      {% for row in tag_rows %}
+      {% set t = row.tag %}
+      <li class="tag-admin-row">
+        <a href="{{ url_for('shopping_list', tag=t.id) }}" class="tag-admin-chip"
+           style="background:{{ t.colour }}18; color:{{ t.colour }};">
+          <span class="tag-admin-dot" style="background:{{ t.colour }};"></span>{{ t.name }}
+        </a>
+        <div class="tag-admin-count text-faint">
+          {{ row.count }} item{{ '' if row.count == 1 else 's' }}
+        </div>
+        <div class="tag-admin-desc text-faint">{{ t.description or '' }}</div>
+        <div class="tag-admin-actions">
+          <button class="btn btn-ghost btn-sm"
+                  onclick='openEditTag({{ t.id }}, {{ t.name|tojson }}, {{ t.colour|tojson }}, {{ (t.description or "")|tojson }})'>
+            Edit
+          </button>
+          <form method="POST" action="{{ url_for('tag_delete', tag_id=t.id) }}" style="display:inline;"
+                onsubmit="return confirm('Delete tag &quot;{{ t.name }}&quot;? The {{ row.count }} item{{ '' if row.count == 1 else 's' }} carrying it won&apos;t be deleted.');">
+            <input type="hidden" name="next" value="{{ next_url }}">
+            <button type="submit" class="btn btn-ghost btn-sm" style="color:var(--danger, #b94545);">Delete</button>
+          </form>
+        </div>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <div class="empty-state" style="padding:32px 24px;">
+      <div class="empty-icon">&#x1f3f7;&#xfe0f;</div>
+      <div class="empty-title">No tags yet</div>
+      <div class="empty-desc">Tags help group items into categories like Clothes, Tech, or Books.</div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- ═══ Modal: New Tag ═══ -->
+<div class="modal-overlay" id="modal-new-tag">
+  <div class="modal" style="max-width:420px;">
+    <form method="POST" action="{{ url_for('tag_create') }}">
+      <input type="hidden" name="next" value="{{ next_url }}">
+      <div class="modal-header">
+        <div class="modal-title">New tag</div>
+        <button type="button" class="btn btn-ghost btn-sm"
+                onclick="document.getElementById('modal-new-tag').classList.remove('open')">&#x2715;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Name</label>
+          <input type="text" name="name" class="form-input" placeholder="e.g. Clothes, Tech, Books" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Description <span class="text-xs text-faint">(optional)</span></label>
+          <textarea name="description" class="form-input" rows="2"
+                    placeholder="What kind of items belong here?"></textarea>
+        </div>
+        <div class="form-group" style="margin-bottom:0;">
+          <label class="form-label">Colour <span class="text-xs text-faint">(blank = random)</span></label>
+          <div class="swatch-row" id="new-tag-swatches">
+            {% for c in swatches %}
+            <div class="swatch" style="background:{{ c }};"
+                 onclick="selectSwatch(this, '{{ c }}', 'new-tag-colour')"></div>
+            {% endfor %}
+          </div>
+          <input type="hidden" name="colour" id="new-tag-colour" value="">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary"
+                onclick="document.getElementById('modal-new-tag').classList.remove('open')">Cancel</button>
+        <button type="submit" class="btn btn-primary">Create</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ═══ Modal: Edit Tag ═══ -->
+<div class="modal-overlay" id="modal-edit-tag">
+  <div class="modal" style="max-width:420px;">
+    <form method="POST" id="edit-tag-form">
+      <input type="hidden" name="next" value="{{ next_url }}">
+      <div class="modal-header">
+        <div class="modal-title">Edit tag</div>
+        <button type="button" class="btn btn-ghost btn-sm"
+                onclick="document.getElementById('modal-edit-tag').classList.remove('open')">&#x2715;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Name</label>
+          <input type="text" name="name" id="edit-tag-name" class="form-input" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Description</label>
+          <textarea name="description" id="edit-tag-desc" class="form-input" rows="2"></textarea>
+        </div>
+        <div class="form-group" style="margin-bottom:0;">
+          <label class="form-label">Colour</label>
+          <div class="swatch-row" id="edit-tag-swatches">
+            {% for c in swatches %}
+            <div class="swatch" style="background:{{ c }};"
+                 onclick="selectSwatch(this, '{{ c }}', 'edit-tag-colour')"></div>
+            {% endfor %}
+          </div>
+          <input type="hidden" name="colour" id="edit-tag-colour" value="">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary"
+                onclick="document.getElementById('modal-edit-tag').classList.remove('open')">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+(function() {
+  window.selectSwatch = function(el, colour, inputId) {
+    el.closest('.swatch-row').querySelectorAll('.swatch').forEach(s => s.classList.remove('active'));
+    el.classList.add('active');
+    document.getElementById(inputId).value = colour;
+  };
+
+  function rgbToHex(rgb) {
+    if (!rgb) return '';
+    if (rgb.startsWith('#')) return rgb.toLowerCase();
+    const m = rgb.match(/\d+/g);
+    if (!m) return '';
+    return '#' + m.slice(0, 3).map(x => parseInt(x).toString(16).padStart(2, '0')).join('');
+  }
+
+  window.openEditTag = function(id, name, colour, desc) {
+    document.getElementById('edit-tag-form').action = '/tags/' + id + '/edit';
+    document.getElementById('edit-tag-name').value = name;
+    document.getElementById('edit-tag-desc').value = desc;
+    document.getElementById('edit-tag-colour').value = colour;
+    document.querySelectorAll('#edit-tag-swatches .swatch').forEach(s => {
+      const hex = rgbToHex(s.style.backgroundColor);
+      s.classList.toggle('active', hex === (colour || '').toLowerCase());
+    });
+    document.getElementById('modal-edit-tag').classList.add('open');
+  };
+
+  // Close modals on overlay click
+  document.querySelectorAll('.modal-overlay').forEach(o => {
+    o.addEventListener('click', e => { if (e.target === o) o.classList.remove('open'); });
+  });
+})();
+</script>

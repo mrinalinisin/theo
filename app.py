@@ -1366,23 +1366,32 @@ def create_app():
             return resp
         return render_template("tags.html", tags=all_tags)
 
+    def _tag_redirect():
+        """Where to bounce after a tag CRUD action. Honours an optional
+        `next` form field so /settings/tags and /tags can share the same
+        write endpoints without forking. Only same-app paths are allowed."""
+        nxt = (request.form.get("next") or "").strip()
+        if nxt.startswith("/") and not nxt.startswith("//"):
+            return redirect(nxt)
+        return redirect(url_for("tags"))
+
     @app.route("/tags/create", methods=["POST"])
     def tag_create():
         name = request.form.get("name", "").strip()
         description = request.form.get("description", "")
         if not name:
             flash("Tag name is required.", "error")
-            return redirect(url_for("tags"))
+            return _tag_redirect()
         name = name[:1].upper() + name[1:]
         if Tag.query.filter_by(name=name).first():
             flash(f"Tag \"{name}\" already exists.", "error")
-            return redirect(url_for("tags"))
-        colour = _pick_random_tag_colour()
+            return _tag_redirect()
+        colour = request.form.get("colour", "").strip() or _pick_random_tag_colour()
         tag = Tag(name=name, colour=colour, description=description)
         db.session.add(tag)
         db.session.commit()
         flash(f"Tag \"{name}\" created.", "success")
-        return redirect(url_for("tags"))
+        return _tag_redirect()
 
     @app.route("/tags/<int:tag_id>/edit", methods=["POST"])
     def tag_edit(tag_id):
@@ -1392,7 +1401,7 @@ def create_app():
         tag.description = request.form.get("description", tag.description)
         db.session.commit()
         flash(f"Tag \"{tag.name}\" updated.", "success")
-        return redirect(url_for("tags"))
+        return _tag_redirect()
 
     @app.route("/tags/<int:tag_id>/delete", methods=["POST"])
     def tag_delete(tag_id):
@@ -1400,7 +1409,7 @@ def create_app():
         db.session.delete(tag)
         db.session.commit()
         flash(f"Tag deleted.", "success")
-        return redirect(url_for("tags"))
+        return _tag_redirect()
 
     # ── Settings ──────────────────────────────────────────────────────────────
 
@@ -1423,6 +1432,21 @@ def create_app():
     def settings_about():
         # About moved to a footer on all /settings pages; preserve the old URL.
         return redirect(url_for("settings_github"), code=302)
+
+    @app.route("/settings/tags")
+    def settings_tags():
+        tags = Tag.query.order_by(Tag.name).all()
+        # Single grouped query for product counts — avoids the N+1 that
+        # `len(t.products)` would trigger in the loop below.
+        counts = dict(
+            db.session.query(
+                product_tags.c.tag_id, func.count(product_tags.c.product_id)
+            ).group_by(product_tags.c.tag_id).all()
+        )
+        rows = [{"tag": t, "count": counts.get(t.id, 0)} for t in tags]
+        return render_template(
+            "settings.html", settings=Settings.get(), tab="tags", tag_rows=rows,
+        )
 
     # ── Data export / import ──────────────────────────────────────────────
     # Portable cross-instance backup format. A ZIP bundle containing:
