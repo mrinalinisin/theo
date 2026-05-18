@@ -2,7 +2,7 @@
 {% block title %}Reports — Theo{% endblock %}
 
 {% block content %}
-<div class="page-body" style="max-width: 720px;">
+<div class="page-body">
 {% if not days %}
   <div class="empty-state">
     <div class="empty-icon">&#x1f4c8;</div>
@@ -11,24 +11,28 @@
   </div>
 {% else %}
   <div class="text-sm text-faint mb-16">
-    One row per day you bought something — click any row to see that
+    One card per day you bought something — click any card to see that
     month's calendar and tag breakdown.
   </div>
-  <ul class="report-list">
+  <div class="day-card-grid">
     {% for d in days %}
-    <li>
-      <a href="{{ url_for('report_month', period=d.month_slug) }}#day-{{ d.date.day }}" class="report-row">
-        <div class="report-row-label">{{ d.label }}</div>
-        <div class="report-row-stats">
-          {{ d.count }} item{{ 's' if d.count != 1 else '' }}
-          {% for sym, total in d.totals %}
-          &middot; <strong>{{ sym }}{{ total|int }}</strong>
-          {% endfor %}
-        </div>
-      </a>
-    </li>
+    <a href="{{ url_for('report_month', period=d.month_slug) }}#day-{{ d.date.day }}"
+       class="day-card">
+      <div class="day-card-date">{{ d.date.strftime('%a') }}</div>
+      <div class="day-card-num">{{ d.date.day }}</div>
+      <div class="day-card-month">{{ d.date.strftime('%b %Y') }}</div>
+      <div class="day-card-divider"></div>
+      <div class="day-card-count">
+        {{ d.count }} item{{ 's' if d.count != 1 else '' }}
+      </div>
+      <div class="day-card-totals">
+        {% for sym, total in d.totals %}
+        <span>{{ sym }}{{ total|int }}</span>
+        {% endfor %}
+      </div>
+    </a>
     {% endfor %}
-  </ul>
+  </div>
 {% endif %}
 </div>
 {% endblock %}

@@ -1213,6 +1213,67 @@ body.has-selection .card-select-checkbox { display: flex; }
 .report-row-label { font-size: 16px; font-weight: 600; }
 .report-row-stats { font-size: 13px; color: var(--text-muted); text-align: right; }
 
+/* Day-of-purchase cards — /reports index */
+.day-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 12px;
+}
+.day-card {
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px;
+  text-decoration: none;
+  color: inherit;
+  transition: transform 0.12s, box-shadow 0.12s, border-color 0.12s;
+}
+.day-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 14px rgba(0,0,0,0.07);
+  border-color: var(--accent, #2d5a27);
+}
+.day-card-date {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.day-card-num {
+  font-size: 36px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--accent, #2d5a27);
+  margin-top: 2px;
+}
+.day-card-month {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+.day-card-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 10px 0;
+}
+.day-card-count {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+.day-card-totals {
+  margin-top: 4px;
+  font-size: 13px;
+  color: var(--text-muted);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.day-card-totals span { white-space: nowrap; }
+
 /* Per-month calendar — items per day on /reports/<YYYY-MM> */
 .report-cal {
   display: grid;
