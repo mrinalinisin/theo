@@ -808,11 +808,24 @@ body.has-selection .card-select-checkbox { display: flex; }
 }
 /* Push the product image to the bottom of the card and keep it modest
    in height — it's a visual reminder, not the headline. The card has
-   no name/price block anymore; image identity + the review carry it. */
+   no name/price block anymore; image identity + the review carry it.
+   Padding around the image gives it visual breathing room from the
+   card's edges (overrides hero-card-image's edge-to-edge default). */
 .review-card .review-card-image-bottom {
   margin-top: auto;
-  aspect-ratio: 16 / 10;
-  border-top: 1px solid var(--border);
+  aspect-ratio: auto;
+  height: auto;
+  padding: 0 14px 14px;
+  background: transparent;
+}
+.review-card .review-card-image-bottom img {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 200px;
+  object-fit: contain;
+  border-radius: var(--radius-sm);
+  background: var(--bg);
 }
 
 /* See Also — related products on /products/<id> */
