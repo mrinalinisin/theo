@@ -1096,7 +1096,30 @@ def create_app():
         rows = Product.query.filter(Product.id.in_(ids)).all()
         by_id = {p.id: p for p in rows}
         products = [by_id[i] for i in ids if i in by_id]
-        return render_template("publish_form.html", products=products, repos=repos, settings=s)
+
+        # Existing publications grouped by repo, so the "Update existing"
+        # picker can show only the pages that live on the currently-chosen
+        # repo. Newest first matches how /settings/github lists them.
+        pubs_by_repo = {}
+        for p in (Publication.query
+                  .filter(Publication.repo.in_(repos))
+                  .order_by(Publication.updated_at.desc())
+                  .all()):
+            pubs_by_repo.setdefault(p.repo, []).append({
+                "id": p.id,
+                "name": p.name,
+                "slug": p.slug,
+                "item_count": p.item_count,
+                "has_item_ids": bool(p.item_ids),
+            })
+
+        return render_template(
+            "publish_form.html",
+            products=products,
+            repos=repos,
+            settings=s,
+            pubs_by_repo=pubs_by_repo,
+        )
 
     @app.route("/publish/create", methods=["POST"])
     def publish_create():
@@ -1108,29 +1131,60 @@ def create_app():
             flash("Connect GitHub first to publish.", "warning")
             return redirect(url_for("settings_github"))
 
-        # Parse form
-        page_name = (request.form.get("page_name") or "").strip()
-        if not page_name:
-            flash("Page name required.", "error")
-            return redirect(request.referrer or url_for("shopping_list"))
-        slug = _slugify(page_name)
+        # Mode: "new" (default) | "add" (merge into existing) | "replace"
+        # (rewrite existing). For "add"/"replace", target_pub_id picks
+        # the Publication we're operating on; page_name + slug come from
+        # there, not the form.
+        mode = (request.form.get("mode") or "new").strip()
+        target_pub = None
+        if mode in ("add", "replace"):
+            try:
+                pub_id = int(request.form.get("target_pub_id") or 0)
+            except ValueError:
+                pub_id = 0
+            target_pub = Publication.query.get(pub_id) if pub_id else None
+            if not target_pub:
+                flash("Pick an existing page to update.", "error")
+                return redirect(request.referrer or url_for("shopping_list"))
 
-        repos = _resolve_publish_targets(s)
-        repo = (request.form.get("repo") or "").strip() or (repos[0] if repos else "")
-        if not repo:
-            flash("No publish target available.", "error")
-            return redirect(url_for("settings_github"))
+        if target_pub:
+            page_name = target_pub.name
+            slug = target_pub.slug
+            repo = target_pub.repo
+        else:
+            page_name = (request.form.get("page_name") or "").strip()
+            if not page_name:
+                flash("Page name required.", "error")
+                return redirect(request.referrer or url_for("shopping_list"))
+            slug = _slugify(page_name)
+            repos = _resolve_publish_targets(s)
+            repo = (request.form.get("repo") or "").strip() or (repos[0] if repos else "")
+            if not repo:
+                flash("No publish target available.", "error")
+                return redirect(url_for("settings_github"))
 
         try:
-            ids = [int(x) for x in (request.form.get("ids") or "").split(",") if x.strip()]
+            new_ids = [int(x) for x in (request.form.get("ids") or "").split(",") if x.strip()]
         except ValueError:
-            ids = []
-        if not ids:
+            new_ids = []
+        if not new_ids:
             flash("No items to publish.", "warning")
             return redirect(url_for("shopping_list"))
+
+        # Final id list depends on mode. For "add", we union previously-
+        # published ids with the new selection (preserve old order, then
+        # append anything new). For everything else, the form's selection
+        # is authoritative.
+        if mode == "add" and target_pub and target_pub.item_ids:
+            existing_ids = list(target_pub.item_ids)
+            ids = existing_ids + [i for i in new_ids if i not in existing_ids]
+        else:
+            ids = new_ids
+
         rows = Product.query.filter(Product.id.in_(ids)).all()
         by_id = {p.id: p for p in rows}
         products = [by_id[i] for i in ids if i in by_id]
+        final_ids = [p.id for p in products]
 
         # Render the static page. _published_page.html is a standalone
         # document (no {% extends %}). Image references get inlined to data
@@ -1160,12 +1214,14 @@ def create_app():
         if existing:
             existing.name = page_name
             existing.item_count = len(products)
+            existing.item_ids = final_ids
             existing.updated_at = datetime.now(timezone.utc)
             existing.url = _public_url(repo, slug)
         else:
             db.session.add(Publication(
                 repo=repo, slug=slug, name=page_name,
                 item_count=len(products),
+                item_ids=final_ids,
                 url=_public_url(repo, slug),
             ))
         db.session.commit()
@@ -2212,6 +2268,11 @@ def _run_lightweight_migrations():
     # Publication table — see models.Publication. SQLAlchemy create_all
     # below will create it on a fresh DB; nothing to do here for an
     # upgrading DB beyond letting SQLAlchemy's metadata catch up.
+    if column_exists("publication", "id") and not column_exists("publication", "item_ids"):
+        # JSON list of product ids per publication so we can merge new
+        # selections into existing pages. Legacy rows get [] — see model.
+        db.session.execute(text("ALTER TABLE publication ADD COLUMN item_ids TEXT DEFAULT '[]'"))
+        db.session.commit()
 
     # Settings.state_refactor_done added 2026-05 — gates the one-shot
     # listing-states migration below (watching/awaiting_delivery/purchased

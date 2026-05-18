@@ -22,28 +22,92 @@
   <form method="POST" action="{{ url_for('publish_create') }}">
     <input type="hidden" name="ids" value="{{ products|map(attribute='id')|join(',') }}">
 
+    {# Mode picker — only shown when at least one existing publication
+       lives on an eligible target repo. Otherwise the form behaves
+       exactly like before (new page only). #}
+    {% set has_existing = pubs_by_repo and (pubs_by_repo.values()|map('length')|sum) > 0 %}
+    {% if has_existing %}
     <div class="form-group">
-      <label class="form-label">Page name</label>
-      <input type="text" name="page_name" class="form-input" autofocus required
-             placeholder="e.g. Wishlist for spring">
-      <div class="form-hint">Becomes the filename (slugified) and the page heading.</div>
-    </div>
-
-    {% if repos|length > 1 %}
-    <div class="form-group">
-      <label class="form-label">Publish to</label>
-      <select name="repo" class="form-select">
-        {% for r in repos %}
-        <option value="{{ r }}">{{ r }}</option>
-        {% endfor %}
-      </select>
+      <label class="form-label">What to publish</label>
+      <div class="publish-mode">
+        <label class="publish-mode-opt">
+          <input type="radio" name="mode" value="new" checked
+                 onchange="updatePublishMode()">
+          <span><strong>Create a new page</strong>
+            <span class="text-xs text-faint">Make a fresh static HTML file.</span>
+          </span>
+        </label>
+        <label class="publish-mode-opt">
+          <input type="radio" name="mode" value="add"
+                 onchange="updatePublishMode()">
+          <span><strong>Add to an existing page</strong>
+            <span class="text-xs text-faint">Merge these items into a page you've already published.</span>
+          </span>
+        </label>
+        <label class="publish-mode-opt">
+          <input type="radio" name="mode" value="replace"
+                 onchange="updatePublishMode()">
+          <span><strong>Replace an existing page</strong>
+            <span class="text-xs text-faint">Overwrite a published page with only these items.</span>
+          </span>
+        </label>
+      </div>
     </div>
     {% else %}
-    <input type="hidden" name="repo" value="{{ repos[0] }}">
+    <input type="hidden" name="mode" value="new">
+    {% endif %}
+
+    {# ── "New page" branch ───────────────────────────────────────────── #}
+    <div id="publish-fields-new">
+      <div class="form-group">
+        <label class="form-label">Page name</label>
+        <input type="text" name="page_name" id="newPageName" class="form-input" autofocus
+               placeholder="e.g. Wishlist for spring">
+        <div class="form-hint">Becomes the filename (slugified) and the page heading.</div>
+      </div>
+
+      {% if repos|length > 1 %}
+      <div class="form-group">
+        <label class="form-label">Publish to</label>
+        <select name="repo" class="form-select">
+          {% for r in repos %}
+          <option value="{{ r }}">{{ r }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      {% else %}
+      <input type="hidden" name="repo" value="{{ repos[0] }}">
+      {% endif %}
+    </div>
+
+    {# ── "Add to / Replace existing" branch ──────────────────────────── #}
+    {% if has_existing %}
+    <div id="publish-fields-existing" style="display:none;">
+      <div class="form-group">
+        <label class="form-label">Existing page</label>
+        <select name="target_pub_id" class="form-select" id="targetPubSelect">
+          {% for repo, pubs in pubs_by_repo.items() %}
+          <optgroup label="{{ repo }}">
+            {% for p in pubs %}
+            <option value="{{ p.id }}" data-has-item-ids="{{ '1' if p.has_item_ids else '0' }}">
+              {{ p.name }} &middot; {{ p.item_count }} item{{ '' if p.item_count == 1 else 's' }}
+            </option>
+            {% endfor %}
+          </optgroup>
+          {% endfor %}
+        </select>
+        <div class="form-hint" id="legacyWarning" style="display:none; color:var(--warning, #b8860b);">
+          This page was published before Theo started tracking its items.
+          <strong>Add</strong> can't merge them — it will rewrite the page with
+          only the currently-selected items. Pick a different page if that's
+          not what you want.
+        </div>
+      </div>
+    </div>
     {% endif %}
 
     <div class="form-group">
-      <label class="form-label">Items</label>
+      <label class="form-label">Items in this push</label>
       <ul class="text-sm" style="padding-left:20px;">
         {% for p in products %}
         <li>{{ p.name }}{% if p.store %} <span class="text-xs text-faint">— {{ p.store }}</span>{% endif %}</li>
@@ -52,9 +116,46 @@
     </div>
 
     <div class="flex gap-8 mt-16">
-      <button type="submit" class="btn btn-primary">Publish</button>
+      <button type="submit" class="btn btn-primary" id="publishBtn">Publish</button>
       <a href="{{ url_for('shopping_list') }}" class="btn btn-secondary">Cancel</a>
     </div>
   </form>
 </div>
+
+{% if has_existing %}
+<script>
+function updatePublishMode() {
+  const mode = document.querySelector('input[name="mode"]:checked').value;
+  const newFields = document.getElementById('publish-fields-new');
+  const existingFields = document.getElementById('publish-fields-existing');
+  const pageNameInput = document.getElementById('newPageName');
+  const publishBtn = document.getElementById('publishBtn');
+
+  if (mode === 'new') {
+    newFields.style.display = '';
+    existingFields.style.display = 'none';
+    pageNameInput.required = true;
+    publishBtn.textContent = 'Publish';
+  } else {
+    newFields.style.display = 'none';
+    existingFields.style.display = '';
+    pageNameInput.required = false;
+    publishBtn.textContent = mode === 'add' ? 'Add & re-publish' : 'Replace & re-publish';
+    updateLegacyWarning();
+  }
+}
+
+function updateLegacyWarning() {
+  const mode = document.querySelector('input[name="mode"]:checked').value;
+  const sel = document.getElementById('targetPubSelect');
+  const warn = document.getElementById('legacyWarning');
+  if (!sel || !warn) return;
+  const opt = sel.options[sel.selectedIndex];
+  const isLegacy = opt && opt.dataset.hasItemIds === '0';
+  warn.style.display = (mode === 'add' && isLegacy) ? '' : 'none';
+}
+
+document.getElementById('targetPubSelect')?.addEventListener('change', updateLegacyWarning);
+</script>
+{% endif %}
 {% endblock %}

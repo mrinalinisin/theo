@@ -751,6 +751,30 @@ body.has-selection .card-select-checkbox { display: flex; }
 }
 .settings-footer strong { color: var(--text); }
 
+/* Publish form — mode radios */
+.publish-mode {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.publish-mode-opt {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background 0.12s;
+}
+.publish-mode-opt:hover { background: var(--bg); }
+.publish-mode-opt input { margin-top: 3px; }
+.publish-mode-opt span span { display: block; margin-top: 2px; }
+.publish-mode-opt:has(input:checked) {
+  border-color: var(--accent, #2d5a27);
+  background: var(--accent-light, #e8f0e6);
+}
+
 /* Floating "+" button on the homepage — opens New-listing modal */
 .fab-add {
   position: fixed;

@@ -138,6 +138,11 @@ class Publication(db.Model):
     name = db.Column(db.Text, nullable=False)        # human title shown on index
     url = db.Column(db.Text, default="")             # full public URL
     item_count = db.Column(db.Integer, default=0)
+    # Product ids that compose this page, in display order. Lets us merge
+    # additional selections into an existing publication without losing the
+    # previously-published cards. Empty list for legacy rows created before
+    # this field existed — in that case "Update" effectively becomes Replace.
+    item_ids = db.Column(db.JSON, default=list)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
