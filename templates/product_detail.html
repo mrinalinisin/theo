@@ -205,6 +205,105 @@
   </div>
 </div>
 
+{# ═══ See Also — symmetric "related" links, available on every product ═══ #}
+<div class="page-body" style="margin-top:24px;">
+  <div class="card">
+    <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
+      <span>See also
+        <span class="text-faint" style="font-weight:400; font-size:13px;">
+          ({{ related|length }})
+        </span>
+      </span>
+      {% if pickable %}
+      <button type="button" class="btn btn-secondary btn-sm"
+              onclick="document.getElementById('modal-add-related').classList.add('open');
+                       setTimeout(function(){
+                         var s = document.getElementById('relatedSearch');
+                         if (s) { s.value = ''; relatedFilter(''); s.focus(); }
+                       }, 50);">
+        + Add related
+      </button>
+      {% endif %}
+    </div>
+    <div class="card-body">
+      {% if related %}
+      <div class="related-grid">
+        {% for r in related %}
+        <div class="related-card">
+          <a href="{{ url_for('product_detail', product_id=r.id) }}" class="related-card-link">
+            <div class="related-card-img"
+                 style="background-image:url('{{ image_src(r.image_url or (r.images[0] if r.images else '')) }}');"></div>
+            <div class="related-card-body">
+              <div class="related-card-name">{{ r.name }}</div>
+              {% if r.store %}<div class="related-card-store text-faint">{{ r.store }}</div>{% endif %}
+            </div>
+          </a>
+          <form method="POST" action="{{ url_for('product_related_remove', product_id=product.id, other_id=r.id) }}"
+                onsubmit="return confirm('Unlink &quot;{{ r.name }}&quot;?');" class="related-card-unlink">
+            <button type="submit" class="btn btn-ghost btn-sm" title="Unlink">&times;</button>
+          </form>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="text-faint" style="font-size:14px;">
+        No related items yet. Use <strong>+ Add related</strong> to backlink another listing — the connection works both ways.
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+{# ── Modal: Add related ───────────────────────────────────────────── #}
+{% if pickable %}
+<div class="modal-overlay" id="modal-add-related">
+  <div class="modal" style="max-width:560px;">
+    <form method="POST" action="{{ url_for('product_related_add', product_id=product.id) }}">
+      <div class="modal-header">
+        <div class="modal-title">Link related items</div>
+        <button type="button" class="btn btn-ghost btn-sm"
+                onclick="document.getElementById('modal-add-related').classList.remove('open')">&#x2715;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <input type="search" id="relatedSearch" class="form-input"
+                 placeholder="Search by name or store…"
+                 oninput="relatedFilter(this.value)">
+          <div class="form-hint">Tick everything you want to link to this listing.</div>
+        </div>
+        <div class="related-picker" id="relatedPicker">
+          {% for p in pickable %}
+          <label class="related-pick-row"
+                 data-search="{{ (p.name + ' ' + p.store)|lower }}">
+            <input type="checkbox" name="other_ids" value="{{ p.id }}">
+            <span class="related-pick-thumb"
+                  {% if p.image %}style="background-image:url('{{ image_src(p.image) }}');"{% endif %}></span>
+            <span class="related-pick-meta">
+              <span class="related-pick-name">{{ p.name }}</span>
+              {% if p.store %}<span class="related-pick-store text-faint">{{ p.store }}</span>{% endif %}
+            </span>
+          </label>
+          {% endfor %}
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary"
+                onclick="document.getElementById('modal-add-related').classList.remove('open')">Cancel</button>
+        <button type="submit" class="btn btn-primary">Link selected</button>
+      </div>
+    </form>
+  </div>
+</div>
+<script>
+function relatedFilter(q) {
+  q = (q || '').trim().toLowerCase();
+  document.querySelectorAll('#relatedPicker .related-pick-row').forEach(function(row) {
+    row.style.display = (!q || row.dataset.search.includes(q)) ? '' : 'none';
+  });
+}
+</script>
+{% endif %}
+
 {# ═══ Review section — only on items that have been purchased / shipped / received ═══ #}
 {% if product.status in ('purchased', 'shipped', 'received') %}
 {% set has_review = (product.review_text and product.review_text|trim) or product.review_photos or product.review_video_url %}

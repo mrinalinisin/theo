@@ -11,6 +11,19 @@ product_tags = db.Table(
 )
 
 
+# Self-referential many-to-many: "See Also" links between two products.
+# The relationship is conceptually symmetric, so each pair is stored once
+# with a canonical ordering (smaller id first) and the CHECK constraint
+# guarantees we never accidentally insert the reverse direction. Queries
+# union both columns to find a given product's relations.
+product_related = db.Table(
+    "product_related",
+    db.Column("a_id", db.Integer, db.ForeignKey("product.id", ondelete="CASCADE"), primary_key=True),
+    db.Column("b_id", db.Integer, db.ForeignKey("product.id", ondelete="CASCADE"), primary_key=True),
+    db.CheckConstraint("a_id < b_id", name="ck_product_related_order"),
+)
+
+
 class Currency(db.Model):
     __tablename__ = "currency"
 
@@ -86,6 +99,40 @@ class Product(db.Model):
         if self.original_price == 0:
             return None
         return ((self.current_price - self.original_price) / self.original_price) * 100
+
+    def related_products(self):
+        """Return the list of Products linked to this one via product_related.
+        Symmetric — collects ids from both sides of the join table."""
+        from sqlalchemy import or_ as _or
+        rows = db.session.query(product_related).filter(
+            _or(product_related.c.a_id == self.id, product_related.c.b_id == self.id)
+        ).all()
+        other_ids = {r.b_id if r.a_id == self.id else r.a_id for r in rows}
+        if not other_ids:
+            return []
+        return Product.query.filter(Product.id.in_(other_ids)).all()
+
+    def link_related(self, other_id):
+        """Add a symmetric link with another product. No-op if already linked
+        or if other_id == self.id."""
+        if not other_id or other_id == self.id:
+            return
+        a, b = sorted([self.id, int(other_id)])
+        existing = db.session.execute(
+            product_related.select().where(
+                (product_related.c.a_id == a) & (product_related.c.b_id == b)
+            )
+        ).first()
+        if not existing:
+            db.session.execute(product_related.insert().values(a_id=a, b_id=b))
+
+    def unlink_related(self, other_id):
+        a, b = sorted([self.id, int(other_id)])
+        db.session.execute(
+            product_related.delete().where(
+                (product_related.c.a_id == a) & (product_related.c.b_id == b)
+            )
+        )
 
     def __repr__(self):
         return f"<Product {self.name}>"

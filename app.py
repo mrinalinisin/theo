@@ -379,12 +379,53 @@ def create_app():
         product = Product.query.get_or_404(product_id)
         tags = Tag.query.order_by(Tag.name).all()
         currencies = Currency.query.order_by(Currency.code).all()
+        related = product.related_products()
+        related_ids = {p.id for p in related}
+        # Lightweight catalogue for the "Add related" picker — id + name +
+        # store + thumbnail. Excludes self and already-linked products so
+        # the picker is pre-filtered.
+        pickable = [
+            {"id": p.id, "name": p.name, "store": p.store or "",
+             "image": p.image_url or (p.images[0] if p.images else "")}
+            for p in Product.query.order_by(Product.name).all()
+            if p.id != product.id and p.id not in related_ids
+        ]
         return render_template(
             "product_detail.html",
             product=product,
             tags=tags,
             currencies=currencies,
+            related=related,
+            pickable=pickable,
         )
+
+    @app.route("/products/<int:product_id>/related/add", methods=["POST"])
+    def product_related_add(product_id):
+        product = Product.query.get_or_404(product_id)
+        raw_ids = request.form.getlist("other_ids") or request.form.getlist("other_ids[]")
+        added = 0
+        for raw in raw_ids:
+            try:
+                oid = int(raw)
+            except (TypeError, ValueError):
+                continue
+            if oid == product.id:
+                continue
+            other = Product.query.get(oid)
+            if other:
+                product.link_related(oid)
+                added += 1
+        db.session.commit()
+        if added:
+            flash(f"Linked {added} related item{'s' if added != 1 else ''}.", "success")
+        return redirect(url_for("product_detail", product_id=product.id))
+
+    @app.route("/products/<int:product_id>/related/remove/<int:other_id>", methods=["POST"])
+    def product_related_remove(product_id, other_id):
+        product = Product.query.get_or_404(product_id)
+        product.unlink_related(other_id)
+        db.session.commit()
+        return redirect(url_for("product_detail", product_id=product.id))
 
     @app.route("/products/<int:product_id>/edit", methods=["POST"])
     def product_edit(product_id):
