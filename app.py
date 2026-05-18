@@ -1424,6 +1424,292 @@ def create_app():
         # About moved to a footer on all /settings pages; preserve the old URL.
         return redirect(url_for("settings_github"), code=302)
 
+    # ── Data export / import ──────────────────────────────────────────────
+    # Portable cross-instance backup format. A ZIP bundle containing:
+    #   data.json   — products, tags, currencies, purchases (no tokens/pubs)
+    #   images/     — every image file referenced by exported products
+    # On import, image filenames are prefixed with a per-bundle UUID so they
+    # never clash with what the receiving instance already has on disk; the
+    # corresponding references in product.images / image_url / review_photos
+    # are rewritten before insert. Products are deduped by URL — re-importing
+    # is therefore safe.
+
+    EXPORT_SCHEMA_VERSION = 1
+
+    def _is_local_filename(value):
+        """True if `value` looks like a local image filename rather than a
+        remote URL or empty string."""
+        if not value:
+            return False
+        v = str(value)
+        return not (v.startswith("http://") or v.startswith("https://") or v.startswith("data:"))
+
+    @app.route("/settings/data")
+    def settings_data():
+        images_dir = os.path.join(app.instance_path, "images")
+        try:
+            image_count = sum(1 for n in os.listdir(images_dir) if not n.startswith("."))
+        except FileNotFoundError:
+            image_count = 0
+        stats = {
+            "products": Product.query.count(),
+            "tags": Tag.query.count(),
+            "purchases": Purchase.query.count(),
+            "images": image_count,
+        }
+        return render_template(
+            "settings.html", settings=Settings.get(), tab="data", stats=stats,
+        )
+
+    @app.route("/settings/export")
+    def settings_export():
+        import io
+        import zipfile
+        from flask import send_file
+
+        images_dir = os.path.join(app.instance_path, "images")
+
+        def _iso(dt):
+            return dt.isoformat() if dt else None
+
+        currencies = [
+            {"code": c.code, "symbol": c.symbol, "name": c.name}
+            for c in Currency.query.all()
+        ]
+        tags = [
+            {"name": t.name, "colour": t.colour, "description": t.description or ""}
+            for t in Tag.query.all()
+        ]
+
+        products_out = []
+        referenced_files = set()
+
+        for p in Product.query.all():
+            # Collect any local-filename references so we can bundle the files.
+            for fname in [p.image_url] + list(p.images or []) + list(p.review_photos or []):
+                if _is_local_filename(fname):
+                    referenced_files.add(str(fname))
+
+            purchase = None
+            if p.purchase:
+                pu = p.purchase
+                purchase = {
+                    "paid_amount": pu.paid_amount,
+                    "purchased_at": _iso(pu.purchased_at),
+                    "notes": pu.notes or "",
+                    "order_details_url": pu.order_details_url or "",
+                    "tracking_url": pu.tracking_url or "",
+                    "expected_delivery_at": _iso(pu.expected_delivery_at),
+                    "delivered_at": _iso(pu.delivered_at),
+                }
+
+            products_out.append({
+                "url": p.url,
+                "name": p.name,
+                "store": p.store or "",
+                "current_price": p.current_price,
+                "original_price": p.original_price,
+                "image_url": p.image_url or "",
+                "images": list(p.images or []),
+                "variants": dict(p.variants or {}),
+                "notes": p.notes or "",
+                "quantity": p.quantity,
+                "currency_code": p.currency.code if p.currency else None,
+                "status": p.status,
+                "created_at": _iso(p.created_at),
+                "updated_at": _iso(p.updated_at),
+                "review_text": p.review_text or "",
+                "review_video_url": p.review_video_url or "",
+                "review_photos": list(p.review_photos or []),
+                "tags": [t.name for t in p.tags],
+                "purchase": purchase,
+            })
+
+        payload = {
+            "schema_version": EXPORT_SCHEMA_VERSION,
+            "exported_at": datetime.now(timezone.utc).isoformat(),
+            "counts": {
+                "products": len(products_out),
+                "tags": len(tags),
+                "currencies": len(currencies),
+            },
+            "currencies": currencies,
+            "tags": tags,
+            "products": products_out,
+        }
+
+        buf = io.BytesIO()
+        with zipfile.ZipFile(buf, "w", compression=zipfile.ZIP_DEFLATED) as zf:
+            zf.writestr("data.json", json.dumps(payload, indent=2))
+            for fname in sorted(referenced_files):
+                src = os.path.join(images_dir, fname)
+                if os.path.isfile(src):
+                    zf.write(src, arcname=f"images/{fname}")
+        buf.seek(0)
+
+        stamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+        return send_file(
+            buf,
+            mimetype="application/zip",
+            as_attachment=True,
+            download_name=f"theo_export_{stamp}.zip",
+        )
+
+    @app.route("/settings/import", methods=["POST"])
+    def settings_import():
+        import io
+        import zipfile
+        import uuid
+
+        upload = request.files.get("bundle")
+        if not upload or not upload.filename:
+            flash("Pick a .zip bundle to import.", "warning")
+            return redirect(url_for("settings_data"))
+
+        try:
+            zf = zipfile.ZipFile(io.BytesIO(upload.read()))
+        except zipfile.BadZipFile:
+            flash("That file isn't a valid .zip bundle.", "error")
+            return redirect(url_for("settings_data"))
+
+        try:
+            data = json.loads(zf.read("data.json"))
+        except KeyError:
+            flash("Bundle is missing data.json.", "error")
+            return redirect(url_for("settings_data"))
+        except json.JSONDecodeError as e:
+            flash(f"data.json is malformed: {e}", "error")
+            return redirect(url_for("settings_data"))
+
+        if data.get("schema_version") != EXPORT_SCHEMA_VERSION:
+            flash(
+                f"Bundle schema version {data.get('schema_version')!r} doesn't match "
+                f"this build ({EXPORT_SCHEMA_VERSION}). Aborting.",
+                "error",
+            )
+            return redirect(url_for("settings_data"))
+
+        images_dir = os.path.join(app.instance_path, "images")
+        os.makedirs(images_dir, exist_ok=True)
+        prefix = f"imp_{uuid.uuid4().hex[:8]}_"
+
+        # 1. Currencies — lookup-or-create by code.
+        for c in data.get("currencies", []):
+            if not Currency.query.filter_by(code=c["code"]).first():
+                db.session.add(Currency(code=c["code"], symbol=c["symbol"], name=c["name"]))
+        db.session.flush()
+
+        # 2. Tags — lookup-or-create by name; keep first-seen colour.
+        tag_cache = {}
+        for t in data.get("tags", []):
+            existing = Tag.query.filter_by(name=t["name"]).first()
+            if existing:
+                tag_cache[t["name"]] = existing
+            else:
+                new_t = Tag(
+                    name=t["name"],
+                    colour=t.get("colour", "#3d6b8a"),
+                    description=t.get("description", ""),
+                )
+                db.session.add(new_t)
+                tag_cache[t["name"]] = new_t
+        db.session.flush()
+
+        # 3. Images — extract everything under images/ into instance/images/
+        # with the unique prefix. Map old → new so product refs can be rewritten.
+        rename_map = {}
+        for member in zf.namelist():
+            if not member.startswith("images/") or member.endswith("/"):
+                continue
+            old_name = member[len("images/"):]
+            if not old_name:
+                continue
+            new_name = prefix + old_name
+            with zf.open(member) as src, open(os.path.join(images_dir, new_name), "wb") as dst:
+                dst.write(src.read())
+            rename_map[old_name] = new_name
+
+        def _rewrite(ref):
+            if not _is_local_filename(ref):
+                return ref
+            return rename_map.get(str(ref), ref)
+
+        # 4. Products — skip URL duplicates.
+        added = skipped = 0
+        for p in data.get("products", []):
+            if Product.query.filter_by(url=p["url"]).first():
+                skipped += 1
+                continue
+
+            currency = None
+            if p.get("currency_code"):
+                currency = Currency.query.filter_by(code=p["currency_code"]).first()
+
+            new_p = Product(
+                url=p["url"],
+                name=p["name"],
+                store=p.get("store", ""),
+                current_price=p.get("current_price"),
+                original_price=p.get("original_price"),
+                image_url=_rewrite(p.get("image_url", "")),
+                images=[_rewrite(x) for x in (p.get("images") or [])],
+                variants=p.get("variants") or {},
+                notes=p.get("notes", ""),
+                quantity=p.get("quantity", 1) or 1,
+                currency=currency,
+                status=p.get("status", "added"),
+                review_text=p.get("review_text", ""),
+                review_video_url=p.get("review_video_url", ""),
+                review_photos=[_rewrite(x) for x in (p.get("review_photos") or [])],
+            )
+            # Preserve timestamps if present.
+            for fld in ("created_at", "updated_at"):
+                raw = p.get(fld)
+                if raw:
+                    try:
+                        setattr(new_p, fld, datetime.fromisoformat(raw))
+                    except ValueError:
+                        pass
+
+            # Tags via join table — use the cache or look up.
+            for tname in p.get("tags") or []:
+                tag = tag_cache.get(tname) or Tag.query.filter_by(name=tname).first()
+                if tag is None:
+                    tag = Tag(name=tname)
+                    db.session.add(tag)
+                    tag_cache[tname] = tag
+                new_p.tags.append(tag)
+
+            db.session.add(new_p)
+            db.session.flush()  # need product.id before attaching purchase
+
+            pu = p.get("purchase")
+            if pu:
+                def _parse(s):
+                    try:
+                        return datetime.fromisoformat(s) if s else None
+                    except ValueError:
+                        return None
+                db.session.add(Purchase(
+                    product_id=new_p.id,
+                    paid_amount=pu.get("paid_amount") or 0.0,
+                    purchased_at=_parse(pu.get("purchased_at")) or datetime.now(timezone.utc),
+                    notes=pu.get("notes", ""),
+                    order_details_url=pu.get("order_details_url", ""),
+                    tracking_url=pu.get("tracking_url", ""),
+                    expected_delivery_at=_parse(pu.get("expected_delivery_at")),
+                    delivered_at=_parse(pu.get("delivered_at")),
+                ))
+            added += 1
+
+        db.session.commit()
+        flash(
+            f"Imported {added} product{'s' if added != 1 else ''}"
+            f"{f', skipped {skipped} duplicate' + ('s' if skipped != 1 else '') if skipped else ''}.",
+            "success",
+        )
+        return redirect(url_for("settings_data"))
+
     @app.route("/settings/stats")
     def settings_stats():
         # Database size

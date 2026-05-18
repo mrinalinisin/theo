@@ -1,0 +1,41 @@
+<div class="card">
+  <div class="card-header">Export</div>
+  <div class="card-body">
+    <div class="text-faint mb-16" style="font-size:15px; line-height:1.55;">
+      Download every product, tag, purchase, and review (plus the image files
+      they reference) as a single <code>.zip</code> bundle. Tokens, publications,
+      and cached previews are <strong>not</strong> included.
+    </div>
+    <div class="text-faint mb-16" style="font-size:13px;">
+      Current inventory: <strong>{{ stats.products }}</strong> products
+      &middot; <strong>{{ stats.tags }}</strong> tags
+      &middot; <strong>{{ stats.purchases }}</strong> purchases
+      &middot; <strong>{{ stats.images }}</strong> image files
+    </div>
+    <a href="{{ url_for('settings_export') }}" class="btn btn-primary">
+      &#x2b07;&#xfe0f; Download <code>theo_export.zip</code>
+    </a>
+  </div>
+</div>
+
+<div class="card mt-16">
+  <div class="card-header">Import</div>
+  <div class="card-body">
+    <div class="text-faint mb-16" style="font-size:15px; line-height:1.55;">
+      Upload a <code>theo_export.zip</code> produced by any Theo instance.
+      Products are matched by URL — existing ones are left untouched, new ones
+      are added. Tags and currencies are reused if already present, otherwise
+      created. Image files are renamed on the way in so they never collide with
+      what you already have.
+    </div>
+    <form method="POST" action="{{ url_for('settings_import') }}" enctype="multipart/form-data">
+      <div class="form-group">
+        <input type="file" name="bundle" accept=".zip,application/zip" required class="form-input">
+      </div>
+      <button type="submit" class="btn btn-primary"
+              onclick="return confirm('Import data from this bundle? Existing products with matching URLs will be skipped.');">
+        &#x2b06;&#xfe0f; Import bundle
+      </button>
+    </form>
+  </div>
+</div>

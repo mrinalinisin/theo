@@ -76,7 +76,7 @@
       <a href="{{ url_for('reports') }}" class="{{ 'active' if request.endpoint in ('reports', 'report_month') }}">
         <span class="icon">&#x1f4ca;</span> Reports
       </a>
-      <a href="{{ url_for('settings') }}" class="{{ 'active' if request.endpoint in ('settings', 'settings_github', 'settings_about', 'settings_stats') }}">
+      <a href="{{ url_for('settings') }}" class="{{ 'active' if request.endpoint in ('settings', 'settings_github', 'settings_about', 'settings_data', 'settings_stats') }}">
         <span class="icon">&#x2699;&#xfe0f;</span> Settings
       </a>
     </nav>
@@ -115,7 +115,7 @@
     <a href="{{ url_for('reports') }}" class="{{ 'active' if request.endpoint in ('reports', 'report_month') }}">
       <span class="icon">&#x1f4ca;</span> Reports
     </a>
-    <a href="{{ url_for('settings') }}" class="{{ 'active' if request.endpoint in ('settings', 'settings_github', 'settings_about', 'settings_stats') }}">
+    <a href="{{ url_for('settings') }}" class="{{ 'active' if request.endpoint in ('settings', 'settings_github', 'settings_about', 'settings_data', 'settings_stats') }}">
       <span class="icon">&#x2699;&#xfe0f;</span> Settings
     </a>
     {% if request.endpoint == 'shopping_list' %}
