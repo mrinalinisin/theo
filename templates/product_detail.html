@@ -960,21 +960,16 @@ document.querySelectorAll('.modal-overlay').forEach(o => {
   }
 
   // Paste from clipboard — accept whenever the review-edit form is visible,
-  // so the user doesn't have to click the zone first. Skip if focus is in a
-  // text field (so pasting URLs into the video input keeps working).
+  // including when focus is in the textarea. We only preventDefault when the
+  // clipboard actually contains an image, so pasting text into the review
+  // body or video-URL field still works naturally (no image items → no
+  // interception → browser's default text paste runs).
   const editPanel = document.getElementById('review-edit');
   function reviewEditOpen() {
     return editPanel && editPanel.style.display !== 'none';
   }
-  function inTextField() {
-    const el = document.activeElement;
-    if (!el) return false;
-    const tag = el.tagName;
-    return tag === 'INPUT' || tag === 'TEXTAREA' || el.isContentEditable;
-  }
   document.addEventListener('paste', e => {
     if (!reviewEditOpen()) return;
-    if (inTextField()) return;
     for (const item of (e.clipboardData?.items || [])) {
       if (item.type.startsWith('image/')) {
         readFile(item.getAsFile());
