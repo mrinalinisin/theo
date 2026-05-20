@@ -979,11 +979,12 @@ body.has-selection .card-select-checkbox { display: flex; }
 }
 .fab-add:active { transform: translateY(0); }
 
-/* Bulk-delete FAB — sits to the left of the "+" FAB, shown only while a
-   Shift+Click selection exists (toggled in refreshSelectionUi). */
+/* Bulk-delete FAB — bottom-left corner, well clear of the additive "+"
+   FAB on the right so a destructive click can't be fat-fingered. Shown
+   only while a Shift+Click selection exists (toggled in refreshSelectionUi). */
 .fab-delete {
   position: fixed;
-  right: 92px;   /* 24 (edge) + 56 (fab-add width) + 12 (gap) */
+  left: 24px;
   bottom: 24px;
   width: 56px;
   height: 56px;
