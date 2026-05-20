@@ -641,6 +641,13 @@ def create_app():
         target_status = request.form.get("target_status", "purchased")
         if target_status not in ("purchased", "received"):
             target_status = "purchased"
+        # Bought at a physical store → the item is already in hand. Skip
+        # straight to 'received' and stamp delivery on the purchase date
+        # itself (not now(), so a backdated in-store buy reads correctly).
+        if bought_at_store:
+            target_status = "received"
+            if not purchase.delivered_at:
+                purchase.delivered_at = purchased_at
         # If user explicitly marked Received, also stamp delivered_at now (if
         # not already set during purchase form submission).
         if target_status == "received" and not purchase.delivered_at:

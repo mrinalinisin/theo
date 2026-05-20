@@ -135,7 +135,7 @@
           <label class="checkbox-inline">
             <input type="checkbox" name="bought_at_store" value="1"
                    onchange="togglePurchaseStoreMode(this)">
-            Bought at store <span class="text-xs text-faint">(no order or tracking link)</span>
+            Bought at store <span class="text-xs text-faint">(in hand now &mdash; marks as received)</span>
           </label>
         </div>
 
@@ -320,7 +320,7 @@ function validatePurchaseLinks(form) {
 function togglePurchaseStoreMode(checkbox) {
   const form = checkbox.form;
   const store = checkbox.checked;
-  ['order_details_url', 'tracking_url'].forEach(function(name) {
+  ['order_details_url', 'tracking_url', 'expected_delivery_at'].forEach(function(name) {
     const el = form.elements[name];
     if (el) el.style.opacity = store ? '0.5' : '';
   });
