@@ -1240,10 +1240,11 @@ def create_app():
             flash("No items to publish.", "warning")
             return redirect(url_for("shopping_list"))
 
-        # Final id list depends on mode. For "add", we union previously-
-        # published ids with the new selection (preserve old order, then
-        # append anything new). For everything else, the form's selection
-        # is authoritative.
+        # Final id list depends on mode. For "add", the new selection goes
+        # to the TOP of the page, followed by the previously-published items
+        # that weren't re-selected. Re-selecting an existing item bubbles it
+        # up to the front. For everything else, the form's selection is
+        # authoritative.
         recovered_count = 0
         if mode == "add" and target_pub:
             existing_ids = list(target_pub.item_ids or [])
@@ -1256,7 +1257,7 @@ def create_app():
                     s.github_branch or "main", target_pub.slug,
                 )
                 recovered_count = len(existing_ids)
-            ids = existing_ids + [i for i in new_ids if i not in existing_ids]
+            ids = new_ids + [i for i in existing_ids if i not in new_ids]
         else:
             ids = new_ids
 
