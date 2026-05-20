@@ -649,6 +649,12 @@ def create_app():
             target_status = "received"
             if not purchase.delivered_at:
                 purchase.delivered_at = purchased_at
+        # Expected delivery already in the past → it must have arrived. Mark
+        # received and stamp delivery on the expected date itself.
+        elif expected_delivery_at and expected_delivery_at.date() < datetime.now(timezone.utc).date():
+            target_status = "received"
+            if not purchase.delivered_at:
+                purchase.delivered_at = expected_delivery_at
         # If user explicitly marked Received, also stamp delivered_at now (if
         # not already set during purchase form submission).
         if target_status == "received" and not purchase.delivered_at:
