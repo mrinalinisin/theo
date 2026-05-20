@@ -25,6 +25,7 @@ import json
 import os
 import re
 import time
+import threading
 
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, send_from_directory, session
 from sqlalchemy import func, or_, and_
@@ -1899,15 +1900,29 @@ def create_app():
             "purchases": Purchase.query.count(),
             "images": image_count,
         }
+        # Local backup status (newest file + count).
+        backups = _list_backups()
+        last_backup = None
+        if backups:
+            newest = backups[-1]
+            last_backup = {
+                "name": os.path.basename(newest),
+                "when": datetime.fromtimestamp(os.path.getmtime(newest)),
+                "size_mb": os.path.getsize(newest) / 1_048_576,
+                "count": len(backups),
+                "retention": BACKUP_RETENTION,
+            }
         return render_template(
-            "settings.html", settings=Settings.get(), tab="data", stats=stats,
+            "settings.html", settings=Settings.get(), tab="data",
+            stats=stats, last_backup=last_backup, backup_retention=BACKUP_RETENTION,
         )
 
-    @app.route("/settings/export")
-    def settings_export():
+    def _build_export_bundle():
+        """Build the migration ZIP (data.json + images/) in memory and return
+        a seeked-to-zero BytesIO. Shared by the /settings/export download and
+        the nightly backup so both always produce an identical bundle."""
         import io
         import zipfile
-        from flask import send_file
 
         images_dir = os.path.join(app.instance_path, "images")
 
@@ -2010,7 +2025,12 @@ def create_app():
                 if os.path.isfile(src):
                     zf.write(src, arcname=f"images/{fname}")
         buf.seek(0)
+        return buf
 
+    @app.route("/settings/export")
+    def settings_export():
+        from flask import send_file
+        buf = _build_export_bundle()
         stamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
         return send_file(
             buf,
@@ -2018,6 +2038,122 @@ def create_app():
             as_attachment=True,
             download_name=f"theo_export_{stamp}.zip",
         )
+
+    # ── Nightly backup ─────────────────────────────────────────────────────
+    # Writes a migration bundle to instance/backups/ once a day. Two triggers:
+    #   1. A daemon thread that wakes at local midnight (best effort — won't
+    #      fire if the machine was asleep).
+    #   2. A before_request catch-up that runs the day's backup the first time
+    #      the app is used if midnight was missed.
+    # The backup files themselves are the source of truth for "did today's
+    # run happen" — no separate marker to drift out of sync.
+
+    BACKUP_RETENTION = 7
+    _backup_lock = threading.Lock()       # serialises actual writes
+    _backup_guard = threading.Lock()      # protects the running flag
+    _backup_running = {"v": False}        # prevents per-request thread storms
+
+    def _backups_dir():
+        d = os.path.join(app.instance_path, "backups")
+        os.makedirs(d, exist_ok=True)
+        return d
+
+    def _list_backups():
+        """Backup file paths sorted oldest→newest (lexicographic == chrono
+        because the stamp is YYYYMMDD_HHMMSS)."""
+        d = _backups_dir()
+        try:
+            names = [n for n in os.listdir(d)
+                     if n.startswith("theo_backup_") and n.endswith(".zip")]
+        except FileNotFoundError:
+            return []
+        return [os.path.join(d, n) for n in sorted(names)]
+
+    def _latest_backup_date():
+        files = _list_backups()
+        if not files:
+            return None
+        name = os.path.basename(files[-1])
+        try:
+            return datetime.strptime(name[12:20], "%Y%m%d").date()
+        except (ValueError, IndexError):
+            return None
+
+    def _perform_backup(force=False):
+        """Write a backup ZIP unless today's already exists (force overrides).
+        Always establishes its own app context so it's safe to call from a
+        background thread. Returns the written path, or None if skipped."""
+        with _backup_lock:
+            with app.app_context():
+                today = datetime.now().date()
+                if not force and _latest_backup_date() == today:
+                    return None
+                buf = _build_export_bundle()
+                stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                path = os.path.join(_backups_dir(), f"theo_backup_{stamp}.zip")
+                with open(path, "wb") as f:
+                    f.write(buf.getvalue())
+                # Prune oldest beyond the retention window.
+                for old in _list_backups()[:-BACKUP_RETENTION]:
+                    try:
+                        os.remove(old)
+                    except OSError:
+                        pass
+                print(f"[backup] wrote {os.path.basename(path)} "
+                      f"({os.path.getsize(path) // 1024} KB)")
+                return path
+
+    def _run_backup_then_clear():
+        try:
+            _perform_backup()
+        except Exception as e:  # pragma: no cover — defensive
+            print(f"[backup] catch-up run failed: {e.__class__.__name__}: {e}")
+        finally:
+            with _backup_guard:
+                _backup_running["v"] = False
+
+    def _maybe_catch_up_backup():
+        """Per-request: if today has no backup yet, kick one off in the
+        background so the request itself isn't blocked by the (large) zip."""
+        try:
+            if _latest_backup_date() == datetime.now().date():
+                return
+        except Exception:
+            return
+        with _backup_guard:
+            if _backup_running["v"]:
+                return
+            _backup_running["v"] = True
+        threading.Thread(target=_run_backup_then_clear, daemon=True).start()
+
+    def _backup_scheduler():
+        """Daemon loop: sleep until the next local midnight, then back up."""
+        while True:
+            now = datetime.now()
+            nxt = (now + timedelta(days=1)).replace(
+                hour=0, minute=0, second=0, microsecond=0
+            )
+            time.sleep(max(1, (nxt - now).total_seconds()))
+            try:
+                _perform_backup()
+            except Exception as e:  # pragma: no cover — defensive
+                print(f"[backup] scheduled run failed: {e.__class__.__name__}: {e}")
+
+    @app.before_request
+    def _backup_catch_up_hook():
+        _maybe_catch_up_backup()
+
+    @app.route("/settings/backup", methods=["POST"])
+    def settings_backup_now():
+        path = _perform_backup(force=True)
+        if path:
+            flash(f"Backup written: {os.path.basename(path)}.", "success")
+        else:
+            flash("Backup skipped — today's backup already exists.", "info")
+        return redirect(url_for("settings_data"))
+
+    # Kick off the midnight scheduler once (use_reloader=False → single process).
+    threading.Thread(target=_backup_scheduler, daemon=True).start()
 
     # ── Human-readable exports ────────────────────────────────────────────
     # Distinct from the migration bundle above. Each format matches the data

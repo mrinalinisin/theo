@@ -42,6 +42,35 @@
 </div>
 
 <div class="card mt-16">
+  <div class="card-header">Nightly backups</div>
+  <div class="card-body">
+    <div class="text-faint mb-16" style="font-size:15px; line-height:1.55;">
+      Theo writes a full migration bundle to
+      <code>instance/backups/</code> automatically every night at midnight.
+      If the machine was asleep at midnight, the missed backup runs the
+      first time you open the app the next day. The newest
+      <strong>{{ backup_retention }}</strong> backups are kept; older ones
+      are pruned.
+    </div>
+    {% if last_backup %}
+    <div class="text-faint mb-16" style="font-size:13px;">
+      Last backup: <strong>{{ last_backup.when.strftime('%b %d, %Y at %H:%M') }}</strong>
+      &middot; {{ "%.1f"|format(last_backup.size_mb) }} MB
+      &middot; <strong>{{ last_backup.count }}</strong> backup{{ '' if last_backup.count == 1 else 's' }} on disk
+      &middot; <code>{{ last_backup.name }}</code>
+    </div>
+    {% else %}
+    <div class="text-faint mb-16" style="font-size:13px;">
+      No backups yet — one will be written automatically, or trigger it now.
+    </div>
+    {% endif %}
+    <form method="POST" action="{{ url_for('settings_backup_now') }}">
+      <button type="submit" class="btn btn-secondary">&#x1f4be; Back up now</button>
+    </form>
+  </div>
+</div>
+
+<div class="card mt-16">
   <div class="card-header">Human-readable exports</div>
   <div class="card-body">
     <div class="text-faint mb-16" style="font-size:15px; line-height:1.55;">
