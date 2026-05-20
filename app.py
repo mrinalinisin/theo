@@ -365,9 +365,156 @@ def create_app():
             result["warning"] = f"Possible duplicate of \"{duplicate_name}\""
         return jsonify(result), 201
 
+    @app.route("/api/ingest", methods=["POST", "OPTIONS"])
+    def api_ingest():
+        """Consolidated agent-facing ingest (OpenClaw / Roger). One JSON call
+        per item does an idempotent upsert-by-URL plus optional purchase and
+        delivery, and returns a machine-readable result.
+
+        Body (JSON):
+          url             (required) — natural key; re-ingesting updates in place
+          name, store, price, currency, image_url, images[], tag_names[], notes
+          order_details_url, tracking_url   — presence implies purchased
+          delivered_date  (YYYY-MM-DD)       — presence implies received
+          expected_delivery_at (YYYY-MM-DD)  — optional; a past date auto-receives
+          purchased_at    (YYYY-MM-DD), paid_amount
+
+        Returns: { ok, product_id, status, created }
+        """
+        if request.method == "OPTIONS":
+            return "", 204
+
+        from urls import sanitize_url
+        from image_store import save_images_for_product, save_image
+
+        data = request.get_json(silent=True)
+        if not data:
+            return jsonify(ok=False, error="Invalid or missing JSON body"), 400
+        url = sanitize_url(data.get("url", ""))
+        if not url:
+            return jsonify(ok=False, error="A valid 'url' is required"), 400
+
+        def _parse_date(s):
+            s = (s or "").strip()
+            if not s:
+                return None
+            try:
+                return datetime.strptime(s, "%Y-%m-%d").replace(tzinfo=timezone.utc)
+            except ValueError:
+                return None
+
+        # ── Upsert by URL ───────────────────────────────────────────────────
+        existing = Product.query.filter_by(url=url).first()
+        created = existing is None
+        product = existing or Product(url=url, status="added", quantity=1, variants={})
+
+        # Only overwrite scalars when a non-empty value is supplied, so a
+        # partial re-ingest never blanks fields that are already populated.
+        name = (data.get("name") or "").strip()
+        if name:
+            product.name = name[:256]
+        elif created:
+            product.name = "Unknown Product"
+        if data.get("store"):
+            product.store = data["store"]
+        if data.get("notes"):
+            product.notes = data["notes"]
+        price_raw = data.get("price")
+        if price_raw not in (None, ""):
+            price = _parse_price(price_raw)
+            product.current_price = price
+            if product.original_price is None:
+                product.original_price = price
+        if data.get("currency") or product.currency_id is None:
+            code = data.get("currency") or "INR"
+            cur = (Currency.query.filter_by(code=code).first()
+                   or Currency.query.filter_by(code="INR").first())
+            product.currency_id = cur.id if cur else None
+
+        # Tags additive — resolve/create by name, never remove existing.
+        for tn in data.get("tag_names", []) or []:
+            tn = (tn or "").strip()
+            if not tn:
+                continue
+            tag = Tag.query.filter(func.lower(Tag.name) == tn.lower()).first()
+            if not tag:
+                tag = Tag(name=tn)
+                db.session.add(tag)
+            if tag not in product.tags:
+                product.tags.append(tag)
+
+        if created:
+            db.session.add(product)
+        db.session.flush()  # need product.id for image saving + purchase FK
+
+        # Images — fetch only when the product has none yet, so re-runs don't
+        # re-download and pile up duplicate files.
+        if not product.image_url:
+            incoming = data.get("images") or []
+            if incoming:
+                product.images = save_images_for_product(incoming, product.id, app)
+            image_url = data.get("image_url", "")
+            if image_url:
+                saved_main = save_image(image_url, product.id, 0, app)
+                if saved_main:
+                    product.image_url = saved_main
+                    if saved_main not in (product.images or []):
+                        product.images = [saved_main] + list(product.images or [])
+            if not product.image_url and product.images:
+                product.image_url = product.images[0]
+
+        # ── Purchase / delivery ─────────────────────────────────────────────
+        order_url = (data.get("order_details_url") or "").strip()
+        tracking_url = (data.get("tracking_url") or "").strip()
+        delivered = _parse_date(data.get("delivered_date"))
+        expected = _parse_date(data.get("expected_delivery_at"))
+        purchased_at = _parse_date(data.get("purchased_at")) or datetime.now(timezone.utc)
+        has_paid = data.get("paid_amount") not in (None, "")
+
+        if order_url or tracking_url or delivered or expected or has_paid:
+            purchase = Purchase.query.filter_by(product_id=product.id).first()
+            if not purchase:
+                purchase = Purchase(product_id=product.id, paid_amount=0.0,
+                                    purchased_at=purchased_at)
+                db.session.add(purchase)
+            if has_paid:
+                purchase.paid_amount = _parse_price(data.get("paid_amount"))
+            elif not purchase.paid_amount:
+                purchase.paid_amount = (product.current_price or 0) * (product.quantity or 1)
+            if order_url:
+                purchase.order_details_url = order_url
+            if tracking_url:
+                purchase.tracking_url = tracking_url
+            if data.get("purchased_at"):
+                purchase.purchased_at = purchased_at
+            if expected:
+                purchase.expected_delivery_at = expected
+
+            # Status derivation: delivered wins → received; else a past
+            # expected date → received; else tracking → shipped; else purchased.
+            if delivered:
+                purchase.delivered_at = delivered
+                if not purchase.expected_delivery_at:
+                    purchase.expected_delivery_at = delivered
+                product.status = "received"
+            elif expected and expected.date() < datetime.now(timezone.utc).date():
+                if not purchase.delivered_at:
+                    purchase.delivered_at = expected
+                product.status = "received"
+            elif tracking_url:
+                product.status = "shipped"
+            else:
+                product.status = "purchased"
+
+        product.updated_at = datetime.now(timezone.utc)
+        db.session.commit()
+        return jsonify(
+            ok=True, product_id=product.id, status=product.status, created=created
+        ), (201 if created else 200)
+
     @app.after_request
     def add_cors_for_browser_extension(response):
-        if request.path == "/products/new_from_browser":
+        if request.path in ("/products/new_from_browser", "/api/ingest"):
             response.headers["Access-Control-Allow-Origin"] = "*"
             response.headers["Access-Control-Allow-Methods"] = "POST, OPTIONS"
             response.headers["Access-Control-Allow-Headers"] = "Content-Type"
