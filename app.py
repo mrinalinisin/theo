@@ -1900,21 +1900,17 @@ def create_app():
             "purchases": Purchase.query.count(),
             "images": image_count,
         }
-        # Local backup status (newest file + count).
-        backups = _list_backups()
-        last_backup = None
-        if backups:
-            newest = backups[-1]
-            last_backup = {
-                "name": os.path.basename(newest),
-                "when": datetime.fromtimestamp(os.path.getmtime(newest)),
-                "size_mb": os.path.getsize(newest) / 1_048_576,
-                "count": len(backups),
-                "retention": BACKUP_RETENTION,
-            }
+        # Local backups, newest first, each downloadable.
+        backups = []
+        for path in reversed(_list_backups()):
+            backups.append({
+                "name": os.path.basename(path),
+                "when": datetime.fromtimestamp(os.path.getmtime(path)),
+                "size_mb": os.path.getsize(path) / 1_048_576,
+            })
         return render_template(
             "settings.html", settings=Settings.get(), tab="data",
-            stats=stats, last_backup=last_backup, backup_retention=BACKUP_RETENTION,
+            stats=stats, backups=backups, backup_retention=BACKUP_RETENTION,
         )
 
     def _build_export_bundle():
@@ -2142,6 +2138,16 @@ def create_app():
     @app.before_request
     def _backup_catch_up_hook():
         _maybe_catch_up_backup()
+
+    @app.route("/settings/backups/<filename>")
+    def settings_backup_download(filename):
+        """Download a backup zip. The <filename> converter rejects slashes,
+        and we additionally allowlist the backup naming pattern, so this can
+        only ever serve files Theo itself wrote to the backups dir."""
+        from flask import send_from_directory, abort
+        if not (filename.startswith("theo_backup_") and filename.endswith(".zip")):
+            abort(404)
+        return send_from_directory(_backups_dir(), filename, as_attachment=True)
 
     @app.route("/settings/backup", methods=["POST"])
     def settings_backup_now():
