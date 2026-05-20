@@ -106,7 +106,15 @@
 {# ── Published pages list ───────────────────────────────────────────── #}
 {% if publications %}
 <div class="card mt-16">
-  <div class="card-header">Published pages</div>
+  <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
+    <span>Published pages</span>
+    <form method="POST" action="{{ url_for('publications_republish_all') }}"
+          onsubmit="return confirm('Re-publish all {{ publications|length }} page(s) with the latest template? This rewrites the live files on GitHub.');">
+      <button type="submit" class="btn btn-secondary btn-sm" title="Re-render every page with the current template and push to GitHub">
+        &#x21bb; Re-publish all
+      </button>
+    </form>
+  </div>
   <div class="card-body">
     <ul class="pub-list">
       {% for pub in publications %}

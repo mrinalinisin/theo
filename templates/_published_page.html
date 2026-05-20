@@ -17,9 +17,11 @@
             transition: box-shadow 0.15s, transform 0.15s; }
     .card:hover { box-shadow: 0 6px 16px rgba(0,0,0,0.08); transform: translateY(-2px); }
     .card-main { text-decoration: none; color: inherit; display: block; }
-    .card-image { aspect-ratio: 1; background: #6a8080; display: flex;
-                  align-items: center; justify-content: center; overflow: hidden; }
-    .card-image img { width: 100%; height: 100%; object-fit: cover; }
+    .card-image { aspect-ratio: 1; background: #fff; display: flex;
+                  align-items: center; justify-content: center; overflow: hidden;
+                  padding: 12px; }
+    .card-image img { width: 100%; height: 100%; object-fit: cover;
+                      border-radius: 6px; background: #f4f3f0; }
     .card-image .no-img { font-size: 32px; opacity: 0.55; }
     .card-body { padding: 12px 14px; }
     .card-title { font-size: 14px; font-weight: 600; line-height: 1.3; margin-bottom: 4px;

@@ -1739,6 +1739,79 @@ def create_app():
 
         return redirect(url_for("settings_github"))
 
+    @app.route("/publications/republish-all", methods=["POST"])
+    def publications_republish_all():
+        """Re-render every published page with the current template and PUT
+        it back to GitHub. Used to roll out template changes (CSS, layout)
+        to already-live pages. Legacy publications with no stored item_ids
+        have their contents recovered from the live page and backfilled, so
+        a second run reads them directly."""
+        s = Settings.get()
+        if not s.github_token:
+            flash("Connect GitHub first.", "warning")
+            return redirect(url_for("settings_github"))
+
+        pubs = Publication.query.all()
+        ok_count = 0
+        failures = []
+        repos_touched = set()
+        for pub in pubs:
+            ids = list(pub.item_ids or [])
+            if not ids:
+                ids = _recover_publication_ids(
+                    s.github_token, pub.repo, s.github_branch or "main", pub.slug
+                )
+            rows = Product.query.filter(Product.id.in_(ids)).all()
+            by_id = {p.id: p for p in rows}
+            products = [by_id[i] for i in ids if i in by_id]
+
+            html = render_template(
+                "_published_page.html",
+                page_title=pub.name,
+                products=products,
+                published_at=datetime.now(timezone.utc),
+            )
+            ok, err = _github_put_file(
+                token=s.github_token,
+                repo=pub.repo,
+                branch=s.github_branch or "main",
+                path=f"{pub.slug}.html",
+                content_str=html,
+                commit_message=f"Re-publish (template refresh): {pub.name}",
+            )
+            if ok:
+                ok_count += 1
+                repos_touched.add(pub.repo)
+                # Backfill recovered ids so the next run doesn't need to scrape.
+                if not pub.item_ids and products:
+                    pub.item_ids = [p.id for p in products]
+                    pub.item_count = len(products)
+            else:
+                failures.append(f"{pub.name}: {err}")
+        db.session.commit()
+
+        # Refresh each touched repo's index too, so it matches the new style.
+        for repo in repos_touched:
+            repo_pubs = (Publication.query.filter_by(repo=repo)
+                         .order_by(Publication.updated_at.desc()).all())
+            index_html = render_template(
+                "_published_index.html", repo=repo, publications=repo_pubs,
+                published_at=datetime.now(timezone.utc),
+            )
+            _github_put_file(
+                token=s.github_token, repo=repo, branch=s.github_branch or "main",
+                path="index.html", content_str=index_html,
+                commit_message="Re-publish index (template refresh)",
+            )
+
+        if failures:
+            flash(f"Re-published {ok_count} page(s); {len(failures)} failed: "
+                  f"{'; '.join(failures)}", "warning")
+        else:
+            flash(f"Re-published {ok_count} page{'s' if ok_count != 1 else ''} "
+                  f"with the latest template.", "success")
+        return redirect(url_for("settings_github"))
+
     # ── Purchases page removed — /products now lists everything by default. ──
 
     def _has_review(p):
