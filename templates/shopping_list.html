@@ -432,9 +432,12 @@ function refreshSelectionUi() {
     link.style.display = n > 0 ? '' : 'none';
   });
   // Delete FAB — only present when there's a selection to act on.
+  // Must set 'flex' (not '') when showing: the CSS default is display:none,
+  // so '' would fall back to that and stay hidden. The FAB also needs flex
+  // to centre its icon.
   var fabDelete = document.getElementById('fabDelete');
   if (fabDelete) {
-    fabDelete.style.display = n > 0 ? '' : 'none';
+    fabDelete.style.display = n > 0 ? 'flex' : 'none';
     var badge = document.getElementById('fabDeleteBadge');
     if (badge) badge.textContent = n;
   }
