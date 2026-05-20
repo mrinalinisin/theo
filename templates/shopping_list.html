@@ -131,6 +131,14 @@
           <input type="date" name="purchased_at" class="form-input" value="{{ now().strftime('%Y-%m-%d') if now is defined else '' }}">
         </div>
 
+        <div class="form-group" style="margin-bottom:10px;">
+          <label class="checkbox-inline">
+            <input type="checkbox" name="bought_at_store" value="1"
+                   onchange="togglePurchaseStoreMode(this)">
+            Bought at store <span class="text-xs text-faint">(no order or tracking link)</span>
+          </label>
+        </div>
+
         <div class="form-group">
           <label class="form-label">Order details URL <span class="text-xs text-faint">(order confirmation / receipt page)</span></label>
           <input type="url" name="order_details_url" class="form-input" placeholder="https://...">
@@ -141,7 +149,7 @@
           <input type="url" name="tracking_url" class="form-input" placeholder="https://...">
         </div>
 
-        <div class="text-xs text-faint" style="margin:-8px 0 12px;">
+        <div class="text-xs text-faint" style="margin:-8px 0 12px;" data-purchase-link-hint>
           At least one of the two links above is required.
         </div>
 
@@ -288,19 +296,36 @@ function openPurchaseModal(productId, name, price, currencySymbol) {
   // not leak through).
   form.elements['order_details_url'].value = '';
   form.elements['tracking_url'].value = '';
+  // Reset the in-store checkbox + its dim/hint side-effects too.
+  const store = form.elements['bought_at_store'];
+  if (store) { store.checked = false; togglePurchaseStoreMode(store); }
   // Set today's date
   const today = new Date().toISOString().split('T')[0];
   document.querySelector('#modal-purchase input[name="purchased_at"]').value = today;
   document.getElementById('modal-purchase').classList.add('open');
 }
 function validatePurchaseLinks(form) {
+  // "Bought at store" waives the order/tracking link requirement.
+  const store = form.elements['bought_at_store'];
+  if (store && store.checked) return true;
   const order = (form.elements['order_details_url'].value || '').trim();
   const tracking = (form.elements['tracking_url'].value || '').trim();
   if (!order && !tracking) {
-    alert('Please provide an Order details URL or a Tracking link before marking as purchased.');
+    alert('Provide an Order details URL or a Tracking link, or tick "Bought at store".');
     return false;
   }
   return true;
+}
+// Dim link fields + hide the "required" hint when in-store is ticked.
+function togglePurchaseStoreMode(checkbox) {
+  const form = checkbox.form;
+  const store = checkbox.checked;
+  ['order_details_url', 'tracking_url'].forEach(function(name) {
+    const el = form.elements[name];
+    if (el) el.style.opacity = store ? '0.5' : '';
+  });
+  const hint = form.querySelector('[data-purchase-link-hint]');
+  if (hint) hint.style.display = store ? 'none' : '';
 }
 function closePurchaseModal() {
   document.getElementById('modal-purchase').classList.remove('open');

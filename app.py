@@ -601,11 +601,13 @@ def create_app():
             except ValueError:
                 expected_delivery_at = None
 
-        # A purchased item must have either an order details link or a tracking
-        # link (or both) so we always have a way back to the receipt/shipment.
-        if not order_details_url and not tracking_url:
+        # A purchased item normally needs an order or tracking link so we
+        # always have a way back to the receipt/shipment — unless the user
+        # marked it as bought at a physical store, where neither exists.
+        bought_at_store = bool(request.form.get("bought_at_store"))
+        if not bought_at_store and not order_details_url and not tracking_url:
             flash(
-                "Please provide an Order details URL or a Tracking link before marking as purchased.",
+                "Provide an Order details URL or a Tracking link, or tick “Bought at store”.",
                 "error",
             )
             return redirect(url_for("product_detail", product_id=product.id))

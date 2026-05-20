@@ -979,6 +979,22 @@ body.has-selection .card-select-checkbox { display: flex; }
 }
 .fab-add:active { transform: translateY(0); }
 
+/* Inline checkbox + label row (e.g. "Bought at store" in the purchase modal) */
+.checkbox-inline {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+}
+.checkbox-inline input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
 /* Bulk-delete FAB — bottom-left corner, well clear of the additive "+"
    FAB on the right so a destructive click can't be fat-fingered. Shown
    only while a Shift+Click selection exists (toggled in refreshSelectionUi). */
