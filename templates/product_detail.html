@@ -703,6 +703,13 @@ document.addEventListener('keydown', function(e) {
   }
 
   wireStrip(editStrip, {allowRemove: true});
+  // Wire the display strip too so users can browse the other photos by
+  // clicking — same setMain() path the edit-modal thumbs use, but with
+  // allowRemove off (no × button is rendered on the outer strip anyway).
+  // Side effect worth knowing: setMain writes to the edit form's hidden
+  // imageUrlField, so a Save in the Edit modal afterwards persists the
+  // newly-selected main. Felt like the right default.
+  wireStrip(outerStrip, {allowRemove: false});
 
   // Seed once at load so edit-form hidden fields match the live DOM
   syncHiddenFields();

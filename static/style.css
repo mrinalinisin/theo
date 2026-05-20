@@ -1544,7 +1544,11 @@ body.has-selection .card-select-checkbox { display: flex; }
 }
 .photo-thumb img { width: 100%; height: 100%; object-fit: cover; }
 .photo-thumb.active { border-color: var(--accent); }
-.photo-strip-static .photo-thumb { cursor: default; }
+/* Hover affordance for browsable strips — both the display strip
+   (.photo-strip-static, clickable to swap the hero image) and the
+   edit-modal strip use the same hint so the click is discoverable. */
+.photo-thumb:hover { border-color: var(--accent-light, #c9dcbd); }
+.photo-thumb.active:hover { border-color: var(--accent); }
 
 /* ── Variant pills ─────────────────────────────────────────────────────────── */
 .variant-grid { display: flex; flex-wrap: wrap; gap: 6px; }
