@@ -167,6 +167,16 @@
                    if (f) f.focus();
                  }, 50);">+</button>
 
+<!-- ═══ Floating delete button: appears only with a Shift+Click selection ═══ -->
+<button type="button" class="fab-delete" id="fabDelete"
+        title="Delete selected" aria-label="Delete selected"
+        onclick="deleteSelected()">
+  <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true">
+    <path d="M6 7h12l-1 13a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L6 7zm3-3h6l1 2h4v2H2V6h4l1-2z"/>
+  </svg>
+  <span class="fab-delete-badge" id="fabDeleteBadge">0</span>
+</button>
+
 <!-- ═══ Modal: New Listing ═══ -->
 <div class="modal-overlay" id="modal-new-listing">
   <div class="modal" style="max-width:520px;">
@@ -421,6 +431,36 @@ function refreshSelectionUi() {
   navPublishLinks.forEach(function(link) {
     link.style.display = n > 0 ? '' : 'none';
   });
+  // Delete FAB — only present when there's a selection to act on.
+  var fabDelete = document.getElementById('fabDelete');
+  if (fabDelete) {
+    fabDelete.style.display = n > 0 ? '' : 'none';
+    var badge = document.getElementById('fabDeleteBadge');
+    if (badge) badge.textContent = n;
+  }
+}
+
+// Bulk-delete the current Shift+Click selection. Confirms first, then
+// POSTs every id to /products/bulk-delete via a one-shot hidden form
+// (same submit pattern the Cart/Compare/Publish nav uses).
+function deleteSelected() {
+  const n = selectedIds.size;
+  if (n === 0) return;
+  if (!confirm('Delete ' + n + ' selected item' + (n !== 1 ? 's' : '') +
+               '? This removes the listing' + (n !== 1 ? 's' : '') +
+               ' and any photos — it cannot be undone.')) return;
+  const form = document.createElement('form');
+  form.method = 'POST';
+  form.action = '/products/bulk-delete';
+  selectedIds.forEach(function(id) {
+    const inp = document.createElement('input');
+    inp.type = 'hidden';
+    inp.name = 'ids';
+    inp.value = id;
+    form.appendChild(inp);
+  });
+  document.body.appendChild(form);
+  form.submit();
 }
 
 function toggleCardSelect(event, btn) {

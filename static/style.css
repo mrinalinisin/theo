@@ -979,6 +979,48 @@ body.has-selection .card-select-checkbox { display: flex; }
 }
 .fab-add:active { transform: translateY(0); }
 
+/* Bulk-delete FAB — sits to the left of the "+" FAB, shown only while a
+   Shift+Click selection exists (toggled in refreshSelectionUi). */
+.fab-delete {
+  position: fixed;
+  right: 92px;   /* 24 (edge) + 56 (fab-add width) + 12 (gap) */
+  bottom: 24px;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: none;
+  background: var(--danger, #b94545);
+  color: #fff;
+  display: none;  /* revealed by JS when n > 0 */
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.18);
+  z-index: 50;
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+.fab-delete:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.22);
+}
+.fab-delete:active { transform: translateY(0); }
+.fab-delete-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  border-radius: 10px;
+  background: #fff;
+  color: var(--danger, #b94545);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 20px;
+  text-align: center;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+}
+
 /* Tag picker (checkbox-as-chip) — used in the New-listing modal */
 .tag-picker {
   display: flex;

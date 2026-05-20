@@ -725,6 +725,41 @@ def create_app():
         flash(f"Removed \"{product.name}\".", "success")
         return redirect(url_for("shopping_list"))
 
+    @app.route("/products/bulk-delete", methods=["POST"])
+    def products_bulk_delete():
+        """Delete several products at once — driven by the Shift+Click
+        selection FAB. Accepts repeated `ids` form fields (one per product).
+        Mirrors single-product delete: drop image files, clear See-Also
+        links in both directions, then delete the row."""
+        from image_store import delete_product_images
+        ids = []
+        for raw in request.form.getlist("ids"):
+            try:
+                ids.append(int(str(raw).strip()))
+            except (TypeError, ValueError):
+                continue
+        if not ids:
+            flash("No items selected to delete.", "warning")
+            return redirect(url_for("shopping_list"))
+
+        deleted = 0
+        for pid in ids:
+            product = Product.query.get(pid)
+            if not product:
+                continue
+            # Clear See-Also links referencing this product on either side.
+            # The FK is ON DELETE CASCADE, but SQLite only enforces that with
+            # PRAGMA foreign_keys=ON, so do it explicitly to avoid orphans.
+            db.session.execute(product_related.delete().where(
+                (product_related.c.a_id == pid) | (product_related.c.b_id == pid)
+            ))
+            delete_product_images(pid, app)
+            db.session.delete(product)
+            deleted += 1
+        db.session.commit()
+        flash(f"Removed {deleted} item{'s' if deleted != 1 else ''}.", "success")
+        return redirect(url_for("shopping_list"))
+
     @app.route("/products/<int:product_id>/review", methods=["POST"])
     def product_review(product_id):
         """Save / update the review for a purchased item.
