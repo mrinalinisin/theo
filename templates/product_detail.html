@@ -481,7 +481,6 @@ function cancelReviewEdit() {
         <div class="form-group">
           <label class="form-label">Expected delivery <span class="text-xs text-faint">(when it should arrive)</span></label>
           <input type="date" name="expected_delivery_at" class="form-input"
-            min="{{ product.purchase.purchased_at|min_delivery_date }}"
             value="{{ product.purchase.expected_delivery_at.strftime('%Y-%m-%d') if product.purchase.expected_delivery_at else '' }}">
         </div>
         <div class="text-xs text-faint" style="margin:-8px 0 12px;">
