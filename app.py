@@ -2270,7 +2270,7 @@ def create_app():
     # The backup files themselves are the source of truth for "did today's
     # run happen" — no separate marker to drift out of sync.
 
-    BACKUP_RETENTION = 7
+    BACKUP_RETENTION = 1
     _backup_lock = threading.Lock()       # serialises actual writes
     _backup_guard = threading.Lock()      # protects the running flag
     _backup_running = {"v": False}        # prevents per-request thread storms

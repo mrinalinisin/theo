@@ -48,9 +48,14 @@
       Theo writes a full migration bundle to
       <code>instance/backups/</code> automatically every night at midnight.
       If the machine was asleep at midnight, the missed backup runs the
-      first time you open the app the next day. The newest
-      <strong>{{ backup_retention }}</strong> backups are kept; older ones
-      are pruned. Click any backup to download it.
+      first time you open the app the next day.
+      {% if backup_retention == 1 %}
+      Only the <strong>most recent</strong> backup is kept; older ones are pruned.
+      {% else %}
+      The newest <strong>{{ backup_retention }}</strong> backups are kept; older
+      ones are pruned.
+      {% endif %}
+      Click any backup to download it.
     </div>
     {% if backups %}
     <ul class="backup-list">
