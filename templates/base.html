@@ -195,6 +195,15 @@
     const url = el.dataset.url;
     if (url) window.open(url, '_blank', 'noopener');
   };
+  // Navigate a card that's a <div> (not an <a>) — used where the card holds
+  // interactive controls like an inline date picker that an <a> would fight.
+  // Bails when the click lands on an interactive element so those keep their
+  // own behaviour (the date picker opens, buttons do their thing).
+  window.cardNav = function(event, el) {
+    if (event.target.closest('input, button, select, textarea, label, form, a, .hero-card-delivery')) return;
+    const href = el.dataset.href;
+    if (href && href !== '#') window.location.href = href;
+  };
   // Mobile menu toggle
   const menuBtn = document.getElementById('mobileMenuBtn');
   const mobileMenu = document.getElementById('mobileMenu');

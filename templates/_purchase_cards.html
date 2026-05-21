@@ -1,6 +1,12 @@
 {% for purchase in purchases %}
 {% set product = purchase.product %}
-<a href="{{ url_for('product_detail', product_id=product.id) if product else '#' }}" class="hero-card">
+{# Card is a <div>, not an <a>: it holds an inline date picker, and a wrapping
+   <a> navigates on click and tears the native picker down. cardNav() (base.html)
+   handles click/Enter and bails on interactive targets. #}
+<div class="hero-card" role="link" tabindex="0"
+     data-href="{{ url_for('product_detail', product_id=product.id) if product else '#' }}"
+     onclick="cardNav(event, this)"
+     onkeydown="if (event.key === 'Enter') cardNav(event, this)">
   <div class="hero-card-image">
     {% if product and product.image_url %}
     <img src="{{ image_src(product.image_url) }}" alt="{{ product.name }}">
@@ -19,10 +25,9 @@
       <span class="price-drop">(Saved {{ product.fmt_price(product.original_price - purchase.paid_amount) }})</span>
       {% endif %}
     </div>
-    {# Delivery row: actual > expected > inline picker. The wrapper both
-       stops propagation AND prevents default — the card is a single <a>,
-       and stopPropagation alone doesn't stop the link navigating, which
-       was tearing down the native date picker as soon as it opened. #}
+    {# Delivery row: actual > expected > inline picker. No event hacks needed —
+       the card is a <div> with a guarded cardNav() that ignores clicks on the
+       picker, so the native calendar opens cleanly. #}
     {% if purchase.delivered_at %}
     <div class="hero-card-delivery delivered">
       &#x1f4e6; Delivered {{ purchase.delivered_at.strftime('%b %d') }}
@@ -36,15 +41,12 @@
       {% endif %}
     </div>
     {% elif product %}
-    <div class="hero-card-delivery"
-         onclick="event.stopPropagation(); event.preventDefault();">
+    <div class="hero-card-delivery">
       <form method="POST" action="{{ url_for('product_edit', product_id=product.id) }}" class="card-date-form">
         <input type="hidden" name="order_details_url" value="{{ purchase.order_details_url or '' }}">
         <input type="hidden" name="tracking_url" value="{{ purchase.tracking_url or '' }}">
         <input type="date" name="expected_delivery_at" class="form-input form-input-sm"
-               required
-               onclick="event.stopPropagation(); event.preventDefault();"
-               onchange="this.form.submit()">
+               required onchange="this.form.submit()">
       </form>
     </div>
     {% endif %}
@@ -92,5 +94,5 @@
       <span class="hero-card-footer-tags" title="{{ tag_text }}">{{ tag_text }}</span>
     </div>
   </div>
-</a>
+</div>
 {% endfor %}
