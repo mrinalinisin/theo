@@ -750,12 +750,16 @@ def create_app():
                 expected_delivery_at = None
 
         # A purchased item normally needs an order or tracking link so we
-        # always have a way back to the receipt/shipment — unless the user
-        # marked it as bought at a physical store, where neither exists.
+        # always have a way back to the receipt/shipment. The requirement is
+        # waived when bought at a physical store, OR when the user explicitly
+        # marks BOTH links as unavailable.
         bought_at_store = bool(request.form.get("bought_at_store"))
-        if not bought_at_store and not order_details_url and not tracking_url:
+        no_order = bool(request.form.get("no_order_details"))
+        no_tracking = bool(request.form.get("no_tracking"))
+        links_waived = bought_at_store or (no_order and no_tracking)
+        if not links_waived and not order_details_url and not tracking_url:
             flash(
-                "Provide an Order details URL or a Tracking link, or tick “Bought at store”.",
+                "Provide an Order details URL or a Tracking link — or mark both as unavailable.",
                 "error",
             )
             return redirect(url_for("product_detail", product_id=product.id))

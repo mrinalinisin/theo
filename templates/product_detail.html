@@ -568,12 +568,22 @@ function cancelReviewEdit() {
           <label class="form-label">Order details URL <span class="text-xs text-faint">(order confirmation / receipt page)</span></label>
           <input type="url" name="order_details_url" class="form-input" placeholder="https://..."
             value="{{ product.purchase.order_details_url if product.purchase else '' }}">
+          <label class="checkbox-inline" style="margin-top:6px;">
+            <input type="checkbox" name="no_order_details" value="1"
+                   onchange="toggleLinkField(this, 'order_details_url')">
+            No order details available
+          </label>
         </div>
 
         <div class="form-group">
           <label class="form-label">Tracking link <span class="text-xs text-faint">(shipment tracking page)</span></label>
           <input type="url" name="tracking_url" class="form-input" placeholder="https://..."
             value="{{ product.purchase.tracking_url if product.purchase else '' }}">
+          <label class="checkbox-inline" style="margin-top:6px;">
+            <input type="checkbox" name="no_tracking" value="1"
+                   onchange="toggleLinkField(this, 'tracking_url')">
+            No tracking available
+          </label>
         </div>
 
         <div class="form-group">
@@ -583,7 +593,7 @@ function cancelReviewEdit() {
         </div>
 
         <div class="text-xs text-faint" style="margin:-8px 0 12px;" data-purchase-link-hint>
-          At least one of the two link fields above is required.
+          At least one link is required — or mark both as unavailable.
         </div>
 
         <div class="form-group" style="margin-bottom:0;">
@@ -867,13 +877,26 @@ function validatePurchaseLinks(form) {
   // "Bought at store" waives the order/tracking link requirement.
   const store = form.elements['bought_at_store'];
   if (store && store.checked) return true;
+  // Marking BOTH links unavailable also waives the requirement.
+  const noOrder = form.elements['no_order_details'];
+  const noTracking = form.elements['no_tracking'];
+  if (noOrder && noOrder.checked && noTracking && noTracking.checked) return true;
   const order = (form.elements['order_details_url'].value || '').trim();
   const tracking = (form.elements['tracking_url'].value || '').trim();
   if (!order && !tracking) {
-    alert('Provide an Order details URL or a Tracking link, or tick "Bought at store".');
+    alert('Provide an Order details URL or a Tracking link — or mark both as unavailable.');
     return false;
   }
   return true;
+}
+
+// Disable + clear a link field when its "not available" box is ticked.
+function toggleLinkField(checkbox, fieldName) {
+  const el = checkbox.form.elements[fieldName];
+  if (!el) return;
+  el.disabled = checkbox.checked;       // disabled inputs aren't submitted
+  el.style.opacity = checkbox.checked ? '0.5' : '';
+  if (checkbox.checked) el.value = '';
 }
 
 // Dim the link fields + hide the "required" hint when in-store is ticked,
