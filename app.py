@@ -1365,7 +1365,7 @@ def create_app():
     # We namespace them under /<PUBLISH_SUBDIR>/ to keep the root free (e.g. for a
     # personal homepage). Project repos already get a /<repo>/ path segment from
     # GitHub Pages, so those stay at their own root.
-    PUBLISH_SUBDIR = "theo"
+    PUBLISH_SUBDIR = "theo/listicles"
 
     def _is_user_site(repo):
         """True for the special <owner>.github.io user/organisation site repo,
