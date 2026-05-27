@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Reviews — Theo{% endblock %}
+{% block title %}Read — Theo{% endblock %}
 
 {% block content %}
 <div class="page-body">
@@ -7,9 +7,10 @@
   <div class="hero-card-grid reviews-grid">
     {% for p in products %}
     <a href="{{ url_for('product_detail', product_id=p.id) }}" class="hero-card review-card">
-      {# Review first — it's the reason the card is on this page. #}
+      {# Reading material first — it's the reason the card is on this page. #}
       <div class="review-card-top">
         {% if p.review_text and p.review_text|trim %}
+        <div class="read-card-label">&#x270d;&#xfe0f; Review</div>
         <div class="review-card-text">{{ p.review_text }}</div>
         {% endif %}
 
@@ -31,6 +32,11 @@
           {% endif %}
         </div>
         {% endif %}
+
+        {% if p.story and p.story|trim %}
+        <div class="read-card-label">&#x1f4dc; Story</div>
+        <div class="review-card-text" style="font-style:italic;">{{ p.story }}</div>
+        {% endif %}
       </div>
 
       {# Product image at the bottom as a visual reminder of the thing reviewed.
@@ -48,11 +54,12 @@
   </div>
   {% else %}
   <div class="empty-state">
-    <div class="empty-icon">&#x270d;&#xfe0f;</div>
-    <div class="empty-title">No reviews yet</div>
+    <div class="empty-icon">&#x1f4d6;</div>
+    <div class="empty-title">Nothing to read yet</div>
     <div class="empty-desc">
-      Open a purchased item and add a review — your written thoughts,
-      photos, or a video link. Anything reviewed shows up here.
+      Add a review to a purchased item — your written thoughts, photos, or a
+      video link — or enable item stories in Settings. Anything with a review
+      or a story shows up here.
     </div>
   </div>
   {% endif %}

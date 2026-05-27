@@ -776,6 +776,16 @@ body.has-selection .card-select-checkbox { display: flex; }
   overflow: hidden;
   white-space: pre-wrap;
 }
+/* Tiny "Review" / "Story" type label above each block on the Read cards.
+   Negative bottom margin tightens the flex gap to the text it labels. */
+.read-card-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  margin-bottom: -6px;
+}
 .review-card-extras {
   display: flex;
   align-items: center;

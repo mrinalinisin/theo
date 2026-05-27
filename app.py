@@ -1839,22 +1839,32 @@ def create_app():
 
     def _has_review(p):
         """A product 'has a review' if any of the review fields carry
-        content. Used by /reviews and could be reused elsewhere later."""
+        content. Used by /read and could be reused elsewhere later."""
         return bool(
             (p.review_text and p.review_text.strip())
             or (p.review_video_url and p.review_video_url.strip())
             or p.review_photos
         )
 
-    @app.route("/reviews")
-    def reviews_list():
-        """Listings that have a written review, photos, or a video link.
+    def _has_story(p):
+        """A product 'has a story' if its generated narrative is non-empty."""
+        return bool(p.story and p.story.strip())
+
+    @app.route("/read")
+    def read_list():
+        """Listings with reading material — a written review (text, photos,
+        or video link) and/or a generated J. Peterman-style story.
         Filtering happens in Python — the JSON review_photos column is
         awkward to predicate on in SQL and the table is small enough
         that the cost is negligible."""
         candidates = Product.query.order_by(Product.updated_at.desc()).all()
-        products = [p for p in candidates if _has_review(p)]
-        return render_template("reviews.html", products=products)
+        products = [p for p in candidates if _has_review(p) or _has_story(p)]
+        return render_template("read.html", products=products)
+
+    @app.route("/reviews")
+    def reviews_list():
+        """Old URL, kept so existing bookmarks/links still resolve."""
+        return redirect(url_for("read_list"))
 
     @app.route("/purchases/calendar")
     def purchases_calendar():

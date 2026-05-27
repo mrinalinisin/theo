@@ -73,13 +73,13 @@
       <a href="{{ url_for('purchases_calendar') }}" class="{{ 'active' if request.endpoint == 'purchases_calendar' }}">
         <span class="icon">&#x1f4c5;</span> Deliveries
       </a>
-      <a href="{{ url_for('reviews_list') }}" class="{{ 'active' if request.endpoint == 'reviews_list' }}">
-        <span class="icon">&#x270d;&#xfe0f;</span> Reviews
+      <a href="{{ url_for('read_list') }}" class="{{ 'active' if request.endpoint in ('read_list', 'reviews_list') }}">
+        <span class="icon">&#x1f4d6;</span> Read
       </a>
       <a href="{{ url_for('reports') }}" class="{{ 'active' if request.endpoint in ('reports', 'report_month') }}">
         <span class="icon">&#x1f4ca;</span> Reports
       </a>
-      <a href="{{ url_for('settings') }}" class="{{ 'active' if request.endpoint in ('settings', 'settings_github', 'settings_about', 'settings_tags', 'settings_brands', 'settings_data', 'settings_stats') }}">
+      <a href="{{ url_for('settings') }}" class="{{ 'active' if request.endpoint in ('settings', 'settings_github', 'settings_about', 'settings_tags', 'settings_stories', 'settings_brands', 'settings_data', 'settings_stats') }}">
         <span class="icon">&#x2699;&#xfe0f;</span> Settings
       </a>
     </nav>
@@ -115,13 +115,13 @@
     <a href="{{ url_for('purchases_calendar') }}" class="{{ 'active' if request.endpoint == 'purchases_calendar' }}">
       <span class="icon">&#x1f4c5;</span> Deliveries
     </a>
-    <a href="{{ url_for('reviews_list') }}" class="{{ 'active' if request.endpoint == 'reviews_list' }}">
-      <span class="icon">&#x270d;&#xfe0f;</span> Reviews
+    <a href="{{ url_for('read_list') }}" class="{{ 'active' if request.endpoint in ('read_list', 'reviews_list') }}">
+      <span class="icon">&#x1f4d6;</span> Read
     </a>
     <a href="{{ url_for('reports') }}" class="{{ 'active' if request.endpoint in ('reports', 'report_month') }}">
       <span class="icon">&#x1f4ca;</span> Reports
     </a>
-    <a href="{{ url_for('settings') }}" class="{{ 'active' if request.endpoint in ('settings', 'settings_github', 'settings_about', 'settings_tags', 'settings_brands', 'settings_data', 'settings_stats') }}">
+    <a href="{{ url_for('settings') }}" class="{{ 'active' if request.endpoint in ('settings', 'settings_github', 'settings_about', 'settings_tags', 'settings_stories', 'settings_brands', 'settings_data', 'settings_stats') }}">
       <span class="icon">&#x2699;&#xfe0f;</span> Settings
     </a>
     {% if request.endpoint == 'shopping_list' %}
