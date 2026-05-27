@@ -175,6 +175,27 @@
           </div>
           {% endif %}
 
+          <!-- Story (J. Peterman-style narrative) -->
+          {% if product.story %}
+          <div class="section-label" style="display:flex; justify-content:space-between; align-items:center;">
+            <span>The Story</span>
+            <form method="POST" action="{{ url_for('product_story_regenerate', product_id=product.id) }}" style="display:inline;"
+                  onsubmit="return confirm('Rewrite the story for this item?');">
+              <button type="submit" class="btn btn-ghost btn-sm" title="Generate a fresh story">&#x21bb; Rewrite</button>
+            </form>
+          </div>
+          <div class="text-sm mb-16"
+               style="padding:14px 16px; background:var(--bg); border-radius:var(--radius-sm); line-height:1.7; font-style:italic; white-space:pre-wrap;">{{ product.story }}</div>
+          {% elif anthropic_configured %}
+          <div class="mb-16">
+            <form method="POST" action="{{ url_for('product_story_regenerate', product_id=product.id) }}" style="display:inline;">
+              <button type="submit" class="btn btn-secondary btn-sm" title="Write a J. Peterman-style story for this item">
+                &#x1f4dc; Write a story
+              </button>
+            </form>
+          </div>
+          {% endif %}
+
           <!-- Quick Tag Selector -->
           {% if tags %}
           <div class="divider"></div>

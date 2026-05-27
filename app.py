@@ -360,6 +360,9 @@ def create_app():
 
         db.session.commit()
 
+        from story import maybe_generate_story_async
+        maybe_generate_story_async(app, product)
+
         result = dict(ok=True, product_id=product.id, name=product.name)
         if duplicate_name:
             result["warning"] = f"Possible duplicate of \"{duplicate_name}\""
@@ -508,6 +511,12 @@ def create_app():
 
         product.updated_at = datetime.now(timezone.utc)
         db.session.commit()
+        # Only on first creation — a re-ingest of an existing item shouldn't
+        # spawn a fresh story (and should_generate() guards against clobbering
+        # an existing one anyway).
+        if created:
+            from story import maybe_generate_story_async
+            maybe_generate_story_async(app, product)
         return jsonify(
             ok=True, product_id=product.id, status=product.status, created=created
         ), (201 if created else 200)
@@ -545,6 +554,7 @@ def create_app():
             currencies=currencies,
             related=related,
             pickable=pickable,
+            anthropic_configured=bool(app.config.get("ANTHROPIC_API_KEY")),
         )
 
     @app.route("/products/<int:product_id>/related/add", methods=["POST"])
@@ -1035,6 +1045,10 @@ def create_app():
             if tag:
                 product.tags.append(tag)
         db.session.commit()
+        # Auto-story: fire-and-forget if enabled and the item carries a
+        # selected tag. Runs in a background thread so the add isn't blocked.
+        from story import maybe_generate_story_async
+        maybe_generate_story_async(app, product)
         flash(f"Added \"{name}\".", "success")
         return redirect(url_for("product_detail", product_id=product.id))
 
@@ -1112,6 +1126,8 @@ def create_app():
             if tag:
                 clone.tags.append(tag)
         db.session.commit()
+        from story import maybe_generate_story_async
+        maybe_generate_story_async(app, clone)
         flash(f"Cloned \"{src.name}\" — edit the new copy as needed.", "success")
         return redirect(url_for("product_detail", product_id=clone.id))
 
@@ -2096,6 +2112,61 @@ def create_app():
         return render_template(
             "settings.html", settings=Settings.get(), tab="tags", tag_rows=rows,
         )
+
+    # ── Stories (J. Peterman-style auto-narratives) ───────────────────────
+    @app.route("/settings/stories")
+    def settings_stories():
+        tags = Tag.query.order_by(Tag.name).all()
+        return render_template(
+            "settings.html",
+            settings=Settings.get(),
+            tab="stories",
+            tags=tags,
+            anthropic_configured=bool(app.config.get("ANTHROPIC_API_KEY")),
+        )
+
+    @app.route("/settings/stories", methods=["POST"])
+    def settings_stories_save():
+        s = Settings.get()
+        s.auto_story_enabled = bool(request.form.get("auto_story_enabled"))
+        # Selected tags arrive as repeated `story_tag_ids` checkboxes.
+        ids = []
+        for raw in request.form.getlist("story_tag_ids"):
+            try:
+                ids.append(int(raw))
+            except (TypeError, ValueError):
+                continue
+        s.auto_story_tag_ids = ids
+        db.session.commit()
+        if s.auto_story_enabled and not app.config.get("ANTHROPIC_API_KEY"):
+            flash(
+                "Saved — but stories won't generate until an ANTHROPIC_API_KEY "
+                "is set in .env (then restart Theo).",
+                "warning",
+            )
+        else:
+            flash("Story settings saved.", "success")
+        return redirect(url_for("settings_stories"))
+
+    @app.route("/products/<int:product_id>/story/regenerate", methods=["POST"])
+    def product_story_regenerate(product_id):
+        """Generate (or regenerate) one item's story on demand — synchronous,
+        so the user sees the result on the next page load."""
+        product = Product.query.get_or_404(product_id)
+        api_key = app.config.get("ANTHROPIC_API_KEY", "")
+        if not api_key:
+            flash("Set ANTHROPIC_API_KEY in .env (and restart) to generate stories.", "error")
+            return redirect(url_for("product_detail", product_id=product.id))
+        from story import generate_story_text
+        try:
+            product.story = generate_story_text(product, api_key)
+            product.story_generated_at = datetime.now(timezone.utc)
+            db.session.commit()
+            flash("Story written.", "success")
+        except Exception as exc:
+            app.logger.warning("Manual story generation failed for %s: %s", product_id, exc)
+            flash(f"Couldn't generate a story: {exc}", "error")
+        return redirect(url_for("product_detail", product_id=product.id))
 
     # ── Data export / import ──────────────────────────────────────────────
     # Portable cross-instance backup format. A ZIP bundle containing:
@@ -3262,6 +3333,20 @@ def _run_lightweight_migrations():
     if not column_exists("product", "review_photos"):
         # SQLite stores JSON as TEXT; SQLAlchemy reads/writes it transparently.
         db.session.execute(text("ALTER TABLE product ADD COLUMN review_photos TEXT DEFAULT '[]'"))
+        db.session.commit()
+
+    # Auto-story (J. Peterman-style narratives) added 2026-05.
+    if not column_exists("product", "story"):
+        db.session.execute(text("ALTER TABLE product ADD COLUMN story TEXT DEFAULT ''"))
+        db.session.commit()
+    if not column_exists("product", "story_generated_at"):
+        db.session.execute(text("ALTER TABLE product ADD COLUMN story_generated_at DATETIME"))
+        db.session.commit()
+    if not column_exists("settings", "auto_story_enabled"):
+        db.session.execute(text("ALTER TABLE settings ADD COLUMN auto_story_enabled BOOLEAN NOT NULL DEFAULT 0"))
+        db.session.commit()
+    if not column_exists("settings", "auto_story_tag_ids"):
+        db.session.execute(text("ALTER TABLE settings ADD COLUMN auto_story_tag_ids TEXT DEFAULT '[]'"))
         db.session.commit()
 
     # GitHub publishing credentials added 2026-05.

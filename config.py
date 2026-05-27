@@ -25,6 +25,11 @@ class Config:
     TWILIO_WHATSAPP_FROM = os.getenv("TWILIO_WHATSAPP_FROM", "whatsapp:+14155238886")
     TWILIO_WHATSAPP_TO = os.getenv("TWILIO_WHATSAPP_TO", "")
 
+    # Anthropic / Claude API — powers the auto-generated J. Peterman-style
+    # item stories. Optional: the app runs fine without it; the Stories
+    # feature simply stays dormant until a key is present.
+    ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
+
     @property
     def twilio_configured(self):
         return bool(self.TWILIO_ACCOUNT_SID and self.TWILIO_AUTH_TOKEN and self.TWILIO_WHATSAPP_TO)

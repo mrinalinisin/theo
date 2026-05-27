@@ -12,6 +12,10 @@
        class="settings-tab {% if tab == 'tags' %}active{% endif %}">
       <span class="icon">&#x1f3f7;&#xfe0f;</span> Tags
     </a>
+    <a href="{{ url_for('settings_stories') }}"
+       class="settings-tab {% if tab == 'stories' %}active{% endif %}">
+      <span class="icon">&#x1f4dc;</span> Stories
+    </a>
     <a href="{{ url_for('settings_brands') }}"
        class="settings-tab {% if tab == 'brands' %}active{% endif %}">
       <span class="icon">&#x1f3ec;</span> Brands
@@ -29,6 +33,7 @@
   <main class="settings-content">
     {% if tab == 'github' %}{% include '_settings_github.html' %}
     {% elif tab == 'tags' %}{% include '_settings_tags.html' %}
+    {% elif tab == 'stories' %}{% include '_settings_stories.html' %}
     {% elif tab == 'brands' %}{% include '_settings_brands.html' %}
     {% elif tab == 'data' %}{% include '_settings_data.html' %}
     {% elif tab == 'stats' %}{% include '_settings_stats.html' %}
