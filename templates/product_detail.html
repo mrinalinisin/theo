@@ -593,7 +593,7 @@ function cancelReviewEdit() {
         </div>
 
         <div class="text-xs text-faint" style="margin:-8px 0 12px;" data-purchase-link-hint>
-          At least one link is required — or mark both as unavailable.
+          At least one link is required — or tick a box if it&rsquo;s unavailable (you can add the other later).
         </div>
 
         <div class="form-group" style="margin-bottom:0;">
@@ -880,11 +880,11 @@ function validatePurchaseLinks(form) {
   // Marking BOTH links unavailable also waives the requirement.
   const noOrder = form.elements['no_order_details'];
   const noTracking = form.elements['no_tracking'];
-  if (noOrder && noOrder.checked && noTracking && noTracking.checked) return true;
+  if ((noOrder && noOrder.checked) || (noTracking && noTracking.checked)) return true;
   const order = (form.elements['order_details_url'].value || '').trim();
   const tracking = (form.elements['tracking_url'].value || '').trim();
   if (!order && !tracking) {
-    alert('Provide an Order details URL or a Tracking link — or mark both as unavailable.');
+    alert('Provide an Order details URL or a Tracking link — or tick a box if it is unavailable.');
     return false;
   }
   return true;
