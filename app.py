@@ -2278,6 +2278,8 @@ def create_app():
                 "review_text": p.review_text or "",
                 "review_video_url": p.review_video_url or "",
                 "review_photos": list(p.review_photos or []),
+                "story": p.story or "",
+                "story_generated_at": _iso(p.story_generated_at),
                 "tags": [t.name for t in p.tags],
                 "purchase": purchase,
             })
@@ -2686,9 +2688,11 @@ def create_app():
                 review_text=p.get("review_text", ""),
                 review_video_url=p.get("review_video_url", ""),
                 review_photos=[_rewrite(x) for x in (p.get("review_photos") or [])],
+                story=p.get("story", ""),
             )
-            # Preserve timestamps if present.
-            for fld in ("created_at", "updated_at"):
+            # Preserve timestamps if present (story_generated_at included so a
+            # restored story keeps its original "written on" date).
+            for fld in ("created_at", "updated_at", "story_generated_at"):
                 raw = p.get(fld)
                 if raw:
                     try:
