@@ -1353,14 +1353,40 @@ def create_app():
         slug = _re.sub(r"[^a-z0-9-]+", "-", (name or "").lower()).strip("-")
         return slug or "page"
 
+    # User-site repos (<owner>.github.io) serve straight from the domain root,
+    # so Theo's pages would otherwise land at https://<owner>.github.io/<slug>.html.
+    # We namespace them under /<PUBLISH_SUBDIR>/ to keep the root free (e.g. for a
+    # personal homepage). Project repos already get a /<repo>/ path segment from
+    # GitHub Pages, so those stay at their own root.
+    PUBLISH_SUBDIR = "theo"
+
+    def _is_user_site(repo):
+        """True for the special <owner>.github.io user/organisation site repo,
+        which is served from the domain root."""
+        owner, _, name = repo.partition("/")
+        return bool(owner) and name == f"{owner}.github.io"
+
+    def _publish_prefix(repo):
+        """Repo-relative path prefix for Theo's files: '<subdir>/' on the
+        user site, '' on project repos."""
+        return f"{PUBLISH_SUBDIR}/" if _is_user_site(repo) else ""
+
+    def _page_path(repo, slug):
+        """Repo-relative path of a published page file."""
+        return f"{_publish_prefix(repo)}{slug}.html"
+
+    def _index_path(repo):
+        """Repo-relative path of the collections index file."""
+        return f"{_publish_prefix(repo)}index.html"
+
     def _public_url(repo, slug):
-        """Public Pages URL for owner/name + filename slug. Both `<u>.github.io`
-        and `<u>/<repo>` flavours. Theo doesn't *enable* Pages — user has to
-        do that on github.com — but we can predict the URL regardless.
+        """Public Pages URL for owner/name + filename slug. User-site pages live
+        under /<PUBLISH_SUBDIR>/; project-repo pages under /<repo>/. Theo doesn't
+        *enable* Pages — user does that on github.com — but we predict the URL.
         """
         owner, _, name = repo.partition("/")
-        if name == f"{owner}.github.io":
-            return f"https://{owner}.github.io/{slug}.html"
+        if _is_user_site(repo):
+            return f"https://{owner}.github.io/{PUBLISH_SUBDIR}/{slug}.html"
         return f"https://{owner}.github.io/{name}/{slug}.html"
 
     @app.route("/publish")
@@ -1502,7 +1528,7 @@ def create_app():
             token=s.github_token,
             repo=repo,
             branch=s.github_branch or "main",
-            path=f"{slug}.html",
+            path=_page_path(repo, slug),
             content_str=html,
             commit_message=f"Publish: {page_name}",
         )
@@ -1542,7 +1568,7 @@ def create_app():
             token=s.github_token,
             repo=repo,
             branch=s.github_branch or "main",
-            path="index.html",
+            path=_index_path(repo),
             content_str=index_html,
             commit_message=f"Update index for {page_name}",
         )
@@ -1581,7 +1607,7 @@ def create_app():
         import re as _re
         try:
             r = _req.get(
-                f"https://api.github.com/repos/{repo}/contents/{slug}.html",
+                f"https://api.github.com/repos/{repo}/contents/{_page_path(repo, slug)}",
                 headers={
                     "Authorization": f"Bearer {token}",
                     "Accept": "application/vnd.github.raw",
@@ -1718,7 +1744,7 @@ def create_app():
             token=s.github_token,
             repo=pub.repo,
             branch=s.github_branch or "main",
-            path=f"{pub.slug}.html",
+            path=_page_path(pub.repo, pub.slug),
             commit_message=f"Delete: {pub.name}",
         )
         if not ok:
@@ -1747,7 +1773,7 @@ def create_app():
                 token=s.github_token,
                 repo=repo,
                 branch=s.github_branch or "main",
-                path="index.html",
+                path=_index_path(repo),
                 content_str=index_html,
                 commit_message="Update index after delete",
             )
@@ -1798,7 +1824,7 @@ def create_app():
                 token=s.github_token,
                 repo=pub.repo,
                 branch=s.github_branch or "main",
-                path=f"{pub.slug}.html",
+                path=_page_path(pub.repo, pub.slug),
                 content_str=html,
                 commit_message=f"Re-publish (template refresh): {pub.name}",
             )
@@ -1823,7 +1849,7 @@ def create_app():
             )
             _github_put_file(
                 token=s.github_token, repo=repo, branch=s.github_branch or "main",
-                path="index.html", content_str=index_html,
+                path=_index_path(repo), content_str=index_html,
                 commit_message="Re-publish index (template refresh)",
             )
 
@@ -1833,6 +1859,98 @@ def create_app():
         else:
             flash(f"Re-published {ok_count} page{'s' if ok_count != 1 else ''} "
                   f"with the latest template.", "success")
+        return redirect(url_for("settings_github"))
+
+    @app.route("/publications/move-to-subdir", methods=["POST"])
+    def publications_move_to_subdir():
+        """One-time relocation of already-published user-site pages from the
+        repo root into /<PUBLISH_SUBDIR>/.
+
+        For each affected Publication: re-render and PUT the page at its new
+        prefixed path, DELETE the old root file, and rewrite the stored URL.
+        Then, per touched repo, build the index at /<PUBLISH_SUBDIR>/index.html
+        and DELETE the old root index.html so the repo root is freed.
+
+        Idempotent: re-running re-PUTs the (already-moved) files and the root
+        deletes 404 harmlessly. Only user-site repos are touched — project
+        repos already live under their own /<repo>/ path.
+        """
+        s = Settings.get()
+        if not s.github_token:
+            flash("Connect GitHub first.", "warning")
+            return redirect(url_for("settings_github"))
+        branch = s.github_branch or "main"
+
+        pubs = [p for p in Publication.query.all() if _is_user_site(p.repo)]
+        if not pubs:
+            flash("No user-site pages to move.", "info")
+            return redirect(url_for("settings_github"))
+
+        moved = 0
+        failures = []
+        repos_touched = set()
+        for pub in pubs:
+            ids = list(pub.item_ids or [])
+            if not ids:
+                ids = _recover_publication_ids(s.github_token, pub.repo, branch, pub.slug)
+            rows = Product.query.filter(Product.id.in_(ids)).all()
+            by_id = {p.id: p for p in rows}
+            products = [by_id[i] for i in ids if i in by_id]
+
+            html = render_template(
+                "_published_page.html",
+                page_title=pub.name, products=products,
+                published_at=datetime.now(timezone.utc),
+            )
+            # PUT the page at its new (prefixed) location first…
+            ok, err = _github_put_file(
+                token=s.github_token, repo=pub.repo, branch=branch,
+                path=_page_path(pub.repo, pub.slug), content_str=html,
+                commit_message=f"Move to /{PUBLISH_SUBDIR}: {pub.name}",
+            )
+            if not ok:
+                failures.append(f"{pub.name}: {err}")
+                continue
+            # …then remove the old root copy. The new file exists before we
+            # delete the old, so the page is never briefly absent.
+            _github_delete_file(
+                token=s.github_token, repo=pub.repo, branch=branch,
+                path=f"{pub.slug}.html",
+                commit_message=f"Remove root copy after move: {pub.name}",
+            )
+            pub.url = _public_url(pub.repo, pub.slug)
+            if products and not pub.item_ids:
+                pub.item_ids = [p.id for p in products]
+                pub.item_count = len(products)
+            moved += 1
+            repos_touched.add(pub.repo)
+        db.session.commit()
+
+        # Build the index under /theo and drop the old root index for each repo.
+        for repo in repos_touched:
+            repo_pubs = (Publication.query.filter_by(repo=repo)
+                         .order_by(Publication.updated_at.desc()).all())
+            index_html = render_template(
+                "_published_index.html", repo=repo, publications=repo_pubs,
+                published_at=datetime.now(timezone.utc),
+            )
+            _github_put_file(
+                token=s.github_token, repo=repo, branch=branch,
+                path=_index_path(repo), content_str=index_html,
+                commit_message=f"Build /{PUBLISH_SUBDIR} index",
+            )
+            _github_delete_file(
+                token=s.github_token, repo=repo, branch=branch,
+                path="index.html",
+                commit_message=f"Remove root index after move to /{PUBLISH_SUBDIR}",
+            )
+
+        if failures:
+            flash(f"Moved {moved} page(s) to /{PUBLISH_SUBDIR}; {len(failures)} failed: "
+                  f"{'; '.join(failures)}", "warning")
+        else:
+            flash(f"Moved {moved} page{'s' if moved != 1 else ''} to /{PUBLISH_SUBDIR} "
+                  f"and cleared the repo root.", "success")
         return redirect(url_for("settings_github"))
 
     # ── Purchases page removed — /products now lists everything by default. ──
@@ -2000,11 +2118,19 @@ def create_app():
     @app.route("/settings/github")
     def settings_github():
         pubs = Publication.query.order_by(Publication.updated_at.desc()).all()
+        # Offer the one-time move only while a user-site page still points at
+        # the repo root (URL lacks the /<subdir>/ segment).
+        needs_subdir_move = any(
+            _is_user_site(p.repo) and f"/{PUBLISH_SUBDIR}/" not in (p.url or "")
+            for p in pubs
+        )
         return render_template(
             "settings.html",
             settings=Settings.get(),
             tab="github",
             publications=pubs,
+            needs_subdir_move=needs_subdir_move,
+            publish_subdir=PUBLISH_SUBDIR,
         )
 
     @app.route("/settings/about")

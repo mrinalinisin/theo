@@ -9,12 +9,12 @@
       Connect a GitHub account to publish selected listings as static HTML.
       Default target:
       {% if settings.github_username %}
-      <a href="https://{{ settings.github_username }}.github.io/"
+      <a href="https://{{ settings.github_username }}.github.io/{{ publish_subdir }}/"
          target="_blank" rel="noopener">
-        <code>{{ settings.github_username }}.github.io</code> &#x2197;
+        <code>{{ settings.github_username }}.github.io/{{ publish_subdir }}</code> &#x2197;
       </a>
       {% else %}
-      <code>&lt;username&gt;.github.io</code>
+      <code>&lt;username&gt;.github.io/{{ publish_subdir }}</code>
       {% endif %}.
       Add specific repos below if you want to push elsewhere — Theo will let you pick at publish time.
     </div>
@@ -108,12 +108,22 @@
 <div class="card mt-16">
   <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
     <span>Published pages</span>
-    <form method="POST" action="{{ url_for('publications_republish_all') }}"
-          onsubmit="return confirm('Re-publish all {{ publications|length }} page(s) with the latest template? This rewrites the live files on GitHub.');">
-      <button type="submit" class="btn btn-secondary btn-sm" title="Re-render every page with the current template and push to GitHub">
-        &#x21bb; Re-publish all
-      </button>
-    </form>
+    <div style="display:flex; gap:8px;">
+      {% if needs_subdir_move %}
+      <form method="POST" action="{{ url_for('publications_move_to_subdir') }}"
+            onsubmit="return confirm('Move all published user-site pages into /{{ publish_subdir }} and delete the old copies (including index.html) from the repo root? This rewrites your live site.');">
+        <button type="submit" class="btn btn-secondary btn-sm" title="Relocate published pages from the repo root into /{{ publish_subdir }} and clear the root">
+          &#x1f4e6; Move to /{{ publish_subdir }}
+        </button>
+      </form>
+      {% endif %}
+      <form method="POST" action="{{ url_for('publications_republish_all') }}"
+            onsubmit="return confirm('Re-publish all {{ publications|length }} page(s) with the latest template? This rewrites the live files on GitHub.');">
+        <button type="submit" class="btn btn-secondary btn-sm" title="Re-render every page with the current template and push to GitHub">
+          &#x21bb; Re-publish all
+        </button>
+      </form>
+    </div>
   </div>
   <div class="card-body">
     <ul class="pub-list">
