@@ -899,6 +899,13 @@ def create_app():
     def product_delete(product_id):
         product = Product.query.get_or_404(product_id)
         from image_store import delete_product_images
+        # Clear See-Also links referencing this product on either side. The FK
+        # is ON DELETE CASCADE, but SQLite only enforces that with
+        # PRAGMA foreign_keys=ON, so do it explicitly to avoid orphans
+        # (mirrors products_bulk_delete).
+        db.session.execute(product_related.delete().where(
+            (product_related.c.a_id == product.id) | (product_related.c.b_id == product.id)
+        ))
         delete_product_images(product.id, app)
         db.session.delete(product)
         db.session.commit()
