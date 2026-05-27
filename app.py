@@ -2168,6 +2168,17 @@ def create_app():
             flash(f"Couldn't generate a story: {exc}", "error")
         return redirect(url_for("product_detail", product_id=product.id))
 
+    @app.route("/products/<int:product_id>/story/delete", methods=["POST"])
+    def product_story_delete(product_id):
+        """Clear an item's story. The card then falls back to the
+        "Write a story" button (if a key is configured)."""
+        product = Product.query.get_or_404(product_id)
+        product.story = ""
+        product.story_generated_at = None
+        db.session.commit()
+        flash("Story deleted.", "success")
+        return redirect(url_for("product_detail", product_id=product.id))
+
     # ── Data export / import ──────────────────────────────────────────────
     # Portable cross-instance backup format. A ZIP bundle containing:
     #   data.json   — products, tags, currencies, purchases (no tokens/pubs)
