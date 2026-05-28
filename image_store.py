@@ -7,6 +7,7 @@ import os
 import re
 import time
 
+import numpy as np
 import requests
 from PIL import Image
 
@@ -108,6 +109,69 @@ def find_duplicate_by_image(phash, exclude_product_id=None):
     return None
 
 
+def strip_solid_background(filepath, color_tolerance=35, uniformity_threshold=40):
+    """If the image has a plain solid-colour background, make it transparent.
+
+    Detection: samples the four corners of the image. If every corner
+    is within *uniformity_threshold* Euclidean distance of the others,
+    the background is considered solid and removal proceeds.
+
+    Removal: every pixel whose colour distance from the background
+    colour is ≤ *color_tolerance* has its alpha set to 0.
+
+    The result is always saved as PNG (the only common raster format
+    that supports an alpha channel). The original file is deleted when
+    the extension changes. Returns the (possibly new) basename.
+    """
+    ext = os.path.splitext(filepath)[1].lower()
+    if ext in (".svg", ".gif", ".avif"):
+        return os.path.basename(filepath)
+
+    try:
+        with Image.open(filepath) as img:
+            img = img.convert("RGBA")
+            arr = np.array(img, dtype=np.float32)   # (H, W, 4)
+            h, w = arr.shape[:2]
+
+            inset = max(1, min(4, w // 10, h // 10))
+            corners = np.array([
+                arr[inset,         inset,         :3],
+                arr[inset,         w - 1 - inset, :3],
+                arr[h - 1 - inset, inset,         :3],
+                arr[h - 1 - inset, w - 1 - inset, :3],
+            ])  # (4, 3)
+
+            # Reject images whose corners are not all similar
+            for i in range(4):
+                for j in range(i + 1, 4):
+                    if np.linalg.norm(corners[i] - corners[j]) > uniformity_threshold:
+                        return os.path.basename(filepath)
+
+            bg = corners.mean(axis=0)               # (3,) mean background colour
+
+            # Euclidean distance from bg for every pixel
+            dist = np.sqrt(np.sum((arr[:, :, :3] - bg) ** 2, axis=2))  # (H, W)
+
+            # Zero out alpha where pixel is within tolerance
+            arr[:, :, 3] = np.where(dist <= color_tolerance, 0, arr[:, :, 3])
+
+            result = Image.fromarray(arr.astype(np.uint8), "RGBA")
+            png_path = os.path.splitext(filepath)[0] + ".png"
+            result.save(png_path, "PNG")
+
+            if png_path != filepath:
+                try:
+                    os.remove(filepath)
+                except OSError:
+                    pass
+
+            return os.path.basename(png_path)
+
+    except Exception as exc:
+        log.warning("Background strip failed for %s: %s", filepath, exc)
+        return os.path.basename(filepath)
+
+
 def save_image(image_value, product_id, index, app):
     """Save a single image (URL, base64, or filename) to disk.
 
@@ -144,6 +208,7 @@ def save_image(image_value, product_id, index, app):
         path = os.path.join(dest_dir, filename)
         with open(path, "wb") as f:
             f.write(data)
+        filename = strip_solid_background(path)
         return filename
 
     # --- remote URL ---
@@ -168,6 +233,7 @@ def save_image(image_value, product_id, index, app):
         with open(path, "wb") as f:
             for chunk in resp.iter_content(8192):
                 f.write(chunk)
+        filename = strip_solid_background(path)
         return filename
 
     # Unknown format — skip
