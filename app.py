@@ -2040,30 +2040,25 @@ def create_app():
 
     @app.route("/tags")
     def tags():
+        """JSON tag listing for external callers (browser extension).
+        The in-app tag UI lives at /settings/tags."""
         all_tags = Tag.query.order_by(Tag.name).all()
-        wants_json = (
-            request.args.get("format") == "json"
-            or request.accept_mimetypes.best_match(
-                ["text/html", "application/json"]
-            ) == "application/json"
-        )
-        if wants_json:
-            resp = jsonify(tags=[
-                {"id": t.id, "name": t.name, "colour": getattr(t, "colour", None)}
-                for t in all_tags
-            ])
-            resp.headers["Access-Control-Allow-Origin"] = "*"
-            return resp
-        return render_template("tags.html", tags=all_tags)
+        resp = jsonify(tags=[
+            {"id": t.id, "name": t.name, "colour": getattr(t, "colour", None)}
+            for t in all_tags
+        ])
+        resp.headers["Access-Control-Allow-Origin"] = "*"
+        return resp
 
     def _tag_redirect():
         """Where to bounce after a tag CRUD action. Honours an optional
-        `next` form field so /settings/tags and /tags can share the same
-        write endpoints without forking. Only same-app paths are allowed."""
+        `next` form field so the tag write endpoints can be reused by any
+        page that wants to bounce somewhere specific. Only same-app paths
+        are allowed; the default lands on /settings/tags."""
         nxt = (request.form.get("next") or "").strip()
         if nxt.startswith("/") and not nxt.startswith("//"):
             return redirect(nxt)
-        return redirect(url_for("tags"))
+        return redirect(url_for("settings_tags"))
 
     @app.route("/tags/create", methods=["POST"])
     def tag_create():
