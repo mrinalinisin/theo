@@ -435,7 +435,7 @@ function cancelReviewEdit() {
 <!-- ═══ Edit Modal ═══ -->
 <div class="modal-overlay" id="modal-edit">
   <div class="modal">
-    <form method="POST" action="{{ url_for('product_edit', product_id=product.id) }}" onsubmit="return validateEditLinks(this)">
+    <form method="POST" action="{{ url_for('product_edit', product_id=product.id) }}">
       <input type="hidden" name="images" id="editImagesField" value="{{ product.images|tojson_safe }}">
       <input type="hidden" name="image_url" id="editImageUrlField" value="{{ product.image_url }}">
       <div class="modal-header">
@@ -940,22 +940,6 @@ function togglePurchaseStoreMode(checkbox) {
   });
   const hint = form.querySelector('[data-purchase-link-hint]');
   if (hint) hint.style.display = store ? 'none' : '';
-}
-
-function validateEditLinks(form) {
-  // Only enforced for purchased products — the template only renders these
-  // inputs when product.status == 'purchased', so their absence means the
-  // rule doesn't apply to this product.
-  const orderField = form.elements['order_details_url'];
-  const trackingField = form.elements['tracking_url'];
-  if (!orderField || !trackingField) return true;
-  const order = (orderField.value || '').trim();
-  const tracking = (trackingField.value || '').trim();
-  if (!order && !tracking) {
-    alert('An Order details URL or a Tracking link is required.');
-    return false;
-  }
-  return true;
 }
 
 // Close modals on overlay click
