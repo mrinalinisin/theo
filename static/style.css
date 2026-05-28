@@ -1049,6 +1049,36 @@ body.has-selection .card-select-checkbox { display: flex; }
   box-shadow: 0 1px 4px rgba(0,0,0,0.2);
 }
 
+/* Send-to-Margo FAB — sits to the right of the delete FAB */
+.fab-margo {
+  position: fixed;
+  left: 88px;
+  bottom: 24px;
+  height: 44px;
+  padding: 0 16px;
+  border-radius: 22px;
+  border: none;
+  background: #b87333;
+  color: #fff;
+  display: none; /* revealed by JS when n > 0 */
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.18);
+  z-index: 50;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+.fab-margo:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.22);
+}
+.fab-margo:active { transform: translateY(0); }
+.fab-margo-label { white-space: nowrap; }
+
 /* Tag picker (checkbox-as-chip) — used in the New-listing modal */
 .tag-picker {
   display: flex;

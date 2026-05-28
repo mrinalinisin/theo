@@ -289,6 +289,52 @@ def create_app():
         )
         return jsonify(html=html, has_more=has_more, next_offset=next_offset, total_count=total_count)
 
+    # ── Margo integration API ────────────────────────────────────────────────
+
+    @app.route("/api/margo/products")
+    def api_margo_products():
+        """Return product data for Margo collage import.
+
+        Accepts ?ids=1,2,3 and returns JSON with image URLs resolved
+        to absolute localhost URLs so Margo can fetch them cross-origin.
+        """
+        ids_param = request.args.get("ids", "")
+        try:
+            ids = [int(i) for i in ids_param.split(",") if i.strip()]
+        except ValueError:
+            return jsonify({"error": "invalid ids"}), 400
+
+        if not ids:
+            return jsonify([])
+
+        products = Product.query.filter(Product.id.in_(ids)).all()
+
+        def resolve(value):
+            if not value:
+                return None
+            if value.startswith(("http://", "https://", "data:")):
+                return value
+            return url_for("serve_image", filename=value, _external=True)
+
+        result = []
+        for p in products:
+            all_images = [resolve(img) for img in (p.images or []) if img]
+            primary = resolve(p.image_url)
+            if primary and primary not in all_images:
+                all_images = [primary] + all_images
+            result.append({
+                "id": p.id,
+                "name": p.name,
+                "store": p.store or "",
+                "image_url": primary,
+                "images": all_images,
+                "tags": [t.name for t in p.tags],
+            })
+
+        resp = jsonify(result)
+        resp.headers["Access-Control-Allow-Origin"] = "http://localhost:5222"
+        return resp
+
     # ── Browser Extension API ────────────────────────────────────────────────
 
     @app.route("/products/new_from_browser", methods=["POST", "OPTIONS"])

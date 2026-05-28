@@ -185,6 +185,19 @@
                    if (f) f.focus();
                  }, 50);">+</button>
 
+<!-- ═══ Floating "Send to Margo" button: appears with a Shift+Click selection ═══ -->
+<button type="button" class="fab-margo" id="fabMargo"
+        title="Send to Margo" aria-label="Send to Margo"
+        onclick="sendToMargo()">
+  <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <rect x="3" y="3" width="7" height="7" rx="1"/>
+    <rect x="14" y="3" width="7" height="7" rx="1"/>
+    <rect x="3" y="14" width="7" height="7" rx="1"/>
+    <path d="M14 17.5h7M17.5 14v7"/>
+  </svg>
+  <span class="fab-margo-label">Margo</span>
+</button>
+
 <!-- ═══ Floating delete button: appears only with a Shift+Click selection ═══ -->
 <button type="button" class="fab-delete" id="fabDelete"
         title="Delete selected" aria-label="Delete selected"
@@ -484,16 +497,24 @@ function refreshSelectionUi() {
   navPublishLinks.forEach(function(link) {
     link.style.display = n > 0 ? '' : 'none';
   });
-  // Delete FAB — only present when there's a selection to act on.
-  // Must set 'flex' (not '') when showing: the CSS default is display:none,
-  // so '' would fall back to that and stay hidden. The FAB also needs flex
-  // to centre its icon.
+  // Delete FAB
   var fabDelete = document.getElementById('fabDelete');
   if (fabDelete) {
     fabDelete.style.display = n > 0 ? 'flex' : 'none';
     var badge = document.getElementById('fabDeleteBadge');
     if (badge) badge.textContent = n;
   }
+  // Margo FAB — same visibility rule as delete
+  var fabMargo = document.getElementById('fabMargo');
+  if (fabMargo) {
+    fabMargo.style.display = n > 0 ? 'flex' : 'none';
+  }
+}
+
+function sendToMargo() {
+  if (selectedIds.size === 0) return;
+  const ids = [...selectedIds].join(',');
+  window.open('http://localhost:5222/editor?from=theo&ids=' + ids, '_blank');
 }
 
 // Bulk-delete the current Shift+Click selection. Confirms first, then
