@@ -31,7 +31,7 @@ Theo runs as a **runit-supervised service**, not directly via `python3 app.py`. 
 ```sh
 #!/bin/sh
 set -e
-cd /Users/sindhus/Desktop/ss_life/Theo
+cd /path/to/theo            # adjust to your checkout
 . venv/bin/activate
 exec 2>&1
 exec env PORT=5111 python3 app.py
@@ -56,8 +56,8 @@ Theo binds to `0.0.0.0:5111` (set via the `PORT` env var in the run script), so 
 
 | URL | Notes |
 |---|---|
-| `http://<tailnet-ip>:5111` | e.g. `http://100.121.204.124:5111` — works from any Tailnet device. The IP is visible in `tailscale status`. |
-| `http://<host>.<tailnet>.ts.net:5111` | MagicDNS hostname, e.g. `http://sindhus-macbook-air.tail89571f.ts.net:5111`. Same destination, friendlier to remember. |
+| `http://<tailnet-ip>:5111` | e.g. `http://100.x.y.z:5111` — works from any Tailnet device. The IP is visible in `tailscale status`. |
+| `http://<host>.<tailnet>.ts.net:5111` | MagicDNS hostname, e.g. `http://your-mac.tailnet-name.ts.net:5111`. Same destination, friendlier to remember. |
 
 **Optional — HTTPS via Tailscale Serve.** If `tailscale serve --bg http://127.0.0.1:5111` is running, Theo is also reachable at `https://<host>.<tailnet>.ts.net/` (port 443, no port number, auto-managed TLS cert). The Serve config lives inside `tailscaled` state, persists across reboots, and is reversible with `tailscale serve reset`. Note: Tailscale Serve must be enabled per-tailnet via the admin console (a one-time UI step) before the command works.
 
