@@ -156,4 +156,4 @@ Issues and PRs welcome. There's no CI or test suite yet — the project has been
 
 ## License
 
-License pending — see `LICENSE` (to be added).
+[MIT](LICENSE) © 2026 Sindhu S
