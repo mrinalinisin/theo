@@ -146,13 +146,23 @@ function selectCompareImage(dot) {
   });
 }
 
-// ── Remove from compare → reload to re-render with one fewer column ──
+// ── Remove from compare → drop ID from the URL and reload ──
+// Compare has no server-side basket; the selection lives entirely in the
+// ?ids=… query string. Removal is purely a URL rewrite.
 function removeFromCompare(event, btn) {
   event.preventDefault();
-  var productId = btn.dataset.productId;
-  fetch('/compare/remove/' + productId, { method: 'POST' })
-    .then(function(r) { return r.json(); })
-    .then(function() { window.location.reload(); });
+  var productId = String(btn.dataset.productId);
+  var params = new URLSearchParams(window.location.search);
+  var ids = (params.get('ids') || '').split(',').filter(function(x) {
+    return x && x !== productId;
+  });
+  if (ids.length) {
+    params.set('ids', ids.join(','));
+    window.location.search = params.toString();
+  } else {
+    // Nothing left to compare — go back to the shopping list.
+    window.location.href = '/products';
+  }
 }
 </script>
 {% endblock %}

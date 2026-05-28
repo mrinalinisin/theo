@@ -1134,14 +1134,6 @@ def create_app():
 
     # ── Cart ──────────────────────────────────────────────────────────────────
 
-    @app.route("/cart/add/<int:product_id>", methods=["POST"])
-    def cart_add(product_id):
-        cart = session.get("cart", [])
-        if product_id not in cart:
-            cart.append(product_id)
-            session["cart"] = cart
-        return jsonify(ok=True, cart_count=len(cart), in_cart=True)
-
     @app.route("/cart/remove/<int:product_id>", methods=["POST"])
     def cart_remove(product_id):
         cart = session.get("cart", [])
@@ -3238,12 +3230,6 @@ def create_app():
     def tojson_safe_filter(value):
         return json.dumps(value) if value else "[]"
 
-    # ── About / Stats redirects (now tabs inside /settings) ──────────────────
-
-    @app.route("/about")
-    def about():
-        return redirect(url_for("settings_about"), code=302)
-
     # ── Reports — monthly summaries computed on demand from Purchase rows ────
 
     def _compute_month_report(year, month):
@@ -3423,12 +3409,6 @@ def create_app():
             day_counts=day_counts,
             weekday_headers=weekday_headers,
         )
-
-    # ── Stats ────────────────────────────────────────────────────────────────
-
-    @app.route("/stats")
-    def stats():
-        return redirect(url_for("settings_stats"), code=302)
 
     return app
 
