@@ -4,7 +4,7 @@
 Safe to re-run — already-migrated images (bare filenames on disk) are skipped.
 
 Usage:
-    python scripts/migrate_images_to_disk.py
+    python scripts/migrations/migrate_images_to_disk.py
 """
 
 import sys

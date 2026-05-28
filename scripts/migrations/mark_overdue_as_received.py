@@ -15,8 +15,8 @@ for them.
 
 Usage:
 
-    python scripts/mark_overdue_as_received.py            # dry-run, prints what it'd do
-    python scripts/mark_overdue_as_received.py --apply    # commits the changes
+    python scripts/migrations/mark_overdue_as_received.py            # dry-run, prints what it'd do
+    python scripts/migrations/mark_overdue_as_received.py --apply    # commits the changes
 """
 
 import sys

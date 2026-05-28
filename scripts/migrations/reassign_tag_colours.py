@@ -1,7 +1,7 @@
 """One-shot: reassign every existing tag a distinct colour from the palette.
 
 Run from the repo root:
-    python scripts/reassign_tag_colours.py
+    python scripts/migrations/reassign_tag_colours.py
 
 Uses the same palette as app._pick_random_tag_colour; if there are more tags
 than palette entries, falls back to HSL-generated colours.

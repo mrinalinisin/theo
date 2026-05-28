@@ -4,7 +4,7 @@
 Safe to re-run -- images that already have a hash row are skipped.
 
 Usage:
-    python scripts/backfill_image_hashes.py
+    python scripts/migrations/backfill_image_hashes.py
 """
 
 import sys
