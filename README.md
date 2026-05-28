@@ -156,4 +156,4 @@ Issues and PRs welcome. There's no CI or test suite yet — the project has been
 
 ## License
 
-[MIT](LICENSE) © 2026 Sindhu S
+[MIT](LICENSE) © 2026 Mrinalini S
