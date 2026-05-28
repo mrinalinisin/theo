@@ -648,19 +648,13 @@ def create_app():
                 product.tags.append(tag)
 
         # Order/tracking/date edits apply to any product with a Purchase row
-        # (purchased, shipped, received). We re-enforce the "at least one link"
-        # invariant so a user can't blank both fields.
+        # (purchased, shipped, received). Either field may be blanked here —
+        # the "at least one link" rule only applies at purchase-creation time.
         if product.status in ("purchased", "shipped", "received") and product.purchase and (
             "order_details_url" in request.form or "tracking_url" in request.form
         ):
             order_details_url = (request.form.get("order_details_url") or "").strip()
             tracking_url = (request.form.get("tracking_url") or "").strip()
-            if not order_details_url and not tracking_url:
-                flash(
-                    "Items require an Order details URL or a Tracking link.",
-                    "error",
-                )
-                return redirect(url_for("product_detail", product_id=product_id))
             had_tracking = bool(product.purchase.tracking_url)
             product.purchase.order_details_url = order_details_url
             product.purchase.tracking_url = tracking_url

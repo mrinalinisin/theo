@@ -516,9 +516,6 @@ function cancelReviewEdit() {
           <input type="date" name="expected_delivery_at" class="form-input"
             value="{{ product.purchase.expected_delivery_at.strftime('%Y-%m-%d') if product.purchase.expected_delivery_at else '' }}">
         </div>
-        <div class="text-xs text-faint" style="margin:-8px 0 12px;">
-          At least one of the two link fields above is required.
-        </div>
         {% endif %}
         <div class="form-group" style="margin-bottom:0;">
           <label class="form-label">Tags</label>
