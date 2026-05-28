@@ -2545,15 +2545,17 @@ def create_app():
                         os.remove(old)
                     except OSError:
                         pass
-                print(f"[backup] wrote {os.path.basename(path)} "
-                      f"({os.path.getsize(path) // 1024} KB)")
+                app.logger.info(
+                    "[backup] wrote %s (%d KB)",
+                    os.path.basename(path), os.path.getsize(path) // 1024,
+                )
                 return path
 
     def _run_backup_then_clear():
         try:
             _perform_backup()
         except Exception as e:  # pragma: no cover — defensive
-            print(f"[backup] catch-up run failed: {e.__class__.__name__}: {e}")
+            app.logger.exception("[backup] catch-up run failed: %s", e)
         finally:
             with _backup_guard:
                 _backup_running["v"] = False
@@ -2583,7 +2585,7 @@ def create_app():
             try:
                 _perform_backup()
             except Exception as e:  # pragma: no cover — defensive
-                print(f"[backup] scheduled run failed: {e.__class__.__name__}: {e}")
+                app.logger.exception("[backup] scheduled run failed: %s", e)
 
     @app.before_request
     def _backup_catch_up_hook():
@@ -3428,6 +3430,7 @@ def _run_lightweight_migrations():
     PRAGMA table_info first so it's safe to re-run on every startup.
     """
     from sqlalchemy import text
+    from flask import current_app
     from models import Currency
 
     def column_exists(table, column):
@@ -3607,7 +3610,7 @@ def _run_lightweight_migrations():
         # Done — set the marker so this block becomes a no-op on subsequent boots.
         settings_row.state_refactor_done = True
         db.session.commit()
-        print("[Theo] Listing-states refactor migration applied.")
+        current_app.logger.info("[Theo] Listing-states refactor migration applied.")
 
     # Product.updated_at added 2026-04 — backfill with created_at so existing
     # rows sort sensibly on "last modified" until they're edited.
@@ -3643,7 +3646,10 @@ def _run_lightweight_migrations():
         for c in stale:
             db.session.delete(c)
         db.session.commit()
-        print(f"[Migration] Pruned {len(stale)} currency row(s): {[c.code for c in stale]}")
+        current_app.logger.info(
+            "[Migration] Pruned %d currency row(s): %s",
+            len(stale), [c.code for c in stale],
+        )
 
     # Product.currency_id added 2026-04 — backfill to INR
     if not column_exists("product", "currency_id"):
@@ -3674,7 +3680,7 @@ def _run_lightweight_migrations():
             changed += 1
     if changed:
         db.session.commit()
-        print(f"[Migration] Canonicalised {changed} product URL(s)")
+        current_app.logger.info("[Migration] Canonicalised %d product URL(s)", changed)
 
 
 # Curated palette of 16 visually-distinct tag colours.
