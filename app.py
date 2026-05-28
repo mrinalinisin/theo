@@ -34,7 +34,10 @@ from models import db, Product, Tag, Purchase, Settings, Currency, Publication, 
 
 
 def create_app():
-    app = Flask(__name__)
+    # Allow an explicit instance path so multiple instances (e.g. dev on
+    # port 5333 and stable on 5111) can share the same database and images.
+    instance_path = os.environ.get("INSTANCE_PATH") or None
+    app = Flask(__name__, **({"instance_path": instance_path} if instance_path else {}))
     app.config.from_object(Config)
     # Allow large form posts (pasted images still arrive as base64 in form POSTs).
     app.config["MAX_CONTENT_LENGTH"] = 32 * 1024 * 1024  # 32 MB total body
